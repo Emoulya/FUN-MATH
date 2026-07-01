@@ -123,3 +123,35 @@ export interface RekapSesi {
   durasiDetik: number;
   detailSoal: RekapSoal[];
 }
+
+// ============================================
+// Types — Sistem Modul Pembelajaran
+// ============================================
+
+/** Identitas modul pembelajaran */
+export type ModulId = 'modul1a' | 'modul1b' | 'modul2' | 'modul3' | 'modul4';
+
+/** Status akses modul */
+export type ModulStatus = 'locked' | 'unlocked' | 'completed';
+
+/** Progress seluruh modul per siswa */
+export interface ModulProgress {
+  modul1a: ModulStatus;
+  modul1b: ModulStatus;
+  modul2: ModulStatus;
+  modul3: ModulStatus;
+  modul4: ModulStatus;
+}
+
+/** Metadata satu modul untuk rendering peta modul */
+export interface ModulInfo {
+  id: ModulId;
+  judul: string;
+  deskripsi: string;
+  /** Nama ikon Lucide untuk rendering */
+  ikon: string;
+  /** Tailwind color class prefix (misal 'blue', 'emerald') */
+  warna: string;
+  /** Route path relatif dari /modul */
+  href: string;
+}

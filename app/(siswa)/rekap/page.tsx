@@ -150,7 +150,7 @@ export default function RekapPage() {
       >
         <Button
           variant="outline"
-          onClick={() => router.push('/pilih-operasi')}
+          onClick={() => router.push('/modul')}
           className="flex-1 gap-2"
         >
           <Home className="w-4 h-4" />
@@ -158,7 +158,7 @@ export default function RekapPage() {
         </Button>
         <Button
           onClick={() => {
-            router.push('/latihan');
+            router.push('/modul');
           }}
           className="flex-1 gap-2"
         >

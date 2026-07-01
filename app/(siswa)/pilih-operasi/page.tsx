@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, PenTool, ArrowLeft, ClipboardList } from 'lucide-react';
+import { BookOpen, PenTool, ArrowLeft, ClipboardList, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import OperationCard from '@/components/math/operation-card';
 import type { Operasi, Kesulitan } from '@/types/math';
@@ -65,6 +65,26 @@ export default function PilihOperasiPage() {
             >
               Mau belajar apa? 🤔
             </motion.h2>
+
+            {/* Banner Peta Modul */}
+            <motion.button
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => router.push('/modul')}
+              className="flex items-center justify-between w-full max-w-sm p-4 bg-primary/10 border-2 border-primary/30 rounded-2xl hover:border-primary/50 shadow-sm hover:shadow-md transition-all group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center group-hover:bg-primary/30 transition-colors">
+                  <Map className="w-6 h-6 text-primary" />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-bold text-primary text-lg">Peta Belajar</h3>
+                  <p className="text-sm text-primary/70 font-medium">Ikuti modul bertahap</p>
+                </div>
+              </div>
+            </motion.button>
 
             <motion.button
               initial={{ opacity: 0, scale: 0.9 }}

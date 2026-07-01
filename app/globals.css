@@ -108,6 +108,22 @@
   --op-addition: oklch(0.6 0.18 260);
   --op-subtraction: oklch(0.6 0.18 160);
   --op-multiplication: oklch(0.6 0.18 300);
+
+  /* Base-10 Blocks colors */
+  --block-satuan: oklch(0.7 0.15 260);
+  --block-satuan-bg: oklch(0.92 0.06 260);
+  --block-puluhan: oklch(0.65 0.18 150);
+  --block-puluhan-bg: oklch(0.92 0.06 150);
+  --block-ratusan: oklch(0.65 0.18 300);
+  --block-ratusan-bg: oklch(0.92 0.06 300);
+
+  /* Modul card status colors */
+  --modul-locked: oklch(0.75 0.02 250);
+  --modul-locked-bg: oklch(0.95 0.005 250);
+  --modul-unlocked: oklch(0.6 0.18 260);
+  --modul-unlocked-bg: oklch(0.95 0.04 260);
+  --modul-completed: oklch(0.6 0.2 150);
+  --modul-completed-bg: oklch(0.95 0.04 150);
 }
 
 .dark {
@@ -162,6 +178,20 @@
   --op-addition: oklch(0.65 0.18 260);
   --op-subtraction: oklch(0.65 0.18 160);
   --op-multiplication: oklch(0.65 0.18 300);
+
+  --block-satuan: oklch(0.75 0.14 260);
+  --block-satuan-bg: oklch(0.25 0.04 260);
+  --block-puluhan: oklch(0.7 0.16 150);
+  --block-puluhan-bg: oklch(0.25 0.04 150);
+  --block-ratusan: oklch(0.7 0.16 300);
+  --block-ratusan-bg: oklch(0.25 0.04 300);
+
+  --modul-locked: oklch(0.45 0.02 260);
+  --modul-locked-bg: oklch(0.22 0.01 260);
+  --modul-unlocked: oklch(0.7 0.18 260);
+  --modul-unlocked-bg: oklch(0.25 0.04 260);
+  --modul-completed: oklch(0.65 0.18 150);
+  --modul-completed-bg: oklch(0.25 0.04 150);
 }
 
 @layer base {

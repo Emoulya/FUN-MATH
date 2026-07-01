@@ -103,7 +103,7 @@ export default function SiswaLayout({
         {/* Kiri: tombol kembali */}
         <div className="flex-1">
           <AnimatePresence>
-            {pathname !== '/pilih-operasi' && (
+            {pathname !== '/modul' && (
               <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -112,7 +112,7 @@ export default function SiswaLayout({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => router.push('/pilih-operasi')}
+                  onClick={() => router.push('/modul')}
                   className="gap-2 text-muted-foreground hover:text-foreground"
                 >
                   <ArrowLeft className="w-4 h-4" />
