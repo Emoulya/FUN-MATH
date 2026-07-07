@@ -37,6 +37,7 @@ function KerjakanTugasPage() {
   const searchParams = useSearchParams();
   const operasiRaw = searchParams.get('op') as Operasi | null;
   const operasi = operasiRaw ?? 'penjumlahan';
+  const tugasId = searchParams.get('tugasId');
   
   const latihan = useLatihan();
   const supabase = createClient();
@@ -57,48 +58,84 @@ function KerjakanTugasPage() {
         return;
       }
       
-      const { data: soalAktif } = await supabase.from('soal').select('*').eq('aktif', true).eq('operasi', operasi);
-      if (!soalAktif || soalAktif.length === 0) {
-        setIsFetching(false);
-        return;
-      }
+      try {
+        if (tugasId) {
+          // 1. Ambil detail tugas
+          const { data: tugasData, error: tugasError } = await supabase
+            .from('tugas')
+            .select('*')
+            .eq('id', tugasId)
+            .single();
 
-      const { data: sesiList } = await supabase.from('sesi_latihan').select('id').eq('siswa_id', siswaId);
-      
-      const attempted = new Set();
-      if (sesiList && sesiList.length > 0) {
-        const sesiIds = (sesiList as any[]).map(s => s.id);
-        const { data: detailList } = await supabase.from('detail_jawaban').select('soal').in('sesi_id', sesiIds);
-        if (detailList) {
-          (detailList as any[]).forEach(d => {
-            if (d.soal && typeof d.soal === 'object') {
-              const s = d.soal as any;
-              attempted.add(`${s.angka1}-${s.angka2}-${s.operasi}`);
+          if (tugasError || !tugasData) {
+            throw new Error('Tugas tidak ditemukan');
+          }
+
+          // 2. Ambil soal berdasarkan soal_ids di tugas
+          const { data: soalList, error: soalError } = await supabase
+            .from('soal')
+            .select('*')
+            .in('id', (tugasData as any).soal_ids);
+
+          if (soalError || !soalList || soalList.length === 0) {
+            throw new Error('Soal tugas tidak ditemukan');
+          }
+
+          latihan.mulaiSesi(soalList.map((s: any) => ({
+            angka1: s.angka1,
+            angka2: s.angka2,
+            operasi: s.operasi as Operasi,
+            kesulitan: s.kesulitan as any
+          })));
+        } else {
+          // Logika pengerjaan bebas
+          const { data: soalAktif } = await supabase.from('soal').select('*').eq('aktif', true).eq('operasi', operasi);
+          if (!soalAktif || soalAktif.length === 0) {
+            setIsFetching(false);
+            return;
+          }
+
+          const { data: sesiList } = await supabase.from('sesi_latihan').select('id').eq('siswa_id', siswaId);
+          
+          const attempted = new Set();
+          if (sesiList && sesiList.length > 0) {
+            const sesiIds = (sesiList as any[]).map(s => s.id);
+            const { data: detailList } = await supabase.from('detail_jawaban').select('soal').in('sesi_id', sesiIds);
+            if (detailList) {
+              (detailList as any[]).forEach(d => {
+                if (d.soal && typeof d.soal === 'object') {
+                  const s = d.soal as any;
+                  attempted.add(`${s.angka1}-${s.angka2}-${s.operasi}`);
+                }
+              });
             }
-          });
+          }
+
+          const pending = (soalAktif as any[]).filter(s => !attempted.has(`${s.angka1}-${s.angka2}-${s.operasi}`));
+          
+          if (pending.length === 0) {
+            setIsFetching(false);
+            return;
+          }
+
+          latihan.mulaiSesi(pending.map((s: any) => ({
+            angka1: s.angka1,
+            angka2: s.angka2,
+            operasi: s.operasi as Operasi,
+            kesulitan: s.kesulitan as any
+          })));
         }
-      }
-
-      const pending = (soalAktif as any[]).filter(s => !attempted.has(`${s.angka1}-${s.angka2}-${s.operasi}`));
-      
-      if (pending.length === 0) {
+        setIsTimerRunning(true);
+        sesiMulaiRef.current = Date.now();
+      } catch (err) {
+        console.error('Error fetching soal:', err);
+      } finally {
         setIsFetching(false);
-        return;
       }
-
-      latihan.mulaiSesi(pending.map((s: any) => ({
-        angka1: s.angka1,
-        angka2: s.angka2,
-        operasi: s.operasi as Operasi,
-        kesulitan: s.kesulitan as any
-      })));
-      setIsTimerRunning(true);
-      sesiMulaiRef.current = Date.now();
-      setIsFetching(false);
     };
 
     fetchSoal();
-  }, [operasi]);
+  }, [operasi, tugasId]);
 
   useEffect(() => {
     if (!isTimerRunning || latihan.state !== 'MENGERJAKAN') return;
@@ -141,6 +178,8 @@ function KerjakanTugasPage() {
         benar,
         salah,
         durasi_detik: Math.floor((Date.now() - sesiMulaiRef.current) / 1000),
+        tugas_id: tugasId || null,
+        tipe: tugasId ? 'tugas' : 'bebas',
         detail: rekap.map((r) => ({
           soal: { angka1: r.soal.angka1, angka2: r.soal.angka2, operasi: r.soal.operasi },
           jawaban_siswa: r.jawabanSiswa,
@@ -152,9 +191,10 @@ function KerjakanTugasPage() {
     }).catch(console.error);
 
     sessionStorage.setItem('rekap', JSON.stringify(rekap));
-    // Kembali ke halaman tugas alih-alih rekap jika diperlukan, tapi rekap lebih baik untuk memberikan skor!
+    sessionStorage.setItem('rekapSource', tugasId ? 'tugas' : 'bebas');
+    sessionStorage.setItem('operasi', operasi);
     router.push('/rekap');
-  }, [latihan.sesiSelesai, latihan.rekap, router, operasi]);
+  }, [latihan.sesiSelesai, latihan.rekap, router, operasi, tugasId]);
 
   const formatTimer = (detik: number) => {
     const m = Math.floor(detik / 60);

@@ -9,7 +9,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js';
 /** POST /api/sesi — Simpan sesi latihan + detail jawaban */
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { siswa_id, operasi, skor, total_soal, benar, salah, durasi_detik, detail } = body;
+  const { siswa_id, operasi, skor, total_soal, benar, salah, durasi_detik, detail, tugas_id, tipe } = body;
 
   // Autentikasi: Verifikasi bahwa yang submit adalah siswa yang login
   const sessionCookie = request.cookies.get('siswa_session')?.value;
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   // Insert sesi
   const { data: sesi, error: sesiError } = await supabaseAdmin
     .from('sesi_latihan')
-    .insert({ siswa_id, operasi, skor, total_soal, benar, salah, durasi_detik })
+    .insert({ siswa_id, operasi, skor, total_soal, benar, salah, durasi_detik, tugas_id, tipe })
     .select()
     .single();
 

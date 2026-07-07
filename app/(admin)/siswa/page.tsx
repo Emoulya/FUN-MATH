@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Plus, Pencil, Trash2, User } from 'lucide-react';
 import Image from 'next/image';
@@ -16,14 +17,15 @@ import { toast } from "sonner";
 import type { Siswa } from '@/lib/supabase/types';
 
 export default function KelolaSiswaPage() {
+  const router = useRouter();
   const [siswaList, setSiswaList] = useState<Siswa[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Modal State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editSiswa, setEditSiswa] = useState<Siswa | null>(null);
   const [siswaToDelete, setSiswaToDelete] = useState<string | null>(null);
-  
+
   // Form State
   const [nama, setNama] = useState('');
   const [kelas, setKelas] = useState('');
@@ -74,7 +76,7 @@ export default function KelolaSiswaPage() {
       toast.error('PIN harus 4 digit angka!');
       return;
     }
-    
+
     setIsSaving(true);
     try {
       if (editSiswa) {
@@ -88,7 +90,7 @@ export default function KelolaSiswaPage() {
         const { error } = await supabase.from('siswa').insert([{ nama, kelas: kelas || null, pin: pin || null }]);
         if (error) throw error;
       }
-      
+
       await fetchSiswa();
       closeDialog();
       toast.success(`Data siswa berhasil ${editSiswa ? 'diperbarui' : 'ditambahkan'}!`);
@@ -120,7 +122,7 @@ export default function KelolaSiswaPage() {
           <h1 className="text-2xl font-bold">Kelola Akun Siswa</h1>
           <p className="text-sm text-muted-foreground">Tambah, edit, atau hapus data siswa dan PIN login mereka.</p>
         </div>
-        
+
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => openDialog()} className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
@@ -135,31 +137,31 @@ export default function KelolaSiswaPage() {
             <div className="flex flex-col gap-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="nama">Nama Lengkap</Label>
-                <Input 
-                  id="nama" 
-                  value={nama} 
-                  onChange={(e) => setNama(e.target.value)} 
-                  placeholder="Contoh: Budi Santoso" 
+                <Input
+                  id="nama"
+                  value={nama}
+                  onChange={(e) => setNama(e.target.value)}
+                  placeholder="Contoh: Budi Santoso"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="kelas">Kelas</Label>
-                <Input 
-                  id="kelas" 
-                  value={kelas} 
-                  onChange={(e) => setKelas(e.target.value)} 
-                  placeholder="Contoh: Kelas 7" 
+                <Input
+                  id="kelas"
+                  value={kelas}
+                  onChange={(e) => setKelas(e.target.value)}
+                  placeholder="Contoh: Kelas 7"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="pin">PIN (4 Digit)</Label>
-                <Input 
-                  id="pin" 
-                  type="text" 
+                <Input
+                  id="pin"
+                  type="text"
                   maxLength={4}
-                  value={pin} 
-                  onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} 
-                  placeholder="Contoh: 1234" 
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                  placeholder="Contoh: 1234"
                 />
                 <p className="text-xs text-muted-foreground">PIN ini digunakan siswa untuk masuk ke aplikasi.</p>
               </div>
@@ -180,11 +182,11 @@ export default function KelolaSiswaPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-             <div className="flex items-center justify-center py-8">
-               <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-             </div>
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
           ) : siswaList.length === 0 ? (
-             <div className="text-center py-8 text-muted-foreground">Belum ada data siswa.</div>
+            <div className="text-center py-8 text-muted-foreground">Belum ada data siswa.</div>
           ) : (
             <Table>
               <TableHeader>
@@ -197,7 +199,7 @@ export default function KelolaSiswaPage() {
               </TableHeader>
               <TableBody>
                 {siswaList.map((s) => (
-                  <TableRow key={s.id}>
+                  <TableRow key={s.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/siswa/${s.id}`)}>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {s.avatar_url ? (
@@ -214,7 +216,7 @@ export default function KelolaSiswaPage() {
                     <TableCell>
                       <span className="font-mono bg-muted px-2 py-1 rounded text-sm">{s.pin}</span>
                     </TableCell>
-                    <TableCell className="text-right space-x-2">
+                    <TableCell className="text-right space-x-2" onClick={(e) => e.stopPropagation()}>
                       <Button variant="ghost" size="icon" onClick={() => openDialog(s)}>
                         <Pencil className="w-4 h-4 text-muted-foreground" />
                       </Button>

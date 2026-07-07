@@ -134,8 +134,6 @@ export default function KelolaSoalPage() {
     switch (op) {
       case 'penjumlahan': return '+';
       case 'pengurangan': return '-';
-      case 'perkalian': return '×';
-      case 'pembagian': return '÷';
       default: return op;
     }
   };
@@ -169,8 +167,6 @@ export default function KelolaSoalPage() {
                   <SelectContent>
                     <SelectItem value="penjumlahan">Penjumlahan (+)</SelectItem>
                     <SelectItem value="pengurangan">Pengurangan (-)</SelectItem>
-                    <SelectItem value="perkalian">Perkalian (×)</SelectItem>
-                    <SelectItem value="pembagian">Pembagian (÷)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -246,8 +242,6 @@ export default function KelolaSoalPage() {
                 <SelectItem value="semua">Semua Operasi</SelectItem>
                 <SelectItem value="penjumlahan">Penjumlahan</SelectItem>
                 <SelectItem value="pengurangan">Pengurangan</SelectItem>
-                <SelectItem value="perkalian">Perkalian</SelectItem>
-                <SelectItem value="pembagian">Pembagian</SelectItem>
               </SelectContent>
             </Select>
 

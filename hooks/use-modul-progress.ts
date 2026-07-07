@@ -32,12 +32,14 @@ interface UseModulProgressReturn {
 // Storage Abstraction Layer
 // ============================================
 
-/** Baca progress dari sessionStorage */
+/** Baca progress dari localStorage per siswa */
 function loadProgress(): ModulProgress {
   if (typeof window === 'undefined') return DEFAULT_MODUL_PROGRESS;
 
   try {
-    const stored = sessionStorage.getItem(STORAGE_KEY_MODUL_PROGRESS);
+    const siswaId = sessionStorage.getItem('siswaId');
+    if (!siswaId) return DEFAULT_MODUL_PROGRESS;
+    const stored = localStorage.getItem(`modul_progress_${siswaId}`);
     if (!stored) return DEFAULT_MODUL_PROGRESS;
     return JSON.parse(stored) as ModulProgress;
   } catch {
@@ -45,10 +47,12 @@ function loadProgress(): ModulProgress {
   }
 }
 
-/** Simpan progress ke sessionStorage */
+/** Simpan progress ke localStorage per siswa */
 function saveProgress(progress: ModulProgress): void {
   if (typeof window === 'undefined') return;
-  sessionStorage.setItem(STORAGE_KEY_MODUL_PROGRESS, JSON.stringify(progress));
+  const siswaId = sessionStorage.getItem('siswaId');
+  if (!siswaId) return;
+  localStorage.setItem(`modul_progress_${siswaId}`, JSON.stringify(progress));
 }
 
 // ============================================
@@ -59,8 +63,9 @@ export function useModulProgress(): UseModulProgressReturn {
   const [progress, setProgress] = useState<ModulProgress>(() => loadProgress());
   const [isLoading, setIsLoading] = useState(true);
 
-  // Tandai loading selesai setelah hydration (tanpa setState synchronous dalam effect)
+  // Tandai loading selesai setelah hydration dan sinkronkan progress
   useEffect(() => {
+    setProgress(loadProgress());
     const id = requestAnimationFrame(() => setIsLoading(false));
     return () => cancelAnimationFrame(id);
   }, []);

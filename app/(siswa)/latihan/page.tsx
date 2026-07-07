@@ -104,6 +104,7 @@ export default function LatihanPage() {
         benar,
         salah,
         durasi_detik: Math.floor((Date.now() - sesiMulaiRef.current) / 1000),
+        tipe: 'bebas',
         detail: rekap.map((r) => ({
           soal: { angka1: r.soal.angka1, angka2: r.soal.angka2, operasi: r.soal.operasi },
           jawaban_siswa: r.jawabanSiswa,

@@ -1,13 +1,32 @@
 'use client';
 
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 export default function NewLandingPage() {
   const router = useRouter();
+
+  useEffect(() => {
+    // 1. Cek sesi siswa
+    const siswaId = sessionStorage.getItem('siswaId');
+    if (siswaId) {
+      router.push('/pilih-operasi');
+      return;
+    }
+
+    // 2. Cek sesi guru
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        router.push('/dashboard');
+      }
+    });
+  }, [router]);
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-linear-to-b from-[#e0f2fe] via-[#ede9fe] to-[#fce7f3]">
