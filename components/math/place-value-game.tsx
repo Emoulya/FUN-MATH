@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Base10Blocks from '@/components/math/base10-blocks';
+import { PlaceValueDragDrop } from '@/components/math/place-value-drag-drop';
 import { MIN_SOAL_GAME } from '@/lib/constants';
 
 interface PlaceValueGameProps {
@@ -142,6 +143,29 @@ export default function PlaceValueGame({
     );
   }
 
+  if (indexSoal < 2) {
+    return (
+      <div className="flex flex-col items-center gap-6 w-full max-w-md">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span className="font-semibold">
+            Soal {indexSoal + 1} dari {jumlahSoal}
+          </span>
+        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={angka}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="w-full"
+          >
+            <PlaceValueDragDrop angka={angka} onBenar={soalBerikutnya} />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-md">
       {/* Progress indicator */}
@@ -159,7 +183,7 @@ export default function PlaceValueGame({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
         >
-          <Base10Blocks angka={angka} tampilkanLabel={false} animasi ukuran="md" />
+          <Base10Blocks angka={angka} tampilkanLabel={false} animasi sembunyikanAngka={true} ukuran="md" />
         </motion.div>
       </AnimatePresence>
 

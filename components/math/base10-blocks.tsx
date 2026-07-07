@@ -19,6 +19,8 @@ interface Base10BlocksProps {
   tampilkanLabel?: boolean;
   /** Animasikan kemunculan balok */
   animasi?: boolean;
+  /** Sembunyikan angka besar di atas blok */
+  sembunyikanAngka?: boolean;
   /** Ukuran blok */
   ukuran?: 'sm' | 'md' | 'lg';
 }
@@ -189,6 +191,7 @@ export default function Base10Blocks({
   angka,
   tampilkanLabel = false,
   animasi = true,
+  sembunyikanAngka = false,
   ukuran = 'md',
 }: Base10BlocksProps) {
   const w = CELL_W[ukuran];
@@ -209,9 +212,11 @@ export default function Base10Blocks({
   return (
     <div className="flex flex-col items-center" style={{ gap: gap * 3 }}>
       {/* Angka display */}
-      <div className="text-center">
-        <span className="text-3xl font-black tabular-nums">{angka}</span>
-      </div>
+      {!sembunyikanAngka && (
+        <div className="text-center">
+          <span className="text-3xl font-black tabular-nums">{angka}</span>
+        </div>
+      )}
 
       {/* Blok visual — sejajarkan di bawah (items-end) */}
       <div className="flex items-end justify-center flex-wrap" style={{ gap: gap * 5 }}>
