@@ -194,9 +194,7 @@ export default function PilihOperasiPage() {
               <div className={(isTutorial) ? 'opacity-50 pointer-events-none' : ''}>
                 <OperationCard operasi="pengurangan" onClick={handlePilihOperasi} delay={0.2} />
               </div>
-              <div className={(isTutorial) ? 'opacity-50 pointer-events-none' : ''}>
-                <OperationCard operasi="perkalian" onClick={handlePilihOperasi} delay={0.3} />
-              </div>
+              
             </div>
           </motion.div>
         ) : !kesulitanTerpilih ? (
