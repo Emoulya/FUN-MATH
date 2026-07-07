@@ -18,14 +18,24 @@ export default function RekapPage() {
   const router = useRouter();
   const [rekap, setRekap] = useState<RekapSoal[]>([]);
   const [operasi, setOperasi] = useState<Operasi>('penjumlahan');
+  const [isTutorialSelesai, setIsTutorialSelesai] = useState(false);
 
   useEffect(() => {
     const rekapJson = sessionStorage.getItem('rekap');
     const op = sessionStorage.getItem('operasi') as Operasi | null;
+    const isTutorial = sessionStorage.getItem('tutorialStep') === 'LATIHAN';
+    const siswaId = sessionStorage.getItem('siswaId');
+    
     if (rekapJson) {
       setRekap(JSON.parse(rekapJson));
     }
     if (op) setOperasi(op);
+    
+    if (isTutorial && siswaId) {
+      setIsTutorialSelesai(true);
+      localStorage.setItem(`tutorial_done_${siswaId}`, 'true');
+      sessionStorage.removeItem('tutorialStep');
+    }
   }, []);
 
   // Hitung skor
@@ -76,9 +86,11 @@ export default function RekapPage() {
           transition={{ repeat: 3, duration: 0.4, repeatDelay: 0.2 }}
           className="text-6xl"
         >
-          {reward.emoji}
+          {isTutorialSelesai ? '🎉' : reward.emoji}
         </motion.span>
-        <h2 className="text-2xl font-black">{reward.pesan}</h2>
+        <h2 className={`text-2xl font-black text-center px-4 ${isTutorialSelesai ? 'text-blue-600' : ''}`}>
+          {isTutorialSelesai ? 'Selamat kamu sudah belajar tahap awal, lanjutkan yaaa!' : reward.pesan}
+        </h2>
         <p className="text-muted-foreground">
           {OPERASI_LABEL[operasi]}
         </p>
@@ -150,11 +162,11 @@ export default function RekapPage() {
       >
         <Button
           variant="outline"
-          onClick={() => router.push('/modul')}
+          onClick={() => router.push(isTutorialSelesai ? '/pilih-operasi' : '/modul')}
           className="flex-1 gap-2"
         >
           <Home className="w-4 h-4" />
-          Kembali
+          {isTutorialSelesai ? 'Ke Dashboard' : 'Kembali'}
         </Button>
         <Button
           onClick={() => {

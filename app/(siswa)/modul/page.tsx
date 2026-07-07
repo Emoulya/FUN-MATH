@@ -6,9 +6,10 @@
 // Menampilkan semua modul dalam urutan linear dengan lock system.
 // Siswa hanya bisa mengakses modul yang sudah unlocked.
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ModulCard from '@/components/math/modul-card';
 import { useModulProgress } from '@/hooks/use-modul-progress';
@@ -17,6 +18,18 @@ import { MODUL_LIST } from '@/lib/constants';
 export default function PetaModulPage() {
   const router = useRouter();
   const { getStatus, resetProgress, isLoading } = useModulProgress();
+
+  const [isTutorial, setIsTutorial] = useState(false);
+
+  useEffect(() => {
+    const siswaId = sessionStorage.getItem('siswaId');
+    if (siswaId) {
+      const tutorialDone = localStorage.getItem(`tutorial_done_${siswaId}`);
+      if (!tutorialDone) {
+        setIsTutorial(true);
+      }
+    }
+  }, []);
 
   // Hitung progress keseluruhan
   const totalModul = MODUL_LIST.length;
@@ -32,14 +45,28 @@ export default function PetaModulPage() {
   }
 
   return (
-    <div className="flex-1 flex flex-col items-center gap-6 p-6 max-w-lg mx-auto w-full">
-      {/* Header */}
+    <div className="flex-1 flex flex-col items-center gap-6 p-6 max-w-lg mx-auto w-full relative">
+      {/* Tutorial Overlay Background */}
+      {isTutorial && (
+        <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm pointer-events-auto" />
+      )}
+
+      {/* Header with Back Button */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center w-full"
+        className="text-center w-full relative"
       >
-        <h2 className="text-2xl font-black">📚 Peta Belajar</h2>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push('/pilih-operasi')}
+          className="absolute left-0 top-0 text-muted-foreground gap-1.5 hover:text-primary z-50"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Kembali
+        </Button>
+        <h2 className="text-2xl font-black mt-10 md:mt-0">📚 Peta Belajar</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Selesaikan setiap modul untuk membuka yang berikutnya
         </p>
@@ -69,15 +96,30 @@ export default function PetaModulPage() {
 
       {/* Daftar modul */}
       <div className="w-full flex flex-col gap-3">
-        {MODUL_LIST.map((modul, index) => (
-          <ModulCard
-            key={modul.id}
-            modul={modul}
-            status={getStatus(modul.id)}
-            index={index}
-            onClick={() => router.push(modul.href)}
-          />
-        ))}
+        {MODUL_LIST.map((modul, index) => {
+          const isTargetTutorial = isTutorial && modul.id === 'modul1a';
+          return (
+            <div key={modul.id} className={`relative ${isTargetTutorial ? 'z-50' : 'z-0'} ${isTutorial && !isTargetTutorial ? 'opacity-50 pointer-events-none' : ''}`}>
+              {isTargetTutorial && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white text-blue-600 px-4 py-1.5 rounded-full font-bold shadow-lg border-2 border-blue-200 text-sm z-10"
+                >
+                  Pilih Nilai Tempat untuk memulai! 👇
+                </motion.div>
+              )}
+              <div className={isTargetTutorial ? 'bg-white ring-4 ring-primary rounded-2xl shadow-2xl scale-[1.02] transition-transform' : ''}>
+                <ModulCard
+                  modul={modul}
+                  status={getStatus(modul.id)}
+                  index={index}
+                  onClick={() => router.push(modul.href)}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Tombol reset (kecil, di bawah) */}

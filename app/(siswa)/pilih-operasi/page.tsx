@@ -6,10 +6,10 @@
 // 3 kartu besar dengan ikon: ➕ ➖ ✖️
 // Setelah pilih operasi → pilih kesulitan + mode (Belajar / Latihan)
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, PenTool, ArrowLeft, ClipboardList, Map } from 'lucide-react';
+import { BookOpen, PenTool, ArrowLeft, ClipboardList, Map, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import OperationCard from '@/components/math/operation-card';
 import type { Operasi, Kesulitan } from '@/types/math';
@@ -19,9 +19,47 @@ export default function PilihOperasiPage() {
   const router = useRouter();
   const [operasiTerpilih, setOperasiTerpilih] = useState<Operasi | null>(null);
   const [kesulitanTerpilih, setKesulitanTerpilih] = useState<Kesulitan | null>(null);
+  const [isTutorial, setIsTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState<string | null>(null);
+
+  useEffect(() => {
+    const siswaId = sessionStorage.getItem('siswaId');
+    if (siswaId) {
+      const tutorialDone = localStorage.getItem(`tutorial_done_${siswaId}`);
+      if (!tutorialDone) {
+        setIsTutorial(true);
+        const step = sessionStorage.getItem('tutorialStep') || 'PETA_BELAJAR';
+        setTutorialStep(step);
+      }
+    }
+  }, []);
+
+  const handleUlangTutorial = () => {
+    const siswaId = sessionStorage.getItem('siswaId');
+    if (siswaId) {
+      localStorage.removeItem(`tutorial_done_${siswaId}`);
+    }
+    sessionStorage.setItem('tutorialStep', 'PETA_BELAJAR');
+    setIsTutorial(true);
+    setTutorialStep('PETA_BELAJAR');
+    setOperasiTerpilih(null);
+    setKesulitanTerpilih(null);
+  };
 
   const handlePilihOperasi = (operasi: Operasi) => {
     setOperasiTerpilih(operasi);
+    if (isTutorial && tutorialStep === 'PILIH_OPERASI') {
+      setTutorialStep('PILIH_KESULITAN');
+      sessionStorage.setItem('tutorialStep', 'PILIH_KESULITAN');
+    }
+  };
+
+  const handlePilihKesulitan = (k: Kesulitan) => {
+    setKesulitanTerpilih(k);
+    if (isTutorial && tutorialStep === 'PILIH_KESULITAN') {
+      setTutorialStep('PILIH_MODE');
+      sessionStorage.setItem('tutorialStep', 'PILIH_MODE');
+    }
   };
 
   const handlePilihMode = (mode: 'belajar' | 'latihan') => {
@@ -30,6 +68,12 @@ export default function PilihOperasiPage() {
     // Simpan pilihan ke sessionStorage
     sessionStorage.setItem('operasi', operasiTerpilih);
     sessionStorage.setItem('kesulitan', kesulitanTerpilih);
+
+    if (isTutorial && tutorialStep === 'PILIH_MODE') {
+      sessionStorage.setItem('tutorialStep', 'BELAJAR');
+      router.push('/belajar');
+      return;
+    }
 
     if (mode === 'belajar') {
       router.push('/belajar');
@@ -45,7 +89,17 @@ export default function PilihOperasiPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-6">
+    <div className="flex-1 flex flex-col items-center justify-center p-6 relative">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleUlangTutorial}
+        className="absolute top-4 left-4 z-50 bg-white/50 hover:bg-white text-muted-foreground shadow-sm rounded-full font-bold"
+      >
+        <RotateCcw className="w-4 h-4 mr-2" />
+        Ulang Tutorial
+      </Button>
+
       <AnimatePresence mode="wait">
         {!operasiTerpilih ? (
           /* ============================================
@@ -66,49 +120,83 @@ export default function PilihOperasiPage() {
               Mau belajar apa? 🤔
             </motion.h2>
 
-            {/* Banner Peta Modul */}
-            <motion.button
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => router.push('/modul')}
-              className="flex items-center justify-between w-full max-w-sm p-4 bg-primary/10 border-2 border-primary/30 rounded-2xl hover:border-primary/50 shadow-sm hover:shadow-md transition-all group"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-                  <Map className="w-6 h-6 text-primary" />
-                </div>
-                <div className="text-left">
-                  <h3 className="font-bold text-primary text-lg">Peta Belajar</h3>
-                  <p className="text-sm text-primary/70 font-medium">Ikuti modul bertahap</p>
-                </div>
-              </div>
-            </motion.button>
+            {/* Tutorial Overlay Background */}
+            {isTutorial && (
+              <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm pointer-events-auto" />
+            )}
 
-            <motion.button
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => router.push('/tugas')}
-              className="flex items-center justify-between w-full max-w-sm p-4 bg-orange-50 border-2 border-orange-200 rounded-2xl hover:border-orange-400 shadow-sm hover:shadow-md transition-all group"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-200 transition-colors">
-                  <ClipboardList className="w-6 h-6 text-orange-600" />
+            {/* Banner Peta Modul */}
+            <div className={`relative ${(isTutorial && tutorialStep === 'PETA_BELAJAR') ? 'z-50' : 'z-0'} ${(isTutorial && tutorialStep !== 'PETA_BELAJAR') ? 'opacity-50 pointer-events-none' : ''}`}>
+              {isTutorial && tutorialStep === 'PETA_BELAJAR' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute -top-14 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white text-blue-600 px-4 py-2 rounded-full font-bold shadow-lg border-2 border-blue-200"
+                >
+                  Mulai dari sini ya! 👇
+                </motion.div>
+              )}
+              <motion.button
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => router.push('/modul')}
+                className={`flex items-center justify-between w-full max-w-sm p-4 bg-primary/10 border-2 border-primary/30 rounded-2xl hover:border-primary/50 shadow-sm hover:shadow-md transition-all group ${isTutorial && tutorialStep === 'PETA_BELAJAR' ? 'bg-white ring-4 ring-primary shadow-2xl scale-105 relative' : ''}`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center group-hover:bg-primary/30 transition-colors">
+                    <Map className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-bold text-primary text-lg">Peta Belajar</h3>
+                    <p className="text-sm text-primary/70 font-medium">Ikuti modul bertahap</p>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <h3 className="font-bold text-orange-800 text-lg">Tugas & PR</h3>
-                  <p className="text-sm text-orange-600/80 font-medium">Kerjakan tugas dari Guru</p>
+              </motion.button>
+            </div>
+
+            <div className={(isTutorial) ? 'opacity-50 pointer-events-none' : ''}>
+              <motion.button
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => router.push('/tugas')}
+                className="flex items-center justify-between w-full max-w-sm p-4 bg-orange-50 border-2 border-orange-200 rounded-2xl hover:border-orange-400 shadow-sm hover:shadow-md transition-all group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-200 transition-colors">
+                    <ClipboardList className="w-6 h-6 text-orange-600" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-bold text-orange-800 text-lg">Tugas & PR</h3>
+                    <p className="text-sm text-orange-600/80 font-medium">Kerjakan tugas dari Guru</p>
+                  </div>
                 </div>
-              </div>
-            </motion.button>
+              </motion.button>
+            </div>
 
             <div className="flex flex-wrap justify-center gap-4">
-              <OperationCard operasi="penjumlahan" onClick={handlePilihOperasi} delay={0.1} />
-              <OperationCard operasi="pengurangan" onClick={handlePilihOperasi} delay={0.2} />
-              <OperationCard operasi="perkalian" onClick={handlePilihOperasi} delay={0.3} />
+              <div className={`relative ${isTutorial && tutorialStep === 'PILIH_OPERASI' ? 'z-50 bg-white ring-4 ring-primary shadow-2xl scale-105 rounded-2xl' : 'z-0'} ${(isTutorial && tutorialStep !== 'PILIH_OPERASI') ? 'opacity-50 pointer-events-none' : ''}`}>
+                {isTutorial && tutorialStep === 'PILIH_OPERASI' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white text-blue-600 px-3 py-1 rounded-full font-bold shadow-lg border-2 border-blue-200 text-sm z-10"
+                  >
+                    Pilih ini! 👇
+                  </motion.div>
+                )}
+                <OperationCard operasi="penjumlahan" onClick={handlePilihOperasi} delay={0.1} />
+              </div>
+              
+              <div className={(isTutorial) ? 'opacity-50 pointer-events-none' : ''}>
+                <OperationCard operasi="pengurangan" onClick={handlePilihOperasi} delay={0.2} />
+              </div>
+              <div className={(isTutorial) ? 'opacity-50 pointer-events-none' : ''}>
+                <OperationCard operasi="perkalian" onClick={handlePilihOperasi} delay={0.3} />
+              </div>
             </div>
           </motion.div>
         ) : !kesulitanTerpilih ? (
@@ -137,28 +225,41 @@ export default function PilihOperasiPage() {
             </div>
 
             <div className="flex flex-col gap-3 w-full">
-              {KESULITAN_LIST.map((k, i) => (
-                <motion.button
-                  key={k}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setKesulitanTerpilih(k)}
-                  className="flex items-center gap-4 p-5 rounded-2xl bg-card border-2 border-border hover:border-primary/30 shadow-sm hover:shadow-md transition-all cursor-pointer"
-                >
-                  <span className="text-3xl">{KESULITAN_EMOJI[k]}</span>
-                  <div className="text-left">
-                    <p className="font-bold text-base">{KESULITAN_LABEL[k]}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {k === 'mudah' && '2 digit, tanpa simpanan'}
-                      {k === 'sedang' && '2 digit, dengan simpanan'}
-                      {k === 'sulit' && '2-3 digit, simpanan beruntun'}
-                    </p>
+              {KESULITAN_LIST.map((k, i) => {
+                const isTarget = isTutorial && tutorialStep === 'PILIH_KESULITAN' && k === 'mudah';
+                return (
+                  <div key={k} className={`relative ${isTarget ? 'z-50' : 'z-0'} ${(isTutorial && !isTarget) ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {isTarget && (
+                      <motion.div
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="absolute -right-2 top-1/2 -translate-y-1/2 translate-x-full whitespace-nowrap bg-white text-blue-600 px-3 py-1 rounded-full font-bold shadow-lg border-2 border-blue-200 text-sm z-10"
+                      >
+                        👈 Pilih yang Mudah!
+                      </motion.div>
+                    )}
+                    <motion.button
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handlePilihKesulitan(k)}
+                      className={`flex items-center gap-4 p-5 rounded-2xl bg-card border-2 transition-all cursor-pointer w-full ${isTarget ? 'border-primary ring-4 ring-primary/30 shadow-xl' : 'border-border hover:border-primary/30 shadow-sm hover:shadow-md'}`}
+                    >
+                      <span className="text-3xl">{KESULITAN_EMOJI[k]}</span>
+                      <div className="text-left">
+                        <p className="font-bold text-base">{KESULITAN_LABEL[k]}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {k === 'mudah' && '2 digit, tanpa simpanan'}
+                          {k === 'sedang' && '2 digit, dengan simpanan'}
+                          {k === 'sulit' && '2-3 digit, simpanan beruntun'}
+                        </p>
+                      </div>
+                    </motion.button>
                   </div>
-                </motion.button>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         ) : (
@@ -186,28 +287,45 @@ export default function PilihOperasiPage() {
               </h2>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 w-full">
+            <div className="grid grid-cols-2 gap-4 w-full relative">
+              {/* Tutorial Overlay Background for this step */}
+              {isTutorial && tutorialStep === 'PILIH_MODE' && (
+                <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm pointer-events-auto" />
+              )}
+              
               {/* Mode Belajar */}
-              <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                whileHover={{ scale: 1.05, y: -4 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => handlePilihMode('belajar')}
-                className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 hover:border-blue-400 shadow-sm hover:shadow-lg transition-all cursor-pointer"
-              >
-                <BookOpen className="w-10 h-10 text-blue-500" />
-                <span className="text-base font-bold text-blue-700 dark:text-blue-300">
-                  📖 Belajar
-                </span>
-                <span className="text-xs text-muted-foreground text-center">
-                  Lihat cara mengerjakan langkah demi langkah
-                </span>
-              </motion.button>
+              <div className={`relative flex flex-col items-center ${isTutorial && tutorialStep === 'PILIH_MODE' ? 'z-50' : 'z-0'} ${(isTutorial && tutorialStep !== 'PILIH_MODE') ? 'opacity-50 pointer-events-none' : ''}`}>
+                {isTutorial && tutorialStep === 'PILIH_MODE' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white text-blue-600 px-3 py-1 rounded-full font-bold shadow-lg border-2 border-blue-200 text-sm z-10"
+                  >
+                    Pilih Belajar! 👇
+                  </motion.div>
+                )}
+                <motion.button
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  whileHover={{ scale: 1.05, y: -4 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => handlePilihMode('belajar')}
+                  className={`flex flex-col items-center justify-center h-full gap-3 p-6 rounded-2xl transition-all cursor-pointer w-full ${isTutorial && tutorialStep === 'PILIH_MODE' ? 'bg-blue-100 border-4 border-blue-500 shadow-2xl scale-105' : 'bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 hover:border-blue-400 shadow-sm hover:shadow-lg'}`}
+                >
+                  <BookOpen className="w-10 h-10 text-blue-500" />
+                  <span className="text-base font-bold text-blue-700 dark:text-blue-300">
+                    📖 Belajar
+                  </span>
+                  <span className="text-xs text-muted-foreground text-center">
+                    Lihat cara mengerjakan langkah demi langkah
+                  </span>
+                </motion.button>
+              </div>
 
               {/* Mode Latihan */}
-              <motion.button
+              <div className={(isTutorial) ? 'opacity-50 pointer-events-none' : ''}>
+                <motion.button
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -224,6 +342,7 @@ export default function PilihOperasiPage() {
                   Kerjakan soal sendiri dengan bantuan
                 </span>
               </motion.button>
+              </div>
             </div>
           </motion.div>
         )}

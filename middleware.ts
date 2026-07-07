@@ -10,7 +10,7 @@ import { createServerClient } from '@supabase/ssr';
 
 const PROTECTED_ROUTES = ['/dashboard', '/siswa'];
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Hanya cek route admin yang dilindungi
