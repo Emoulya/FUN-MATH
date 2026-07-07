@@ -7,11 +7,12 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, User, Calendar, Trophy } from 'lucide-react';
+import { ArrowLeft, User, Calendar, Trophy, CheckCircle2, XCircle, Eye, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { createClient } from '@/lib/supabase/client';
 import { OPERASI_LABEL } from '@/lib/constants';
 import type { Siswa, SesiLatihan } from '@/lib/supabase/types';
@@ -23,6 +24,28 @@ export default function DetailSiswaPage({ params }: { params: Promise<{ id: stri
   const [siswa, setSiswa] = useState<Siswa | null>(null);
   const [sesiList, setSesiList] = useState<SesiLatihan[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Modal State untuk rekap detail sesi
+  const [selectedSesi, setSelectedSesi] = useState<SesiLatihan | null>(null);
+  const [detailJawabanList, setDetailJawabanList] = useState<any[]>([]);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  const OPERASI_SIMBOL = {
+    penjumlahan: '+',
+    pengurangan: '-',
+    perkalian: '×',
+  };
+
+  const statusIcon = (status: 'benar' | 'salah' | 'diungkap') => {
+    switch (status) {
+      case 'benar':
+        return <CheckCircle2 className="w-5 h-5 text-emerald-500" />;
+      case 'salah':
+        return <XCircle className="w-5 h-5 text-red-500" />;
+      case 'diungkap':
+        return <Eye className="w-5 h-5 text-violet-500" />;
+    }
+  };
 
   useEffect(() => {
     if (!siswaId) return;
@@ -41,6 +64,7 @@ export default function DetailSiswaPage({ params }: { params: Promise<{ id: stri
           .from('sesi_latihan')
           .select('*')
           .eq('siswa_id', siswaId)
+          .or('tipe.eq.bebas,tipe.is.null')
           .order('selesai_pada', { ascending: false });
 
         if (siswaData) setSiswa(siswaData);
@@ -52,6 +76,31 @@ export default function DetailSiswaPage({ params }: { params: Promise<{ id: stri
     }
     fetchData();
   }, [siswaId]);
+
+  useEffect(() => {
+    async function fetchDetailJawaban() {
+      if (!selectedSesi) {
+        setDetailJawabanList([]);
+        return;
+      }
+      setLoadingDetail(true);
+      try {
+        const supabase = createClient();
+        const { data, error } = await (supabase as any)
+          .from('detail_jawaban')
+          .select('*')
+          .eq('sesi_id', selectedSesi.id);
+        if (!error && data) {
+          setDetailJawabanList(data);
+        }
+      } catch (err) {
+        console.error('Error fetching detail jawaban:', err);
+      } finally {
+        setLoadingDetail(false);
+      }
+    }
+    fetchDetailJawaban();
+  }, [selectedSesi]);
 
   if (loading) {
     return (
@@ -148,11 +197,16 @@ export default function DetailSiswaPage({ params }: { params: Promise<{ id: stri
                   <TableHead className="text-center">Benar</TableHead>
                   <TableHead className="text-center">Salah</TableHead>
                   <TableHead className="text-center">Durasi</TableHead>
+                  <TableHead className="w-20 text-center font-bold">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {sesiList.map((sesi) => (
-                  <TableRow key={sesi.id}>
+                  <TableRow 
+                    key={sesi.id}
+                    className="hover:bg-muted/10 transition-colors cursor-pointer"
+                    onClick={() => setSelectedSesi(sesi)}
+                  >
                     <TableCell className="text-sm">
                       <div className="flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
@@ -183,6 +237,11 @@ export default function DetailSiswaPage({ params }: { params: Promise<{ id: stri
                     <TableCell className="text-center text-muted-foreground text-sm">
                       {sesi.durasi_detik ? `${Math.floor(sesi.durasi_detik / 60)}m ${sesi.durasi_detik % 60}s` : '-'}
                     </TableCell>
+                    <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                      <Button variant="link" className="font-bold text-xs p-0 gap-1 text-primary" onClick={() => setSelectedSesi(sesi)}>
+                        <FileText className="w-3.5 h-3.5" /> Lihat
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -190,6 +249,65 @@ export default function DetailSiswaPage({ params }: { params: Promise<{ id: stri
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog Detail Rekap Sesi Latihan */}
+      <Dialog open={!!selectedSesi} onOpenChange={(open) => !open && setSelectedSesi(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Detail Rekap Latihan</DialogTitle>
+            <DialogDescription>
+              Riwayat pengerjaan latihan bebas oleh **{siswa.nama}** pada {selectedSesi && new Date(selectedSesi.selesai_pada).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-3 max-h-[60vh] overflow-y-auto px-1">
+            {loadingDetail ? (
+              <div className="flex justify-center py-8">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : detailJawabanList.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground py-4">
+                Detail rekap tidak ditemukan.
+              </p>
+            ) : (
+              detailJawabanList.map((detail) => {
+                const soal = detail.soal as { angka1: number; angka2: number; operasi: string };
+                const simbol = OPERASI_SIMBOL[soal.operasi as keyof typeof OPERASI_SIMBOL] || soal.operasi;
+                const hasil = 
+                  soal.operasi === 'penjumlahan' 
+                    ? soal.angka1 + soal.angka2 
+                    : soal.operasi === 'pengurangan'
+                      ? soal.angka1 - soal.angka2
+                      : soal.angka1 * soal.angka2;
+
+                return (
+                  <div 
+                    key={detail.id}
+                    className="flex items-center justify-between p-3 bg-muted/40 rounded-xl border border-border"
+                  >
+                    <div className="flex items-center gap-3">
+                      {statusIcon(detail.status as 'benar' | 'salah' | 'diungkap')}
+                      <span className="font-mono font-bold text-sm">
+                        {soal.angka1} {simbol} {soal.angka2} = {hasil}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="bg-background px-2 py-1 rounded border font-semibold">{detail.jumlah_percobaan}× coba</span>
+                      {detail.waktu_detik && detail.waktu_detik > 0 && (
+                        <span className="bg-background px-2 py-1 rounded border font-semibold">{detail.waktu_detik}s</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="flex justify-end mt-4">
+            <Button onClick={() => setSelectedSesi(null)}>Tutup</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

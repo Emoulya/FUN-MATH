@@ -36,6 +36,9 @@ export default function PetaModulPage() {
   const completedCount = MODUL_LIST.filter((m) => getStatus(m.id) === 'completed').length;
   const progressPersen = Math.round((completedCount / totalModul) * 100);
 
+  // Cari modul pertama yang belum selesai untuk target tutorial
+  const targetTutorialId = MODUL_LIST.find((m) => getStatus(m.id) !== 'completed')?.id || null;
+
   if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -57,15 +60,34 @@ export default function PetaModulPage() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center w-full relative"
       >
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.push('/pilih-operasi')}
-          className="absolute left-0 top-0 text-muted-foreground gap-1.5 hover:text-primary z-50"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Kembali
-        </Button>
+        <div className={`absolute left-4 top-0 ${isTutorial && !targetTutorialId ? 'z-50 bg-white ring-4 ring-primary rounded-xl shadow-2xl p-1' : 'z-50'}`}>
+          {isTutorial && !targetTutorialId && (
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="absolute top-12 left-0 whitespace-nowrap bg-white text-blue-600 px-4 py-1.5 rounded-full font-bold shadow-lg border-2 border-blue-200 text-sm z-50"
+            >
+              Semua modul selesai! Klik Kembali untuk lanjut 👈
+            </motion.div>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (isTutorial && !targetTutorialId) {
+                const siswaId = sessionStorage.getItem('siswaId');
+                if (siswaId) {
+                  localStorage.setItem(`tutorial_step_${siswaId}`, 'PILIH_OPERASI');
+                }
+              }
+              router.push('/pilih-operasi');
+            }}
+            className="text-muted-foreground gap-1.5 hover:text-primary"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Kembali
+          </Button>
+        </div>
         <h2 className="text-2xl font-black mt-10 md:mt-0">📚 Peta Belajar</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Selesaikan setiap modul untuk membuka yang berikutnya
@@ -97,7 +119,7 @@ export default function PetaModulPage() {
       {/* Daftar modul */}
       <div className="w-full flex flex-col gap-3">
         {MODUL_LIST.map((modul, index) => {
-          const isTargetTutorial = isTutorial && modul.id === 'modul1a';
+          const isTargetTutorial = isTutorial && modul.id === targetTutorialId;
           return (
             <div key={modul.id} className={`relative ${isTargetTutorial ? 'z-50' : 'z-0'} ${isTutorial && !isTargetTutorial ? 'opacity-50 pointer-events-none' : ''}`}>
               {isTargetTutorial && (
@@ -106,7 +128,7 @@ export default function PetaModulPage() {
                   animate={{ opacity: 1, y: 0 }}
                   className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white text-blue-600 px-4 py-1.5 rounded-full font-bold shadow-lg border-2 border-blue-200 text-sm z-10"
                 >
-                  Pilih Nilai Tempat untuk memulai! 👇
+                  Pilih {modul.judul} untuk memulai! 👇
                 </motion.div>
               )}
               <div className={isTargetTutorial ? 'bg-white ring-4 ring-primary rounded-2xl shadow-2xl scale-[1.02] transition-transform' : ''}>

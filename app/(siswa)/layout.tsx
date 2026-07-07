@@ -39,37 +39,40 @@ export default function SiswaLayout({
     setNama(sessionStorage.getItem("siswaNama") ?? "Siswa");
     setAvatar(sessionStorage.getItem("siswaAvatar") ?? "");
     setIsReady(true);
-    
+
     // Cek jumlah tugas yang belum dikerjakan
     const fetchTugas = async () => {
       try {
-        const { data: soalAktif } = await supabase.from('soal').select('*').eq('aktif', true);
-        if (!soalAktif || soalAktif.length === 0) {
+        const nowStr = new Date().toISOString();
+        // 1. Ambil tugas aktif untuk siswa ini
+        const { data: tugasList } = await supabase
+          .from('tugas')
+          .select('id')
+          .contains('siswa_ids', [siswaId])
+          .lte('mulai_pada', nowStr)
+          .gte('tenggat_pada', nowStr);
+
+        if (!tugasList || tugasList.length === 0) {
           setTugasCount(0);
           return;
         }
 
-        const { data: sesiList } = await supabase.from('sesi_latihan').select('id').eq('siswa_id', siswaId);
-        if (!sesiList || sesiList.length === 0) {
-          setTugasCount(soalAktif.length);
-          return;
-        }
+        // 2. Ambil sesi latihan tipe 'tugas' milik siswa ini
+        const { data: sesiList } = await supabase
+          .from('sesi_latihan')
+          .select('tugas_id')
+          .eq('siswa_id', siswaId)
+          .eq('tipe', 'tugas');
 
-        const sesiIds = (sesiList as any[]).map(s => s.id);
-        const { data: detailList } = await supabase.from('detail_jawaban').select('soal').in('sesi_id', sesiIds);
-        
-        const attempted = new Set();
-        if (detailList) {
-          (detailList as any[]).forEach(d => {
-            if (d.soal && typeof d.soal === 'object') {
-              const s = d.soal as any;
-              attempted.add(`${s.angka1}-${s.angka2}-${s.operasi}`);
-            }
-          });
-        }
+        const completedTugasIds = new Set(
+          (sesiList as any[] || [])
+            .map((s) => s.tugas_id)
+            .filter(Boolean)
+        );
 
-        const pending = (soalAktif as any[]).filter(s => !attempted.has(`${s.angka1}-${s.angka2}-${s.operasi}`));
-        setTugasCount(pending.length);
+        // 3. Hitung tugas yang belum selesai
+        const pendingTugas = (tugasList as any[] || []).filter((t) => !completedTugasIds.has(t.id));
+        setTugasCount(pendingTugas.length);
       } catch (err) {
         console.error("Gagal mengambil data tugas:", err);
       }
@@ -100,28 +103,8 @@ export default function SiswaLayout({
         animate={{ y: 0, opacity: 1 }}
         className="sticky top-0 z-40 flex items-center px-4 py-3 bg-card/80 backdrop-blur-md border-b border-border">
 
-        {/* Kiri: tombol kembali */}
-        <div className="flex-1">
-          <AnimatePresence>
-            {pathname !== '/modul' && (
-              <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-              >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => router.push('/modul')}
-                  className="gap-2 text-muted-foreground hover:text-foreground"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">Dashboard</span>
-                </Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        {/* Kiri: kosong */}
+        <div className="flex-1" />
 
         {/* Tengah: logo kecil */}
         <div className="flex-1 flex justify-center">

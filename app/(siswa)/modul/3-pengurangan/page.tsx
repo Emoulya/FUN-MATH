@@ -98,6 +98,7 @@ export default function Modul3Page() {
         benar,
         salah,
         durasi_detik: Math.floor((Date.now() - sesiMulaiRef.current) / 1000),
+        tipe: 'modul',
         detail: rekap.map((r) => ({
           soal: { angka1: r.soal.angka1, angka2: r.soal.angka2, operasi: r.soal.operasi },
           jawaban_siswa: r.jawabanSiswa,
@@ -202,11 +203,9 @@ export default function Modul3Page() {
               </Button>
               <Button onClick={isTutorial ? () => { 
                 selesaikanModul('modul3'); 
-                const siswaId = sessionStorage.getItem('siswaId');
-                if (siswaId) localStorage.setItem(`tutorial_done_${siswaId}`, 'true');
-                router.push('/pilih-operasi'); 
+                router.push('/modul'); 
               } : mulaiLatihan} className="gap-2">
-                {isTutorial ? "Selesai Tutorial" : "Mulai Latihan"}
+                {isTutorial ? "Selesai & Lanjut" : "Mulai Latihan"}
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </div>

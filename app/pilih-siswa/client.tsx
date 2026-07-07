@@ -39,11 +39,17 @@ export default function PilihSiswaClient({ initialSiswaList }: { initialSiswaLis
 
   // Cek sessionStorage saat komponen pertama kali dipasang
   useEffect(() => {
+    const siswaId = sessionStorage.getItem('siswaId');
+    if (siswaId) {
+      router.push('/pilih-operasi');
+      return;
+    }
+
     const hasSeen = sessionStorage.getItem('hasSeenSplash');
     if (hasSeen === 'true') {
       setShowSplash(false);
     }
-  }, []);
+  }, [router]);
 
   // Timer progress bar splash screen
   useEffect(() => {

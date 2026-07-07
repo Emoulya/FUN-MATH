@@ -6,7 +6,7 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Users, BookOpen, LogOut, GraduationCap } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, LogOut, GraduationCap, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/siswa', icon: Users, label: 'Siswa' },
   { href: '/soal', icon: BookOpen, label: 'Soal' },
+  { href: '/kelola-tugas', icon: ClipboardList, label: 'Tugas' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

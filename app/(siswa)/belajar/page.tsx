@@ -37,7 +37,7 @@ export default function BelajarPage() {
     if (siswaId) {
       const tutorialDone = localStorage.getItem(`tutorial_done_${siswaId}`);
       if (!tutorialDone) {
-        setIsTutorial(sessionStorage.getItem('tutorialStep') === 'BELAJAR');
+        setIsTutorial(localStorage.getItem(`tutorial_step_${siswaId}`) === 'BELAJAR');
       }
     }
 
@@ -48,7 +48,8 @@ export default function BelajarPage() {
 
   const handleCobaLatihan = () => {
     if (isTutorial) {
-      sessionStorage.setItem('tutorialStep', 'LATIHAN');
+      const siswaId = sessionStorage.getItem('siswaId');
+      if (siswaId) localStorage.setItem(`tutorial_step_${siswaId}`, 'LATIHAN');
     }
     router.push('/latihan');
   };

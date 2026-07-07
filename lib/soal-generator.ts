@@ -79,25 +79,79 @@ function randomInt(min: number, max: number): number {
  * - Menggunakan range lebih kecil agar hasil tidak terlalu besar
  */
 export function generateSoal(operasi: Operasi, kesulitan: Kesulitan): Soal {
-  const range = operasi === 'perkalian'
-    ? RANGE_PERKALIAN[kesulitan]
-    : RANGE_PER_KESULITAN[kesulitan];
+  if (operasi === 'perkalian') {
+    const range = RANGE_PERKALIAN[kesulitan];
+    const angka1 = randomInt(range.angka1.min, range.angka1.max);
+    const angka2 = randomInt(range.angka2.min, range.angka2.max);
+    return { angka1, angka2, operasi, kesulitan };
+  }
 
+  // Probabilitas 40% untuk memunculkan kombinasi Puluhan + Satuan atau Puluhan - Satuan
+  const isPuluhanSatuan = Math.random() < 0.4;
+
+  if (isPuluhanSatuan) {
+    if (operasi === 'penjumlahan') {
+      if (kesulitan === 'mudah') {
+        // Puluhan + Satuan tanpa menyimpan (carry)
+        const angka1 = randomInt(10, 39);
+        const s1 = angka1 % 10;
+        const maxSatuan = 9 - s1;
+        const angka2 = maxSatuan >= 1 ? randomInt(1, maxSatuan) : randomInt(1, 9);
+        return { angka1, angka2, operasi, kesulitan };
+      } else {
+        // Sedang / Sulit: Puluhan + Satuan dengan menyimpan (carry)
+        let angka1 = randomInt(11, 39);
+        while (angka1 % 10 === 0) {
+          angka1 = randomInt(11, 39);
+        }
+        const s1 = angka1 % 10;
+        const minSatuan = 10 - s1;
+        const angka2 = randomInt(minSatuan, 9);
+        return { angka1, angka2, operasi, kesulitan };
+      }
+    } else if (operasi === 'pengurangan') {
+      if (kesulitan === 'mudah') {
+        // Puluhan - Satuan tanpa meminjam (borrow)
+        let angka1 = randomInt(11, 39);
+        while (angka1 % 10 === 0) {
+          angka1 = randomInt(11, 39);
+        }
+        const s1 = angka1 % 10;
+        const angka2 = randomInt(1, s1);
+        return { angka1, angka2, operasi, kesulitan };
+      } else {
+        // Sedang / Sulit: Puluhan - Satuan dengan meminjam (borrow)
+        let angka1 = randomInt(11, 39);
+        while (angka1 % 10 === 9) {
+          angka1 = randomInt(11, 39);
+        }
+        const s1 = angka1 % 10;
+        const minSatuan = s1 + 1;
+        const angka2 = randomInt(minSatuan, 9);
+        return { angka1, angka2, operasi, kesulitan };
+      }
+    }
+  }
+
+  // Alur biasa (Puluhan dengan Puluhan)
+  const range = RANGE_PER_KESULITAN[kesulitan];
   let angka1 = randomInt(range.angka1.min, range.angka1.max);
   let angka2 = randomInt(range.angka2.min, range.angka2.max);
 
   if (operasi === 'penjumlahan') {
     while (angka1 + angka2 > 50) {
-      angka1 = randomInt(range.angka1.min, range.angka1.max);
-      angka2 = randomInt(range.angka2.min, range.angka2.max);
+      const rangeVal = RANGE_PER_KESULITAN[kesulitan];
+      angka1 = randomInt(rangeVal.angka1.min, rangeVal.angka1.max);
+      angka2 = randomInt(rangeVal.angka2.min, rangeVal.angka2.max);
     }
   } else if (operasi === 'pengurangan') {
     if (angka1 < angka2) {
       [angka1, angka2] = [angka2, angka1];
     }
     while (angka1 > 50) {
-      angka1 = randomInt(range.angka1.min, Math.min(50, range.angka1.max));
-      angka2 = randomInt(range.angka2.min, Math.min(angka1, range.angka2.max));
+      const rangeVal = RANGE_PER_KESULITAN[kesulitan];
+      angka1 = randomInt(rangeVal.angka1.min, Math.min(50, rangeVal.angka1.max));
+      angka2 = randomInt(rangeVal.angka2.min, Math.min(angka1, rangeVal.angka2.max));
       if (angka1 < angka2) {
         [angka1, angka2] = [angka2, angka1];
       }

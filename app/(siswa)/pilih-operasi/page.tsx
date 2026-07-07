@@ -28,18 +28,33 @@ export default function PilihOperasiPage() {
       const tutorialDone = localStorage.getItem(`tutorial_done_${siswaId}`);
       if (!tutorialDone) {
         setIsTutorial(true);
-        const step = sessionStorage.getItem('tutorialStep') || 'PETA_BELAJAR';
+        const step = localStorage.getItem(`tutorial_step_${siswaId}`) || 'PETA_BELAJAR';
         setTutorialStep(step);
       }
     }
   }, []);
 
+  // Sinkronisasi reaktif tutorialStep dengan state halaman (menghindari soft lock akibat Back/Logout/Refresh)
+  useEffect(() => {
+    const siswaId = sessionStorage.getItem('siswaId');
+    if (!siswaId || !isTutorial || !tutorialStep) return;
+
+    if (!operasiTerpilih && tutorialStep !== 'PETA_BELAJAR' && tutorialStep !== 'PILIH_OPERASI') {
+      setTutorialStep('PILIH_OPERASI');
+      localStorage.setItem(`tutorial_step_${siswaId}`, 'PILIH_OPERASI');
+    } else if (operasiTerpilih && !kesulitanTerpilih && tutorialStep === 'PILIH_MODE') {
+      setTutorialStep('PILIH_KESULITAN');
+      localStorage.setItem(`tutorial_step_${siswaId}`, 'PILIH_KESULITAN');
+    }
+  }, [operasiTerpilih, kesulitanTerpilih, isTutorial, tutorialStep]);
+
   const handleUlangTutorial = () => {
     const siswaId = sessionStorage.getItem('siswaId');
     if (siswaId) {
       localStorage.removeItem(`tutorial_done_${siswaId}`);
+      localStorage.setItem(`tutorial_step_${siswaId}`, 'PETA_BELAJAR');
+      localStorage.removeItem(`modul_progress_${siswaId}`);
     }
-    sessionStorage.setItem('tutorialStep', 'PETA_BELAJAR');
     setIsTutorial(true);
     setTutorialStep('PETA_BELAJAR');
     setOperasiTerpilih(null);
@@ -50,7 +65,8 @@ export default function PilihOperasiPage() {
     setOperasiTerpilih(operasi);
     if (isTutorial && tutorialStep === 'PILIH_OPERASI') {
       setTutorialStep('PILIH_KESULITAN');
-      sessionStorage.setItem('tutorialStep', 'PILIH_KESULITAN');
+      const siswaId = sessionStorage.getItem('siswaId');
+      if (siswaId) localStorage.setItem(`tutorial_step_${siswaId}`, 'PILIH_KESULITAN');
     }
   };
 
@@ -58,7 +74,8 @@ export default function PilihOperasiPage() {
     setKesulitanTerpilih(k);
     if (isTutorial && tutorialStep === 'PILIH_KESULITAN') {
       setTutorialStep('PILIH_MODE');
-      sessionStorage.setItem('tutorialStep', 'PILIH_MODE');
+      const siswaId = sessionStorage.getItem('siswaId');
+      if (siswaId) localStorage.setItem(`tutorial_step_${siswaId}`, 'PILIH_MODE');
     }
   };
 
@@ -70,7 +87,8 @@ export default function PilihOperasiPage() {
     sessionStorage.setItem('kesulitan', kesulitanTerpilih);
 
     if (isTutorial && tutorialStep === 'PILIH_MODE') {
-      sessionStorage.setItem('tutorialStep', 'BELAJAR');
+      const siswaId = sessionStorage.getItem('siswaId');
+      if (siswaId) localStorage.setItem(`tutorial_step_${siswaId}`, 'BELAJAR');
       router.push('/belajar');
       return;
     }

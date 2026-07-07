@@ -43,6 +43,8 @@ export interface Database {
           salah: number;
           durasi_detik: number | null;
           selesai_pada: string;
+          tugas_id: string | null;
+          tipe: 'bebas' | 'modul' | 'tugas';
         };
         Insert: {
           id?: string;
@@ -54,6 +56,8 @@ export interface Database {
           salah?: number;
           durasi_detik?: number | null;
           selesai_pada?: string;
+          tugas_id?: string | null;
+          tipe?: 'bebas' | 'modul' | 'tugas';
         };
         Update: {
           id?: string;
@@ -65,6 +69,8 @@ export interface Database {
           salah?: number;
           durasi_detik?: number | null;
           selesai_pada?: string;
+          tugas_id?: string | null;
+          tipe?: 'bebas' | 'modul' | 'tugas';
         };
       };
       detail_jawaban: {
@@ -140,6 +146,38 @@ export interface Database {
           aktif?: boolean;
         };
       };
+      tugas: {
+        Row: {
+          id: string;
+          nama_tugas: string;
+          soal_ids: string[];
+          siswa_ids: string[];
+          operasi: string;
+          mulai_pada: string;
+          tenggat_pada: string;
+          dibuat_pada: string;
+        };
+        Insert: {
+          id?: string;
+          nama_tugas: string;
+          soal_ids: string[];
+          siswa_ids: string[];
+          operasi: string;
+          mulai_pada: string;
+          tenggat_pada: string;
+          dibuat_pada?: string;
+        };
+        Update: {
+          id?: string;
+          nama_tugas?: string;
+          soal_ids?: string[];
+          siswa_ids?: string[];
+          operasi?: string;
+          mulai_pada?: string;
+          tenggat_pada?: string;
+          dibuat_pada?: string;
+        };
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -152,3 +190,4 @@ export type Siswa = Database['public']['Tables']['siswa']['Row'];
 export type SesiLatihan = Database['public']['Tables']['sesi_latihan']['Row'];
 export type DetailJawaban = Database['public']['Tables']['detail_jawaban']['Row'];
 export type SoalDB = Database['public']['Tables']['soal']['Row'];
+export type TugasDB = Database['public']['Tables']['tugas']['Row'];

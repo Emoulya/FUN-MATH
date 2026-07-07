@@ -38,7 +38,7 @@ export default function DashboardPage() {
         const { data: siswa } = await supabase.from('siswa').select('*').order('nama') as { data: Siswa[] | null };
 
         // Fetch sesi
-        const { data: sesi } = await supabase.from('sesi_latihan').select('*') as { data: SesiLatihan[] | null };
+        const { data: sesi } = await supabase.from('sesi_latihan').select('*').or('tipe.eq.bebas,tipe.is.null') as { data: SesiLatihan[] | null };
 
         if (siswa && sesi) {
           const withStats: SiswaWithStats[] = siswa.map((s) => {

@@ -19,22 +19,29 @@ export default function RekapPage() {
   const [rekap, setRekap] = useState<RekapSoal[]>([]);
   const [operasi, setOperasi] = useState<Operasi>('penjumlahan');
   const [isTutorialSelesai, setIsTutorialSelesai] = useState(false);
+  const [rekapSource, setRekapSource] = useState<string | null>(null);
+  const [fromModul, setFromModul] = useState<string | null>(null);
 
   useEffect(() => {
     const rekapJson = sessionStorage.getItem('rekap');
     const op = sessionStorage.getItem('operasi') as Operasi | null;
-    const isTutorial = sessionStorage.getItem('tutorialStep') === 'LATIHAN';
     const siswaId = sessionStorage.getItem('siswaId');
+    const source = sessionStorage.getItem('rekapSource');
+    const fModul = sessionStorage.getItem('fromModul');
+    
+    const isTutorial = siswaId ? localStorage.getItem(`tutorial_step_${siswaId}`) === 'LATIHAN' : false;
     
     if (rekapJson) {
       setRekap(JSON.parse(rekapJson));
     }
     if (op) setOperasi(op);
+    if (source) setRekapSource(source);
+    if (fModul) setFromModul(fModul);
     
     if (isTutorial && siswaId) {
       setIsTutorialSelesai(true);
       localStorage.setItem(`tutorial_done_${siswaId}`, 'true');
-      sessionStorage.removeItem('tutorialStep');
+      localStorage.removeItem(`tutorial_step_${siswaId}`);
     }
   }, []);
 
@@ -160,23 +167,52 @@ export default function RekapPage() {
         transition={{ delay: 0.5 }}
         className="flex gap-3 w-full"
       >
-        <Button
-          variant="outline"
-          onClick={() => router.push('/pilih-operasi')}
-          className="flex-1 gap-2"
-        >
-          <Home className="w-4 h-4" />
-          Kembali ke Dashboard
-        </Button>
-        <Button
-          onClick={() => {
-            router.push('/modul');
-          }}
-          className="flex-1 gap-2"
-        >
-          <RotateCcw className="w-4 h-4" />
-          Latihan Lagi
-        </Button>
+        {rekapSource === 'tugas' ? (
+          <>
+            <Button
+              variant="outline"
+              onClick={() => router.push('/tugas')}
+              className="flex-1 gap-2"
+            >
+              <Home className="w-4 h-4" />
+              Kembali ke Tugas
+            </Button>
+            <Button
+              onClick={() => router.push('/tugas')}
+              className="flex-1 gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Tugas Lainnya
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (fromModul) {
+                  sessionStorage.removeItem('fromModul');
+                  router.push('/modul');
+                } else {
+                  router.push('/pilih-operasi');
+                }
+              }}
+              className="flex-1 gap-2"
+            >
+              <Home className="w-4 h-4" />
+              {fromModul ? 'Kembali ke Peta Modul' : 'Kembali ke Dashboard'}
+            </Button>
+            <Button
+              onClick={() => {
+                router.push('/modul');
+              }}
+              className="flex-1 gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Latihan Lagi
+            </Button>
+          </>
+        )}
       </motion.div>
     </div>
   );
