@@ -37,19 +37,6 @@ export default function Modul1APage() {
 
   const handleGameSelesai = useCallback(() => {
     selesaikanModul('modul1a');
-    
-    // Cek apakah ini bagian dari tutorial awal
-    const siswaId = sessionStorage.getItem('siswaId');
-    if (siswaId) {
-      const tutorialDone = localStorage.getItem(`tutorial_done_${siswaId}`);
-      if (!tutorialDone) {
-        // Lanjutkan tutorial ke pemilihan operasi
-        sessionStorage.setItem('tutorialStep', 'PILIH_OPERASI');
-        router.push('/pilih-operasi');
-        return;
-      }
-    }
-    
     router.push('/modul');
   }, [selesaikanModul, router]);
 

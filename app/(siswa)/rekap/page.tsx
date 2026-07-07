@@ -162,11 +162,11 @@ export default function RekapPage() {
       >
         <Button
           variant="outline"
-          onClick={() => router.push(isTutorialSelesai ? '/pilih-operasi' : '/modul')}
+          onClick={() => router.push('/pilih-operasi')}
           className="flex-1 gap-2"
         >
           <Home className="w-4 h-4" />
-          {isTutorialSelesai ? 'Ke Dashboard' : 'Kembali'}
+          Kembali ke Dashboard
         </Button>
         <Button
           onClick={() => {

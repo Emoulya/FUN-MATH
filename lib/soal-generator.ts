@@ -23,34 +23,34 @@ interface RangeAngka {
  */
 const RANGE_PER_KESULITAN: Record<Kesulitan, { angka1: RangeAngka; angka2: RangeAngka }> = {
   mudah: {
-    angka1: { min: 10, max: 49 },
-    angka2: { min: 10, max: 49 },
+    angka1: { min: 10, max: 25 },
+    angka2: { min: 10, max: 25 },
   },
   sedang: {
-    angka1: { min: 20, max: 99 },
-    angka2: { min: 10, max: 99 },
+    angka1: { min: 15, max: 30 },
+    angka2: { min: 10, max: 20 },
   },
   sulit: {
-    angka1: { min: 100, max: 999 },
-    angka2: { min: 10, max: 999 },
+    angka1: { min: 20, max: 35 },
+    angka2: { min: 10, max: 15 },
   },
 };
 
 /**
- * Range khusus perkalian — digit lebih kecil karena hasil bisa sangat besar.
+ * Range khusus perkalian — tidak dipakai, disesuaikan max 50
  */
 const RANGE_PERKALIAN: Record<Kesulitan, { angka1: RangeAngka; angka2: RangeAngka }> = {
   mudah: {
-    angka1: { min: 10, max: 49 },
-    angka2: { min: 2, max: 9 },
+    angka1: { min: 10, max: 15 },
+    angka2: { min: 2, max: 3 },
   },
   sedang: {
-    angka1: { min: 10, max: 99 },
-    angka2: { min: 10, max: 49 },
+    angka1: { min: 10, max: 15 },
+    angka2: { min: 2, max: 4 },
   },
   sulit: {
-    angka1: { min: 10, max: 99 },
-    angka2: { min: 10, max: 99 },
+    angka1: { min: 10, max: 15 },
+    angka2: { min: 2, max: 4 },
   },
 };
 
@@ -86,9 +86,22 @@ export function generateSoal(operasi: Operasi, kesulitan: Kesulitan): Soal {
   let angka1 = randomInt(range.angka1.min, range.angka1.max);
   let angka2 = randomInt(range.angka2.min, range.angka2.max);
 
-  // Pengurangan: pastikan angka1 >= angka2
-  if (operasi === 'pengurangan' && angka1 < angka2) {
-    [angka1, angka2] = [angka2, angka1];
+  if (operasi === 'penjumlahan') {
+    while (angka1 + angka2 > 50) {
+      angka1 = randomInt(range.angka1.min, range.angka1.max);
+      angka2 = randomInt(range.angka2.min, range.angka2.max);
+    }
+  } else if (operasi === 'pengurangan') {
+    if (angka1 < angka2) {
+      [angka1, angka2] = [angka2, angka1];
+    }
+    while (angka1 > 50) {
+      angka1 = randomInt(range.angka1.min, Math.min(50, range.angka1.max));
+      angka2 = randomInt(range.angka2.min, Math.min(angka1, range.angka2.max));
+      if (angka1 < angka2) {
+        [angka1, angka2] = [angka2, angka1];
+      }
+    }
   }
 
   return { angka1, angka2, operasi, kesulitan };
