@@ -61,32 +61,79 @@ export function solveAddition(a: number, b: number): HasilPerhitungan {
   const langkahLangkah: LangkahHitung[] = [];
   let carry = 0;
 
+  // 1. Pengantar Awal
+  langkahLangkah.push({
+    kolom: -1,
+    nilaiDigit1: 0,
+    nilaiDigit2: 0,
+    hasil: 0,
+    penjelasan: `Ayo hitung <b>${a} + ${b}</b>. Mulai dari kolom satuan (paling kanan).`,
+  });
+
   for (let i = 0; i < maxLen; i++) {
     const d1 = paddedA[i];
     const d2 = paddedB[i];
+    const namaKolom = ['satuan', 'puluhan', 'ratusan', 'ribuan'][i] ?? `kolom-${i}`;
+
+    // A. Pengantar Kolom i
+    langkahLangkah.push({
+      kolom: -1,
+      nilaiDigit1: d1,
+      nilaiDigit2: d2,
+      carry,
+      hasil: 0,
+      highlightBaris1: [i],
+      highlightBaris2: [i],
+      penjelasan: `Lihat kolom <b>${namaKolom}</b>.`,
+    });
+
     const jumlah = d1 + d2 + carry;
     const hasilDigit = jumlah % 10;
     const carryBaru = Math.floor(jumlah / 10);
 
-    const namaKolom = ['satuan', 'puluhan', 'ratusan', 'ribuan'][i] ?? `kolom-${i}`;
-    let penjelasan1 = `Jumlahkan digit atas <b>${d1}</b> dengan digit bawah <b>${d2}</b>`;
-    if (carry > 0) penjelasan1 += ` ditambah simpanan <b>${carry}</b>`;
-    penjelasan1 += ` menjadi <b>${jumlah}</b>.`;
+    // B. Hitung Penjumlahan Kolom i
+    let penjelasanHitung = `Jumlahkan <b>${d1} + ${d2}</b>`;
+    if (carry > 0) {
+      penjelasanHitung += ` ditambah simpanan <b>${carry}</b>`;
+    }
+    penjelasanHitung += ` = <b>${jumlah}</b>.`;
 
+    langkahLangkah.push({
+      kolom: -1,
+      nilaiDigit1: d1,
+      nilaiDigit2: d2,
+      carry,
+      hasil: 0,
+      highlightBaris1: [i],
+      highlightBaris2: [i],
+      penjelasan: penjelasanHitung,
+    });
+
+    // C. Jika ada carryBaru (menyimpan)
     if (carryBaru > 0) {
-      // Step 1: Hitung jumlah
+      // Info Menyimpan
+      langkahLangkah.push({
+        kolom: -1,
+        nilaiDigit1: d1,
+        nilaiDigit2: d2,
+        carry,
+        hasil: 0,
+        highlightBaris1: [i],
+        highlightBaris2: [i],
+        penjelasan: `Karena <b>${jumlah}</b> lebih dari 9, kita simpan <b>${carryBaru}</b> ke kolom puluhan.`,
+      });
+
+      // Tulis Satuan
       langkahLangkah.push({
         kolom: i,
         nilaiDigit1: d1,
         nilaiDigit2: d2,
         carry,
-        hasil: jumlah,
-        carryBaru: undefined,
-        penjelasan: `Kolom <b>${namaKolom}</b>: ${penjelasan1}`,
+        hasil: hasilDigit,
+        penjelasan: `Tulis angka satuan <b>${hasilDigit}</b> di bawah.`,
       });
 
-      // Step 2: Simpan carry
-      const penjelasan2 = `Karena hasil &ge; 10, tulis <b>${hasilDigit}</b> di bawah, lalu simpan <b>${carryBaru}</b> di atas kolom berikutnya.`;
+      // Simpan Carry (Pemicu Animasi)
       langkahLangkah.push({
         kolom: i,
         nilaiDigit1: d1,
@@ -94,25 +141,24 @@ export function solveAddition(a: number, b: number): HasilPerhitungan {
         carry,
         hasil: hasilDigit,
         carryBaru,
-        penjelasan: `Kolom <b>${namaKolom}</b>: ${penjelasan2}`,
+        penjelasan: `Simpan <b>${carryBaru}</b> meluncur ke atas puluhan!`,
       });
     } else {
-      const penjelasan3 = ` Tulis hasil <b>${hasilDigit}</b> di bawah.`;
+      // Tanpa Menyimpan: Tulis Hasil
       langkahLangkah.push({
         kolom: i,
         nilaiDigit1: d1,
         nilaiDigit2: d2,
         carry,
         hasil: hasilDigit,
-        carryBaru: undefined,
-        penjelasan: `Kolom <b>${namaKolom}</b>: ${penjelasan1}${penjelasan3}`,
+        penjelasan: `Tulis <b>${hasilDigit}</b> di bawah.`,
       });
     }
 
     carry = carryBaru;
   }
 
-  // Jika ada carry terakhir, tambah langkah
+  // Jika ada sisa carry di akhir
   if (carry > 0) {
     langkahLangkah.push({
       kolom: maxLen,
@@ -120,9 +166,18 @@ export function solveAddition(a: number, b: number): HasilPerhitungan {
       nilaiDigit2: 0,
       carry,
       hasil: carry,
-      penjelasan: `Tulis <span style="color: var(--carry-color)"> simpanan ${carry}</span>`,
+      penjelasan: `Tulis angka simpanan terakhir <b>${carry}</b> di kolom paling kiri.`,
     });
   }
+
+  // Kesimpulan Akhir
+  langkahLangkah.push({
+    kolom: -1,
+    nilaiDigit1: 0,
+    nilaiDigit2: 0,
+    hasil: 0,
+    penjelasan: `Selesai! Hasil akhirnya adalah <b>${hasil}</b>. Hebat! 🎉`,
+  });
 
   return { angka1: a, angka2: b, operasi: 'penjumlahan', hasil, langkahLangkah };
 }
@@ -152,55 +207,147 @@ export function solveSubtraction(a: number, b: number): HasilPerhitungan {
   const workingA = [...paddedA];
   const langkahLangkah: LangkahHitung[] = [];
 
+  // 1. Pengantar Awal
+  langkahLangkah.push({
+    kolom: -1,
+    nilaiDigit1: 0,
+    nilaiDigit2: 0,
+    hasil: 0,
+    digitAtasAktif: [...workingA],
+    penjelasan: `Ayo hitung <b>${a} − ${b}</b>. Mulai dari kolom satuan (paling kanan).`,
+  });
+
   for (let i = 0; i < maxLen; i++) {
     const d1 = workingA[i];
     const d2 = paddedB[i];
     const namaKolom = ['satuan', 'puluhan', 'ratusan', 'ribuan'][i] ?? `kolom-${i}`;
 
+    // A. Pengantar Kolom i
+    langkahLangkah.push({
+      kolom: -1,
+      nilaiDigit1: d1,
+      nilaiDigit2: d2,
+      hasil: 0,
+      highlightBaris1: [i],
+      highlightBaris2: [i],
+      digitAtasAktif: [...workingA],
+      penjelasan: `Lihat kolom <b>${namaKolom}</b>.`,
+    });
+
     if (d1 >= d2) {
-      const hasilDigit = d1 - d2;
+      // B. Hitung Pengurangan
+      langkahLangkah.push({
+        kolom: -1,
+        nilaiDigit1: d1,
+        nilaiDigit2: d2,
+        hasil: 0,
+        highlightBaris1: [i],
+        highlightBaris2: [i],
+        digitAtasAktif: [...workingA],
+        penjelasan: `Kurangkan <b>${d1} − ${d2}</b> = <b>${d1 - d2}</b>.`,
+      });
+
+      // C. Tulis Hasil
       langkahLangkah.push({
         kolom: i,
         nilaiDigit1: d1,
         nilaiDigit2: d2,
-        borrow: false,
-        hasil: hasilDigit,
+        hasil: d1 - d2,
         digitAtasAktif: [...workingA],
-        penjelasan: `Kolom <b>${namaKolom}</b>: Kurangkan digit atas <b>${d1}</b> dengan digit bawah <b>${d2}</b> menjadi <b>${hasilDigit}</b>. Tulis hasil <b>${hasilDigit}</b> di bawah.`,
+        penjelasan: `Tulis <b>${d1 - d2}</b> di bawah.`,
       });
     } else {
-      // Perlu borrow dari kolom sebelah
-      // Cari kolom yang bisa dipinjam
-      let j = i + 1;
-      while (j < maxLen && workingA[j] === 0) {
-        j++;
-      }
+      // B. Info Tidak Cukup
+      langkahLangkah.push({
+        kolom: -1,
+        nilaiDigit1: paddedA[i],
+        nilaiDigit2: d2,
+        hasil: 0,
+        highlightBaris1: [i],
+        highlightBaris2: [i],
+        digitAtasAktif: [...workingA],
+        penjelasan: `Karena <b>${d1}</b> kurang dari <b>${d2}</b>, kita harus meminjam dari kolom kiri.`,
+      });
 
-      // Pinjam berantai
+      // C. Pinjam dari kolom sebelah
+      langkahLangkah.push({
+        kolom: -1,
+        nilaiDigit1: paddedA[i],
+        nilaiDigit2: d2,
+        hasil: 0,
+        highlightBaris1: [i + 1],
+        digitAtasAktif: [...workingA],
+        penjelasan: `Pinjam 1 puluhan dari kolom kiri.`,
+      });
+
+      // Lakukan borrow berantai
+      let j = i + 1;
+      while (j < maxLen && workingA[j] === 0) j++;
       const nilaiSebelumBorrow = workingA[j];
       workingA[j] -= 1;
       j--;
       while (j > i) {
-        workingA[j] = 9; // kolom yang tadinya 0 jadi 9 setelah dipinjam
+        workingA[j] = 9;
         j--;
       }
       workingA[i] += 10;
 
-      const hasilDigit = workingA[i] - d2;
-
+      // D. Coret Puluhan (Memicu Coretan)
       langkahLangkah.push({
-        kolom: i,
+        kolom: -1,
         nilaiDigit1: paddedA[i],
         nilaiDigit2: d2,
         borrow: true,
         nilaiSebelumBorrow,
-        nilaiSetelahBorrow: workingA[i],
-        hasil: hasilDigit,
+        nilaiSetelahBorrow: workingA[i + 1],
+        hasil: 0,
         digitAtasAktif: [...workingA],
-        penjelasan: `Kolom <b>${namaKolom}</b>: Digit atas <b>${paddedA[i]}</b> lebih kecil dari digit bawah <b>${d2}</b>. Pinjam 1 puluhan dari kolom kiri sehingga digit atas bertambah 10 menjadi <b>${workingA[i]}</b>. Lalu kurangkan <b>${workingA[i]} &minus; ${d2} = ${hasilDigit}</b>. Tulis hasil <b>${hasilDigit}</b> di bawah.`,
+        penjelasan: `Angka puluhan <b>${nilaiSebelumBorrow}</b> dipinjam 1, dicoret menjadi <b>${workingA[i + 1]}</b>.`,
+      });
+
+      // E. Tambah 10 ke Satuan (Tampil angka baru kecil di atas satuan)
+      langkahLangkah.push({
+        kolom: -1,
+        nilaiDigit1: paddedA[i],
+        nilaiDigit2: d2,
+        hasil: 0,
+        digitAtasAktif: [...workingA],
+        penjelasan: `Kolom satuan mendapat 10 satuan baru, menjadi <b>${workingA[i]}</b>.`,
+      });
+
+      // F. Hitung Pengurangan Baru
+      langkahLangkah.push({
+        kolom: -1,
+        nilaiDigit1: workingA[i],
+        nilaiDigit2: d2,
+        hasil: 0,
+        highlightBaris1: [i],
+        highlightBaris2: [i],
+        digitAtasAktif: [...workingA],
+        penjelasan: `Sekarang kurangkan <b>${workingA[i]} − ${d2}</b> = <b>${workingA[i] - d2}</b>.`,
+      });
+
+      // G. Tulis Hasil
+      langkahLangkah.push({
+        kolom: i,
+        nilaiDigit1: workingA[i],
+        nilaiDigit2: d2,
+        hasil: workingA[i] - d2,
+        digitAtasAktif: [...workingA],
+        penjelasan: `Tulis <b>${workingA[i] - d2}</b> di bawah.`,
       });
     }
   }
+
+  // Kesimpulan Akhir
+  langkahLangkah.push({
+    kolom: -1,
+    nilaiDigit1: 0,
+    nilaiDigit2: 0,
+    hasil: 0,
+    digitAtasAktif: [...workingA],
+    penjelasan: `Selesai! Hasil akhirnya adalah <b>${hasil}</b>. Hebat! 🎉`,
+  });
 
   return { angka1: a, angka2: b, operasi: 'pengurangan', hasil, langkahLangkah };
 }
@@ -623,6 +770,11 @@ export function enrichStepsForLearning(
   perhitungan: HasilPerhitungan,
   kesulitan: import('@/types/math').Kesulitan,
 ): HasilPerhitungan {
+  // Jika penjumlahan atau pengurangan, langkah-langkah detail sudah dibuat secara kustom di solveAddition / solveSubtraction.
+  if (perhitungan.operasi === 'penjumlahan' || perhitungan.operasi === 'pengurangan') {
+    return perhitungan;
+  }
+
   const target = TARGET_LANGKAH[kesulitan];
   const langkahInti = [...perhitungan.langkahLangkah];
   const enriched: LangkahHitung[] = [];
@@ -651,22 +803,6 @@ export function enrichStepsForLearning(
 
   // 5. Langkah kesimpulan (selalu ada)
   enriched.push(langkahKesimpulan(perhitungan));
-
-  // Isi digitAtasAktif untuk langkah deskriptif pada pengurangan
-  if (perhitungan.operasi === 'pengurangan') {
-    const digitsA = getDigits(perhitungan.angka1);
-    const maxLen = langkahInti.find((l) => l.digitAtasAktif)?.digitAtasAktif?.length ?? digitsA.length;
-    const digitAtasAwal = padDigits(digitsA, maxLen);
-    
-    let currentDigitAtas = [...digitAtasAwal];
-    for (const l of enriched) {
-      if (l.kolom !== -1 && l.digitAtasAktif) {
-        currentDigitAtas = [...l.digitAtasAktif];
-      } else {
-        l.digitAtasAktif = [...currentDigitAtas];
-      }
-    }
-  }
 
   return {
     ...perhitungan,
