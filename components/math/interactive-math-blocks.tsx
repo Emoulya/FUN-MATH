@@ -327,21 +327,8 @@ export default function InteractiveMathBlocks({ angka1, angka2, operasi, onSeles
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center gap-4 mt-4 bg-emerald-50/50 p-6 rounded-2xl border border-emerald-100 max-w-sm text-center"
           >
-            <div className="flex flex-col gap-1.5 text-sm text-emerald-800">
-              <div className="font-semibold">
-                Nilai Puluhan: <span style={{ color: 'var(--block-puluhan)' }}><b>{isPenjumlahan ? puluhan1 * 10 + interactedPuluhanIds.length * 10 : puluhan1 * 10 - interactedPuluhanIds.length * 10}</b></span>
-                &nbsp;&bull;&nbsp;
-                Nilai Satuan: <span style={{ color: 'var(--block-satuan)' }}><b>{isPenjumlahan ? satuan1 + interactedSatuanIds.length : satuan1 - interactedSatuanIds.length}</b></span>
-              </div>
-              <div className="text-xs text-emerald-700/80 mt-1">
-                Gabungkan puluhan dan satuan:
-              </div>
-              <div className="text-2xl font-black text-emerald-950 my-1 tabular-nums">
-                {isPenjumlahan ? puluhan1 * 10 + interactedPuluhanIds.length * 10 : puluhan1 * 10 - interactedPuluhanIds.length * 10} + {isPenjumlahan ? satuan1 + interactedSatuanIds.length : satuan1 - interactedSatuanIds.length} = {isPenjumlahan ? angka1 + angka2 : angka1 - angka2}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-emerald-600 font-bold text-base border-t border-emerald-200/60 pt-3 w-full justify-center">
-              <CheckCircle2 className="w-5 h-5" />
+            <div className="flex items-center gap-2 text-emerald-600 font-bold text-lg w-full justify-center">
+              <CheckCircle2 className="w-6 h-6" />
               <span>
                 Hasil Akhir: {isPenjumlahan ? angka1 + angka2 : angka1 - angka2}
               </span>
