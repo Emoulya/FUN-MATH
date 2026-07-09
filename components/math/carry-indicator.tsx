@@ -15,20 +15,30 @@ interface CarryIndicatorProps {
   visible?: boolean;
   /** Apakah carry ini aktif/baru pada langkah saat ini */
   isNew?: boolean;
+  /** Apakah carry ini sedang di-highlight (fokus langkah aktif) */
+  highlight?: boolean;
 }
 
-export default function CarryIndicator({ nilai, visible = true, isNew = true }: CarryIndicatorProps) {
+export default function CarryIndicator({ nilai, visible = true, isNew = true, highlight = false }: CarryIndicatorProps) {
   if (!visible || nilai === 0) return null;
 
   return (
     <motion.span
-      initial={{ y: 8, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
+      initial={{ y: isNew ? 120 : 8, scale: isNew ? 1.5 : 1, opacity: 0 }}
+      animate={{ 
+        y: 0, 
+        scale: 1,
+        opacity: 1,
+        backgroundColor: highlight ? 'hsla(249, 47%, 90%, 1)' : 'transparent',
+      }}
       exit={{ y: -8, opacity: 0 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="carry-indicator animate-slide-in-up transition-colors duration-300"
+      transition={{ 
+        duration: isNew ? 0.6 : 0.3, 
+        ease: isNew ? [0.17, 0.89, 0.32, 1.2] : 'easeOut' // Bouncy effect when flying up
+      }}
+      className={`carry-indicator animate-slide-in-up transition-colors duration-300 rounded px-1 ${highlight ? 'font-bold' : ''}`}
       style={{
-        color: isNew ? 'var(--carry-color)' : 'var(--muted-foreground)',
+        color: isNew || highlight ? 'var(--carry-color)' : 'var(--muted-foreground)',
       }}
       aria-label={`Simpanan ${nilai}`}
     >

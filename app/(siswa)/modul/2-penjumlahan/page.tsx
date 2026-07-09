@@ -29,7 +29,7 @@ import {
   STORAGE_KEY_FROM_MODUL,
 } from '@/lib/constants';
 
-type Layar = 'game-konsep' | 'belajar' | 'latihan';
+type Layar = 'belajar' | 'latihan';
 
 /** Fallback ErrorBoundary */
 function ErrorFallback({ resetErrorBoundary }: { resetErrorBoundary: () => void }) {
@@ -49,7 +49,7 @@ export default function Modul2Page() {
   const animasi = useAnimasi();
   const latihan = useLatihan();
   const { selesaikanModul } = useModulProgress();
-  const [layar, setLayar] = useState<Layar>('game-konsep');
+  const [layar, setLayar] = useState<Layar>('belajar');
   const [isTutorial, setIsTutorial] = useState(false);
   const sesiMulaiRef = useRef(0);
 
@@ -134,27 +134,15 @@ export default function Modul2Page() {
       >
         <h2 className="text-xl font-bold">➕ Penjumlahan Menyimpan</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          {layar === 'game-konsep' 
-            ? 'Pahami konsep menyimpan dengan balok!'
-            : layar === 'belajar'
-            ? 'Perhatikan cara menyimpan (carry)'
+          {layar === 'belajar'
+            ? 'Perhatikan cara menyimpan angka'
             : `Soal ${latihan.indexSoal + 1}/${latihan.totalSoal}`}
         </p>
       </motion.div>
 
       {/* Konten */}
       <AnimatePresence mode="wait">
-        {layar === 'game-konsep' ? (
-          <motion.div
-            key="game-konsep"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col items-center gap-6 w-full"
-          >
-            <DragDropCarry onSelesai={() => setLayar('belajar')} />
-          </motion.div>
-        ) : layar === 'belajar' ? (
+        {layar === 'belajar' ? (
           <motion.div
             key="belajar"
             initial={{ opacity: 0 }}
@@ -165,11 +153,6 @@ export default function Modul2Page() {
             {/* MathBoard mode animasi */}
             {animasi.perhitungan && (
               <>
-                <div className="flex gap-4 items-end justify-center scale-75 origin-top -mb-8">
-                   <Base10Blocks angka={animasi.perhitungan.angka1} />
-                   <span className="text-4xl font-black text-blue-500 mb-4">+</span>
-                   <Base10Blocks angka={animasi.perhitungan.angka2} />
-                </div>
                 <MathBoard
                   angka1={animasi.perhitungan.angka1}
                   angka2={animasi.perhitungan.angka2}
@@ -239,11 +222,6 @@ export default function Modul2Page() {
             {latihan.soalAktif && (
               <ErrorBoundary FallbackComponent={ErrorFallback}>
                 <>
-                  <div className="flex gap-4 items-end justify-center scale-75 origin-top -mb-8">
-                     <Base10Blocks angka={latihan.soalAktif.angka1} />
-                     <span className="text-4xl font-black text-blue-500 mb-4">+</span>
-                     <Base10Blocks angka={latihan.soalAktif.angka2} />
-                  </div>
                   <MathBoard
                     angka1={latihan.soalAktif.angka1}
                     angka2={latihan.soalAktif.angka2}

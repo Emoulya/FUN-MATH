@@ -228,11 +228,6 @@ export default function Modul3Page() {
             {latihan.soalAktif && (
               <ErrorBoundary FallbackComponent={ErrorFallback}>
                 <>
-                  <div className="flex gap-4 items-end justify-center scale-75 origin-top -mb-8">
-                     <Base10Blocks angka={latihan.soalAktif.angka1} />
-                     <span className="text-4xl font-black text-emerald-500 mb-4">−</span>
-                     <Base10Blocks angka={latihan.soalAktif.angka2} />
-                  </div>
                   <MathBoard
                     angka1={latihan.soalAktif.angka1}
                     angka2={latihan.soalAktif.angka2}

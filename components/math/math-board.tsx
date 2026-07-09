@@ -16,6 +16,7 @@ import InputBox from './input-box';
 import CarryIndicator from './carry-indicator';
 import BorrowIndicator from './borrow-indicator';
 import OffsetIndicator from './offset-indicator';
+import SideOperationPanel from './side-operation-panel';
 
 interface MathBoardProps {
   angka1: number;
@@ -301,28 +302,66 @@ export default function MathBoard({
 
   // Cek highlight per baris pada langkah aktif
   const getHighlightForBaris = (baris: 1 | 2, kolom: number): boolean => {
-    if (langkahAktif === undefined) return false;
-    const langkah = perhitungan.langkahLangkah[langkahAktif];
-    if (!langkah) return false;
-    // Jika ada penentuan highlight spesifik per baris, gunakan itu secara mutlak
-    if (baris === 1 && langkah.highlightBaris1 !== undefined) {
-      return langkah.highlightBaris1.includes(kolom);
+    if (langkahAktif !== undefined) {
+      const langkah = perhitungan.langkahLangkah[langkahAktif];
+      if (!langkah) return false;
+      if (baris === 1 && langkah.highlightBaris1 !== undefined) {
+        return langkah.highlightBaris1.includes(kolom);
+      }
+      if (baris === 2 && langkah.highlightBaris2 !== undefined) {
+        return langkah.highlightBaris2.includes(kolom);
+      }
+      if (langkah.kolom === kolom) return true;
+      return false;
     }
-    if (baris === 2 && langkah.highlightBaris2 !== undefined) {
-      return langkah.highlightBaris2.includes(kolom);
+    
+    if (mode === 'latihan') {
+      let activeKolom = -1;
+      for (let k = 0; k < maxKolom; k++) {
+        if (!isKolomSelesai(k)) {
+          activeKolom = k;
+          break;
+        }
+      }
+      return activeKolom === kolom;
     }
-    // Cek kolom utama (berlaku untuk kedua baris sebagai fallback)
-    if (langkah.kolom === kolom) return true;
+    
     return false;
   };
 
+  let isSidePanelVisible = false;
+  let langkahSekarang = langkahAktif !== undefined ? perhitungan.langkahLangkah[langkahAktif] : null;
+
+  if (mode === 'animasi') {
+    isSidePanelVisible = true;
+  } else if (mode === 'latihan') {
+    let activeKolom = -1;
+    for (let k = 0; k < maxKolom; k++) {
+      if (!isKolomSelesai(k)) {
+        activeKolom = k;
+        break;
+      }
+    }
+    if (activeKolom !== -1) {
+      const step = perhitungan.langkahLangkah.find(l => 
+        l.kolom === activeKolom && 
+        (operasi !== 'perkalian' || l.barisPerkalianIdx === undefined)
+      );
+      if (step) {
+        langkahSekarang = step;
+        isSidePanelVisible = true;
+      }
+    }
+  }
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="inline-flex flex-col items-end gap-1 p-6 bg-card rounded-2xl shadow-lg border border-border"
-    >
+    <div className="inline-flex flex-row items-stretch gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="inline-flex flex-col items-end gap-1 p-6 bg-card rounded-2xl shadow-lg border border-border shrink-0"
+      >
       {/* ============================================
           Baris Carry/Borrow Indicators
           ============================================ */}
@@ -385,7 +424,7 @@ export default function MathBoard({
                     />
                   </div>
                 ) : (
-                  <CarryIndicator nilai={carry.carry} isNew={isCarryActive} />
+                  <CarryIndicator nilai={carry.carry} isNew={isCarryActive} highlight={isCarryActive} />
                 )
               )}
               {borrow && (
@@ -674,6 +713,17 @@ export default function MathBoard({
           })}
         </div>
       </AnimatePresence>
-    </motion.div>
+      </motion.div>
+
+      {/* Side Panel Khusus Mode Animasi/Belajar dan Latihan */}
+      {isSidePanelVisible && (
+        <SideOperationPanel
+          langkah={langkahSekarang}
+          operasi={operasi}
+          visible={true}
+          mode={mode === 'animasi' || mode === 'latihan' ? mode : undefined}
+        />
+      )}
+    </div>
   );
 }
