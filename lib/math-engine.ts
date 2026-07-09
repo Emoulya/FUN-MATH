@@ -69,10 +69,14 @@ export function solveAddition(a: number, b: number): HasilPerhitungan {
     const carryBaru = Math.floor(jumlah / 10);
 
     const namaKolom = ['satuan', 'puluhan', 'ratusan', 'ribuan'][i] ?? `kolom-${i}`;
-    let penjelasan = `${d1} + ${d2}`;
-    if (carry > 0) penjelasan += ` <span style="color: var(--carry-color)">+ ${carry} (simpanan)</span>`;
-    penjelasan += ` = <span style="color: var(--primary)">${jumlah}</span>`;
-    if (carryBaru > 0) penjelasan += `, <span style="color: var(--primary)">tulis ${hasilDigit}</span> <span style="color: var(--carry-color)">simpan ${carryBaru}</span>`;
+    let penjelasan = `Jumlahkan digit atas <b>${d1}</b> dengan digit bawah <b>${d2}</b>`;
+    if (carry > 0) penjelasan += ` ditambah simpanan <b>${carry}</b>`;
+    penjelasan += ` menjadi <b>${jumlah}</b>.`;
+    if (carryBaru > 0) {
+      penjelasan += ` Karena hasil &ge; 10, tulis <b>${hasilDigit}</b> di bawah, lalu simpan <b>${carryBaru}</b> di atas kolom berikutnya.`;
+    } else {
+      penjelasan += ` Tulis hasil <b>${hasilDigit}</b> di bawah.`;
+    }
 
     langkahLangkah.push({
       kolom: i,
@@ -81,7 +85,7 @@ export function solveAddition(a: number, b: number): HasilPerhitungan {
       carry,
       hasil: hasilDigit,
       carryBaru: carryBaru > 0 ? carryBaru : undefined,
-      penjelasan: `Kolom ${namaKolom}: ${penjelasan}`,
+      penjelasan: `Kolom <b>${namaKolom}</b>: ${penjelasan}`,
     });
 
     carry = carryBaru;
@@ -141,7 +145,7 @@ export function solveSubtraction(a: number, b: number): HasilPerhitungan {
         borrow: false,
         hasil: hasilDigit,
         digitAtasAktif: [...workingA],
-        penjelasan: `Kolom ${namaKolom}: ${d1} − ${d2} = <span style="color: var(--primary)"> ${hasilDigit}</span>`,
+        penjelasan: `Kolom <b>${namaKolom}</b>: Kurangkan digit atas <b>${d1}</b> dengan digit bawah <b>${d2}</b> menjadi <b>${hasilDigit}</b>. Tulis hasil <b>${hasilDigit}</b> di bawah.`,
       });
     } else {
       // Perlu borrow dari kolom sebelah
@@ -172,7 +176,7 @@ export function solveSubtraction(a: number, b: number): HasilPerhitungan {
         nilaiSetelahBorrow: workingA[i],
         hasil: hasilDigit,
         digitAtasAktif: [...workingA],
-        penjelasan: `Kolom ${namaKolom}: ${paddedA[i]} <i>kurang dari</i> ${d2}, <span style="color: var(--borrow-color)"> pinjam → ${workingA[i]}</span> − ${d2} = <span style="color: var(--primary)"> ${hasilDigit}</span>`,
+        penjelasan: `Kolom <b>${namaKolom}</b>: Digit atas <b>${paddedA[i]}</b> lebih kecil dari digit bawah <b>${d2}</b>. Pinjam 1 puluhan dari kolom kiri sehingga digit atas bertambah 10 menjadi <b>${workingA[i]}</b>. Lalu kurangkan <b>${workingA[i]} &minus; ${d2} = ${hasilDigit}</b>. Tulis hasil <b>${hasilDigit}</b> di bawah.`,
       });
     }
   }

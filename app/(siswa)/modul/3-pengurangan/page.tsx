@@ -17,23 +17,23 @@ import { ErrorBoundary } from 'react-error-boundary';
 import MathBoard from '@/components/math/math-board';
 import StepControls from '@/components/math/step-controls';
 import FeedbackOverlay from '@/components/math/feedback-overlay';
-import Base10Blocks from '@/components/math/base10-blocks';
-import DragDropBorrow from '@/components/math/drag-drop-borrow';
+
 import { useAnimasi } from '@/hooks/use-animasi';
 import { useLatihan } from '@/hooks/use-latihan';
 import { useModulProgress } from '@/hooks/use-modul-progress';
-import { generateSoal, generateSesiSoal } from '@/lib/soal-generator';
+import { useTutorial } from '@/hooks/use-tutorial';
+import { generateSoal, generateSesiSoalBerurutan } from '@/lib/soal-generator';
 import { MAX_PERCOBAAN, SOAL_PER_SESI, STORAGE_KEY_FROM_MODUL } from '@/lib/constants';
 
-type Layar = 'game-konsep' | 'belajar' | 'latihan';
+type Layar = 'belajar' | 'latihan';
 
 /** Fallback ErrorBoundary */
 function ErrorFallback({ resetErrorBoundary }: { resetErrorBoundary: () => void }) {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
-      <span className="text-4xl">⚠️</span>
-      <p className="text-sm text-muted-foreground text-center">
-        Terjadi kesalahan. Coba refresh halaman.
+    <div className="p-4 bg-red-50 text-red-800 rounded-xl border border-red-200 text-center max-w-sm mx-auto my-10">
+      <h3 className="font-bold mb-2">Terjadi Kesalahan!</h3>
+      <p className="text-sm mb-4">
+        Ada masalah saat menampilkan modul ini.
       </p>
       <Button onClick={resetErrorBoundary}>Coba Lagi</Button>
     </div>
@@ -45,20 +45,13 @@ export default function Modul3Page() {
   const animasi = useAnimasi();
   const latihan = useLatihan();
   const { selesaikanModul } = useModulProgress();
-  const [layar, setLayar] = useState<Layar>('game-konsep');
-  const [isTutorial, setIsTutorial] = useState(false);
+  const [layar, setLayar] = useState<Layar>('belajar');
+  const { isTutorial } = useTutorial();
   const sesiMulaiRef = useRef(0);
 
   useEffect(() => {
-    const siswaId = sessionStorage.getItem('siswaId');
-    if (siswaId) {
-      const tutorialDone = localStorage.getItem(`tutorial_done_${siswaId}`);
-      if (!tutorialDone) {
-        setIsTutorial(true);
-      }
-    }
-    const soal = generateSoal('pengurangan', 'sedang');
-    animasi.setSoal(soal.angka1, soal.angka2, 'pengurangan', 'sedang');
+    const soal = generateSoal('pengurangan', 'mudah');
+    animasi.setSoal(soal.angka1, soal.angka2, 'pengurangan', 'mudah');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -66,16 +59,17 @@ export default function Modul3Page() {
   const mulaiLatihan = useCallback(() => {
     setLayar('latihan');
     sessionStorage.setItem('operasi', 'pengurangan');
-    sessionStorage.setItem('kesulitan', 'sedang');
-    const soalList = generateSesiSoal('pengurangan', 'sedang', SOAL_PER_SESI);
+    sessionStorage.setItem('kesulitan', 'mudah');
+    // Soal berurutan dari mudah → sulit (bukan acak, sesuai feedback Prof)
+    const soalList = generateSesiSoalBerurutan('pengurangan', SOAL_PER_SESI);
     latihan.mulaiSesi(soalList);
     sesiMulaiRef.current = Date.now();
   }, [latihan]);
 
   // Generate soal belajar baru
   const soalBaruBelajar = useCallback(() => {
-    const soal = generateSoal('pengurangan', 'sedang');
-    animasi.setSoal(soal.angka1, soal.angka2, 'pengurangan', 'sedang');
+    const soal = generateSoal('pengurangan', 'mudah');
+    animasi.setSoal(soal.angka1, soal.angka2, 'pengurangan', 'mudah');
   }, [animasi]);
 
   // Saat sesi latihan selesai
@@ -127,26 +121,14 @@ export default function Modul3Page() {
       >
         <h2 className="text-xl font-bold">➖ Pengurangan Meminjam</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          {layar === 'game-konsep'
-            ? 'Pahami konsep meminjam dengan balok!'
-            : layar === 'belajar'
+          {layar === 'belajar'
             ? 'Perhatikan cara meminjam (borrow)'
             : `Soal ${latihan.indexSoal + 1}/${latihan.totalSoal}`}
         </p>
       </motion.div>
 
       <AnimatePresence mode="wait">
-        {layar === 'game-konsep' ? (
-          <motion.div
-            key="game-konsep"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col items-center gap-6 w-full"
-          >
-            <DragDropBorrow onSelesai={() => setLayar('belajar')} />
-          </motion.div>
-        ) : layar === 'belajar' ? (
+        {layar === 'belajar' ? (
           <motion.div
             key="belajar"
             initial={{ opacity: 0 }}
@@ -156,11 +138,6 @@ export default function Modul3Page() {
           >
             {animasi.perhitungan && (
               <>
-                <div className="flex gap-4 items-end justify-center scale-75 origin-top -mb-8">
-                   <Base10Blocks angka={animasi.perhitungan.angka1} />
-                   <span className="text-4xl font-black text-emerald-500 mb-4">−</span>
-                   <Base10Blocks angka={animasi.perhitungan.angka2} />
-                </div>
                 <MathBoard
                   angka1={animasi.perhitungan.angka1}
                   angka2={animasi.perhitungan.angka2}

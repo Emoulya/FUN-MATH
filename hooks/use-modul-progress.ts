@@ -4,14 +4,12 @@
 // useModulProgress — Manajemen Progress Modul
 // ============================================
 // Mengelola state progress modul pembelajaran (lock/unlock/completed).
-// Saat ini menggunakan sessionStorage (MVP).
-// Migrasi ke Supabase hanya perlu mengubah loadProgress/saveProgress.
+// Sinkronisasi data ke database Supabase secara real-time.
 
 import { useState, useCallback, useEffect } from 'react';
 import type { ModulId, ModulStatus, ModulProgress } from '@/types/math';
 import {
   DEFAULT_MODUL_PROGRESS,
-  STORAGE_KEY_MODUL_PROGRESS,
   MODUL_UNLOCK_ORDER,
 } from '@/lib/constants';
 
@@ -28,50 +26,69 @@ interface UseModulProgressReturn {
   isLoading: boolean;
 }
 
-// ============================================
-// Storage Abstraction Layer
-// ============================================
-
-/** Baca progress dari localStorage per siswa */
-function loadProgress(): ModulProgress {
-  if (typeof window === 'undefined') return DEFAULT_MODUL_PROGRESS;
-
-  try {
-    const siswaId = sessionStorage.getItem('siswaId');
-    if (!siswaId) return DEFAULT_MODUL_PROGRESS;
-    const stored = localStorage.getItem(`modul_progress_${siswaId}`);
-    if (!stored) return DEFAULT_MODUL_PROGRESS;
-    return JSON.parse(stored) as ModulProgress;
-  } catch {
-    return DEFAULT_MODUL_PROGRESS;
-  }
-}
-
-/** Simpan progress ke localStorage per siswa */
-function saveProgress(progress: ModulProgress): void {
-  if (typeof window === 'undefined') return;
-  const siswaId = sessionStorage.getItem('siswaId');
-  if (!siswaId) return;
-  localStorage.setItem(`modul_progress_${siswaId}`, JSON.stringify(progress));
-}
-
-// ============================================
-// Hook
-// ============================================
-
 export function useModulProgress(): UseModulProgressReturn {
-  const [progress, setProgress] = useState<ModulProgress>(() => loadProgress());
+  const [progress, setProgress] = useState<ModulProgress>(DEFAULT_MODUL_PROGRESS);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Tandai loading selesai setelah hydration dan sinkronkan progress
+  // Load progress dari DB / localStorage
+  const loadProgress = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    const siswaId = sessionStorage.getItem('siswaId');
+    if (!siswaId) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/siswa/${siswaId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.modul_progress) {
+          setProgress(data.modul_progress);
+          localStorage.setItem(`modul_progress_${siswaId}`, JSON.stringify(data.modul_progress));
+          setIsLoading(false);
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('Error loading modul progress from DB:', err);
+    }
+
+    // Fallback ke localStorage jika fetch gagal
+    try {
+      const stored = localStorage.getItem(`modul_progress_${siswaId}`);
+      if (stored) {
+        setProgress(JSON.parse(stored) as ModulProgress);
+      }
+    } catch {}
+    setIsLoading(false);
+  }, []);
+
   useEffect(() => {
-    setProgress(loadProgress());
-    const id = requestAnimationFrame(() => setIsLoading(false));
-    return () => cancelAnimationFrame(id);
+    loadProgress();
+  }, [loadProgress]);
+
+  // Simpan progress ke DB & localStorage
+  const saveProgress = useCallback(async (updated: ModulProgress) => {
+    if (typeof window === 'undefined') return;
+    const siswaId = sessionStorage.getItem('siswaId');
+    if (!siswaId) return;
+
+    localStorage.setItem(`modul_progress_${siswaId}`, JSON.stringify(updated));
+
+    try {
+      await fetch(`/api/siswa/${siswaId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ modul_progress: updated }),
+      });
+    } catch (err) {
+      console.error('Error saving modul progress to DB:', err);
+    }
   }, []);
 
   const getStatus = useCallback(
-    (modulId: ModulId): ModulStatus => progress[modulId],
+    (modulId: ModulId): ModulStatus => progress[modulId] ?? 'locked',
     [progress],
   );
 
@@ -96,12 +113,12 @@ export function useModulProgress(): UseModulProgressReturn {
       saveProgress(updated);
       return updated;
     });
-  }, []);
+  }, [saveProgress]);
 
   const resetProgress = useCallback(() => {
     setProgress(DEFAULT_MODUL_PROGRESS);
     saveProgress(DEFAULT_MODUL_PROGRESS);
-  }, []);
+  }, [saveProgress]);
 
   return {
     progress,

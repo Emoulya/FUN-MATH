@@ -14,6 +14,9 @@ export interface Database {
           avatar_url: string | null;
           pin: string | null;
           dibuat_pada: string;
+          tutorial_step: string;
+          tutorial_done: boolean;
+          modul_progress: any;
         };
         Insert: {
           id?: string;
@@ -22,6 +25,9 @@ export interface Database {
           avatar_url?: string | null;
           pin?: string | null;
           dibuat_pada?: string;
+          tutorial_step?: string;
+          tutorial_done?: boolean;
+          modul_progress?: any;
         };
         Update: {
           id?: string;
@@ -30,6 +36,9 @@ export interface Database {
           avatar_url?: string | null;
           pin?: string | null;
           dibuat_pada?: string;
+          tutorial_step?: string;
+          tutorial_done?: boolean;
+          modul_progress?: any;
         };
       };
       sesi_latihan: {

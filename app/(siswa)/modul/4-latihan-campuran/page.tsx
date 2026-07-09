@@ -17,8 +17,8 @@ import MathBoard from '@/components/math/math-board';
 import FeedbackOverlay from '@/components/math/feedback-overlay';
 import { useLatihan } from '@/hooks/use-latihan';
 import { useModulProgress } from '@/hooks/use-modul-progress';
-import { generateSesiSoal } from '@/lib/soal-generator';
-import { shuffle } from '@/lib/utils';
+import { generateSesiSoalBerurutan } from '@/lib/soal-generator';
+
 import {
   MAX_PERCOBAAN,
   SOAL_PER_SESI,
@@ -45,9 +45,16 @@ export default function Modul4Page() {
   const sesiMulaiRef = useRef(0);
 
   useEffect(() => {
-    const soalPenjumlahan = generateSesiSoal('penjumlahan', 'sedang', SOAL_PER_SESI);
-    const soalPengurangan = generateSesiSoal('pengurangan', 'sedang', SOAL_PER_SESI);
-    const soalCampuran = shuffle([...soalPenjumlahan, ...soalPengurangan]);
+    // Soal berurutan dari mudah → sulit per operasi, lalu interleave
+    const soalPenjumlahan = generateSesiSoalBerurutan('penjumlahan', SOAL_PER_SESI);
+    const soalPengurangan = generateSesiSoalBerurutan('pengurangan', SOAL_PER_SESI);
+    // Interleave: penjumlahan, pengurangan, penjumlahan, ... (tetap teratur)
+    const soalCampuran = [];
+    const maxLen = Math.max(soalPenjumlahan.length, soalPengurangan.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (i < soalPenjumlahan.length) soalCampuran.push(soalPenjumlahan[i]);
+      if (i < soalPengurangan.length) soalCampuran.push(soalPengurangan[i]);
+    }
     latihan.mulaiSesi(soalCampuran);
     sesiMulaiRef.current = Date.now();
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -24,8 +24,14 @@ export default function CarryIndicator({ nilai, visible = true, isNew = true, hi
 
   return (
     <motion.span
-      initial={{ y: isNew ? 120 : 8, scale: isNew ? 1.5 : 1, opacity: 0 }}
+      initial={{ 
+        x: isNew ? "3.125rem" : 0, 
+        y: isNew ? "11rem" : 8, 
+        scale: isNew ? 1.5 : 1, 
+        opacity: 0 
+      }}
       animate={{ 
+        x: 0,
         y: 0, 
         scale: 1,
         opacity: 1,
@@ -33,8 +39,8 @@ export default function CarryIndicator({ nilai, visible = true, isNew = true, hi
       }}
       exit={{ y: -8, opacity: 0 }}
       transition={{ 
-        duration: isNew ? 0.6 : 0.3, 
-        ease: isNew ? [0.17, 0.89, 0.32, 1.2] : 'easeOut' // Bouncy effect when flying up
+        duration: isNew ? 0.8 : 0.3, 
+        ease: isNew ? [0.17, 0.89, 0.32, 1.1] : 'easeOut' // Bouncy effect when flying up diagonal
       }}
       className={`carry-indicator animate-slide-in-up transition-colors duration-300 rounded px-1 ${highlight ? 'font-bold' : ''}`}
       style={{

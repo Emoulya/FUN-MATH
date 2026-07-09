@@ -107,10 +107,15 @@ export default function TugasPage() {
               exit={{ opacity: 0, y: -10 }}
               className="flex flex-col gap-6"
             >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                  <ClipboardList className="w-6 h-6 text-orange-600" />
-                </div>
+              <div className="flex items-center gap-3">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="rounded-xl w-9 h-9 shrink-0"
+                  onClick={() => router.push('/pilih-operasi')}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
                 <div>
                   <h1 className="text-2xl font-bold">Daftar Tugas</h1>
                   <p className="text-muted-foreground text-sm">Pilih kategori matematika untuk melihat tugas dari guru.</p>

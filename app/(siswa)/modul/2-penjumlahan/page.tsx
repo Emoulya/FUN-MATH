@@ -17,12 +17,12 @@ import { ErrorBoundary } from 'react-error-boundary';
 import MathBoard from '@/components/math/math-board';
 import StepControls from '@/components/math/step-controls';
 import FeedbackOverlay from '@/components/math/feedback-overlay';
-import Base10Blocks from '@/components/math/base10-blocks';
-import DragDropCarry from '@/components/math/drag-drop-carry';
+
 import { useAnimasi } from '@/hooks/use-animasi';
 import { useLatihan } from '@/hooks/use-latihan';
 import { useModulProgress } from '@/hooks/use-modul-progress';
-import { generateSoal, generateSesiSoal } from '@/lib/soal-generator';
+import { useTutorial } from '@/hooks/use-tutorial';
+import { generateSoal, generateSesiSoalBerurutan } from '@/lib/soal-generator';
 import {
   MAX_PERCOBAAN,
   SOAL_PER_SESI,
@@ -34,10 +34,10 @@ type Layar = 'belajar' | 'latihan';
 /** Fallback ErrorBoundary */
 function ErrorFallback({ resetErrorBoundary }: { resetErrorBoundary: () => void }) {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
-      <span className="text-4xl">⚠️</span>
-      <p className="text-sm text-muted-foreground text-center">
-        Terjadi kesalahan. Coba refresh halaman.
+    <div className="p-4 bg-red-50 text-red-800 rounded-xl border border-red-200 text-center max-w-sm mx-auto my-10">
+      <h3 className="font-bold mb-2">Terjadi Kesalahan!</h3>
+      <p className="text-sm mb-4">
+        Ada masalah saat menampilkan modul ini.
       </p>
       <Button onClick={resetErrorBoundary}>Coba Lagi</Button>
     </div>
@@ -50,19 +50,12 @@ export default function Modul2Page() {
   const latihan = useLatihan();
   const { selesaikanModul } = useModulProgress();
   const [layar, setLayar] = useState<Layar>('belajar');
-  const [isTutorial, setIsTutorial] = useState(false);
+  const { isTutorial } = useTutorial();
   const sesiMulaiRef = useRef(0);
 
   useEffect(() => {
-    const siswaId = sessionStorage.getItem('siswaId');
-    if (siswaId) {
-      const tutorialDone = localStorage.getItem(`tutorial_done_${siswaId}`);
-      if (!tutorialDone) {
-        setIsTutorial(true);
-      }
-    }
-    const soal = generateSoal('penjumlahan', 'sedang');
-    animasi.setSoal(soal.angka1, soal.angka2, 'penjumlahan', 'sedang');
+    const soal = generateSoal('penjumlahan', 'mudah');
+    animasi.setSoal(soal.angka1, soal.angka2, 'penjumlahan', 'mudah');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -70,16 +63,17 @@ export default function Modul2Page() {
   const mulaiLatihan = useCallback(() => {
     setLayar('latihan');
     sessionStorage.setItem('operasi', 'penjumlahan');
-    sessionStorage.setItem('kesulitan', 'sedang');
-    const soalList = generateSesiSoal('penjumlahan', 'sedang', SOAL_PER_SESI);
+    sessionStorage.setItem('kesulitan', 'mudah');
+    // Soal berurutan dari mudah → sulit (bukan acak, sesuai feedback Prof)
+    const soalList = generateSesiSoalBerurutan('penjumlahan', SOAL_PER_SESI);
     latihan.mulaiSesi(soalList);
     sesiMulaiRef.current = Date.now();
   }, [latihan]);
 
   // Generate soal belajar baru
   const soalBaruBelajar = useCallback(() => {
-    const soal = generateSoal('penjumlahan', 'sedang');
-    animasi.setSoal(soal.angka1, soal.angka2, 'penjumlahan', 'sedang');
+    const soal = generateSoal('penjumlahan', 'mudah');
+    animasi.setSoal(soal.angka1, soal.angka2, 'penjumlahan', 'mudah');
   }, [animasi]);
 
   // Saat sesi latihan selesai → simpan ke DB + tandai modul selesai

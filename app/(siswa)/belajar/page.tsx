@@ -9,11 +9,12 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import MathBoard from '@/components/math/math-board';
 import StepControls from '@/components/math/step-controls';
 import { useAnimasi } from '@/hooks/use-animasi';
+import { useTutorial } from '@/hooks/use-tutorial';
 import { generateSoal } from '@/lib/soal-generator';
 import { OPERASI_LABEL } from '@/lib/constants';
 import type { Operasi, Kesulitan } from '@/types/math';
@@ -23,7 +24,9 @@ export default function BelajarPage() {
   const animasi = useAnimasi();
   const [operasi, setOperasi] = useState<Operasi>('penjumlahan');
   const [kesulitan, setKesulitan] = useState<Kesulitan>('mudah');
-  const [isTutorial, setIsTutorial] = useState(false);
+  const { isTutorial: isTutorialActive, tutorialStep, setStep } = useTutorial();
+
+  const isTutorial = isTutorialActive && tutorialStep === 'BELAJAR';
 
   // Load pilihan dari sessionStorage
   useEffect(() => {
@@ -32,24 +35,14 @@ export default function BelajarPage() {
     if (op) setOperasi(op);
     if (ks) setKesulitan(ks);
 
-    // Cek tutorial
-    const siswaId = sessionStorage.getItem('siswaId');
-    if (siswaId) {
-      const tutorialDone = localStorage.getItem(`tutorial_done_${siswaId}`);
-      if (!tutorialDone) {
-        setIsTutorial(localStorage.getItem(`tutorial_step_${siswaId}`) === 'BELAJAR');
-      }
-    }
-
     // Generate soal awal
     const soal = generateSoal(op ?? 'penjumlahan', ks ?? 'mudah');
     animasi.setSoal(soal.angka1, soal.angka2, soal.operasi, ks ?? 'mudah');
   }, []);
 
-  const handleCobaLatihan = () => {
+  const handleCobaLatihan = async () => {
     if (isTutorial) {
-      const siswaId = sessionStorage.getItem('siswaId');
-      if (siswaId) localStorage.setItem(`tutorial_step_${siswaId}`, 'LATIHAN');
+      await setStep('LATIHAN');
     }
     router.push('/latihan');
   };
@@ -62,18 +55,29 @@ export default function BelajarPage() {
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-8 p-6">
-      {/* Judul */}
+      {/* Header dengan Tombol Kembali */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center"
+        className="w-full max-w-sm flex items-center justify-between gap-4"
       >
-        <h2 className="text-xl font-bold">
-          📖 Belajar {OPERASI_LABEL[operasi]}
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Perhatikan langkah demi langkah
-        </p>
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="rounded-xl w-9 h-9 shrink-0"
+          onClick={() => router.push('/pilih-operasi')}
+          disabled={isTutorial}
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
+        <div className="text-center flex-1 pr-9">
+          <h2 className="text-xl font-bold">
+            📖 Belajar {OPERASI_LABEL[operasi]}
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Perhatikan langkah demi langkah
+          </p>
+        </div>
       </motion.div>
 
       {/* MathBoard — mode animasi */}

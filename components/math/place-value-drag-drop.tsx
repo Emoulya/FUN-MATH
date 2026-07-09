@@ -31,6 +31,18 @@ export function PlaceValueDragDrop({ angka, onBenar }: DragDropGameProps) {
     }
   };
 
+  const handleDragEndPuluhanBalik = (e: any, info: any) => {
+    if (info.offset.y < -40) {
+      setPuluhanDiWadah(prev => Math.max(prev - 1, 0));
+    }
+  };
+
+  const handleDragEndSatuanBalik = (e: any, info: any) => {
+    if (info.offset.y < -40) {
+      setSatuanDiWadah(prev => Math.max(prev - 1, 0));
+    }
+  };
+
   const isLengkap = puluhanDiWadah === puluhanBenar && satuanDiWadah === satuanBenar;
 
   const periksa = () => {
@@ -41,6 +53,7 @@ export function PlaceValueDragDrop({ angka, onBenar }: DragDropGameProps) {
     <div className="flex flex-col items-center gap-8 w-full max-w-md">
       <div className="text-center mb-4">
         <p className="text-lg font-bold text-blue-600 mb-2">Geser (Drag) balok ke wadah di bawah!</p>
+        <p className="text-xs text-slate-500">Bisa digeser balik ke atas untuk mengurangi</p>
       </div>
 
       {/* Sumber Balok */}
@@ -54,8 +67,8 @@ export function PlaceValueDragDrop({ angka, onBenar }: DragDropGameProps) {
               dragSnapToOrigin
               onDragEnd={handleDragEndPuluhan}
               className="cursor-grab active:cursor-grabbing z-10"
-              whileHover={{ scale: 1.1 }}
-              whileDrag={{ scale: 1.2, zIndex: 50 }}
+              whileHover={{ scale: 1.05 }}
+              whileDrag={{ scale: 1.1, zIndex: 50 }}
             >
               <div
                 style={{
@@ -108,6 +121,12 @@ export function PlaceValueDragDrop({ angka, onBenar }: DragDropGameProps) {
                   key={`tgt-p-${i}`}
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
+                  drag
+                  dragSnapToOrigin
+                  onDragEnd={handleDragEndPuluhanBalik}
+                  className="cursor-grab active:cursor-grabbing"
+                  whileHover={{ scale: 1.05 }}
+                  whileDrag={{ scale: 1.1, zIndex: 50 }}
                   style={{
                     width: 20,
                     height: 180,
@@ -131,6 +150,12 @@ export function PlaceValueDragDrop({ angka, onBenar }: DragDropGameProps) {
                 key={`tgt-s-${i}`}
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
+                drag
+                dragSnapToOrigin
+                onDragEnd={handleDragEndSatuanBalik}
+                className="cursor-grab active:cursor-grabbing"
+                whileHover={{ scale: 1.1 }}
+                whileDrag={{ scale: 1.2, zIndex: 50 }}
                 style={{
                   width: 20,
                   height: 18,

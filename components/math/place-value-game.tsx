@@ -13,6 +13,7 @@ import { Check, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Base10Blocks from '@/components/math/base10-blocks';
 import { PlaceValueDragDrop } from '@/components/math/place-value-drag-drop';
+import PlaceValueMatchGame from '@/components/math/place-value-match-game';
 import { MIN_SOAL_GAME } from '@/lib/constants';
 
 interface PlaceValueGameProps {
@@ -39,6 +40,7 @@ export default function PlaceValueGame({
   const [inputSatuan, setInputSatuan] = useState('');
   const [inputAngka, setInputAngka] = useState('');
   const [soalState, setSoalState] = useState<SoalState>('mengerjakan');
+  const [stage, setStage] = useState<'mencocokkan' | 'gameplay'>('mencocokkan');
 
   const puluhanRef = useRef<HTMLInputElement>(null);
   const satuanRef = useRef<HTMLInputElement>(null);
@@ -51,10 +53,10 @@ export default function PlaceValueGame({
 
   // Focus input puluhan saat soal baru
   useEffect(() => {
-    if (soalState === 'mengerjakan') {
+    if (soalState === 'mengerjakan' && stage === 'gameplay') {
       puluhanRef.current?.focus();
     }
-  }, [angka, soalState]);
+  }, [angka, soalState, stage]);
 
   /** Periksa jawaban */
   const periksaJawaban = useCallback(() => {
@@ -117,6 +119,11 @@ export default function PlaceValueGame({
       periksaJawaban();
     }
   };
+
+  // 1. Tampilkan Game Mencocokkan terlebih dahulu
+  if (stage === 'mencocokkan') {
+    return <PlaceValueMatchGame onBenar={() => setStage('gameplay')} />;
+  }
 
   // Tampilan selesai
   if (selesaiSemua) {

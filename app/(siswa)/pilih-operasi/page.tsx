@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, PenTool, ArrowLeft, ClipboardList, Map, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import OperationCard from '@/components/math/operation-card';
+import { useTutorial } from '@/hooks/use-tutorial';
 import type { Operasi, Kesulitan } from '@/types/math';
 import { OPERASI_LABEL, KESULITAN_LIST, KESULITAN_LABEL } from '@/lib/constants';
 
@@ -19,67 +20,40 @@ export default function PilihOperasiPage() {
   const router = useRouter();
   const [operasiTerpilih, setOperasiTerpilih] = useState<Operasi | null>(null);
   const [kesulitanTerpilih, setKesulitanTerpilih] = useState<Kesulitan | null>(null);
-  const [isTutorial, setIsTutorial] = useState(false);
-  const [tutorialStep, setTutorialStep] = useState<string | null>(null);
-
-  useEffect(() => {
-    const siswaId = sessionStorage.getItem('siswaId');
-    if (siswaId) {
-      const tutorialDone = localStorage.getItem(`tutorial_done_${siswaId}`);
-      if (!tutorialDone) {
-        setIsTutorial(true);
-        const step = localStorage.getItem(`tutorial_step_${siswaId}`) || 'PETA_BELAJAR';
-        setTutorialStep(step);
-      }
-    }
-  }, []);
+  const { isTutorial, tutorialStep, setStep, resetTutorial } = useTutorial();
 
   // Sinkronisasi reaktif tutorialStep dengan state halaman (menghindari soft lock akibat Back/Logout/Refresh)
   useEffect(() => {
-    const siswaId = sessionStorage.getItem('siswaId');
-    if (!siswaId || !isTutorial || !tutorialStep) return;
+    if (!isTutorial || !tutorialStep) return;
 
     if (!operasiTerpilih && tutorialStep !== 'PETA_BELAJAR' && tutorialStep !== 'PILIH_OPERASI') {
-      setTutorialStep('PILIH_OPERASI');
-      localStorage.setItem(`tutorial_step_${siswaId}`, 'PILIH_OPERASI');
+      setStep('PILIH_OPERASI');
     } else if (operasiTerpilih && !kesulitanTerpilih && tutorialStep === 'PILIH_MODE') {
-      setTutorialStep('PILIH_KESULITAN');
-      localStorage.setItem(`tutorial_step_${siswaId}`, 'PILIH_KESULITAN');
+      setStep('PILIH_KESULITAN');
     }
-  }, [operasiTerpilih, kesulitanTerpilih, isTutorial, tutorialStep]);
+  }, [operasiTerpilih, kesulitanTerpilih, isTutorial, tutorialStep, setStep]);
 
-  const handleUlangTutorial = () => {
-    const siswaId = sessionStorage.getItem('siswaId');
-    if (siswaId) {
-      localStorage.removeItem(`tutorial_done_${siswaId}`);
-      localStorage.setItem(`tutorial_step_${siswaId}`, 'PETA_BELAJAR');
-      localStorage.removeItem(`modul_progress_${siswaId}`);
-    }
-    setIsTutorial(true);
-    setTutorialStep('PETA_BELAJAR');
+  const handleUlangTutorial = async () => {
+    await resetTutorial();
     setOperasiTerpilih(null);
     setKesulitanTerpilih(null);
   };
 
-  const handlePilihOperasi = (operasi: Operasi) => {
+  const handlePilihOperasi = async (operasi: Operasi) => {
     setOperasiTerpilih(operasi);
     if (isTutorial && tutorialStep === 'PILIH_OPERASI') {
-      setTutorialStep('PILIH_KESULITAN');
-      const siswaId = sessionStorage.getItem('siswaId');
-      if (siswaId) localStorage.setItem(`tutorial_step_${siswaId}`, 'PILIH_KESULITAN');
+      await setStep('PILIH_KESULITAN');
     }
   };
 
-  const handlePilihKesulitan = (k: Kesulitan) => {
+  const handlePilihKesulitan = async (k: Kesulitan) => {
     setKesulitanTerpilih(k);
     if (isTutorial && tutorialStep === 'PILIH_KESULITAN') {
-      setTutorialStep('PILIH_MODE');
-      const siswaId = sessionStorage.getItem('siswaId');
-      if (siswaId) localStorage.setItem(`tutorial_step_${siswaId}`, 'PILIH_MODE');
+      await setStep('PILIH_MODE');
     }
   };
 
-  const handlePilihMode = (mode: 'belajar' | 'latihan') => {
+  const handlePilihMode = async (mode: 'belajar' | 'latihan') => {
     if (!operasiTerpilih || !kesulitanTerpilih) return;
 
     // Simpan pilihan ke sessionStorage
@@ -87,8 +61,7 @@ export default function PilihOperasiPage() {
     sessionStorage.setItem('kesulitan', kesulitanTerpilih);
 
     if (isTutorial && tutorialStep === 'PILIH_MODE') {
-      const siswaId = sessionStorage.getItem('siswaId');
-      if (siswaId) localStorage.setItem(`tutorial_step_${siswaId}`, 'BELAJAR');
+      await setStep('BELAJAR');
       router.push('/belajar');
       return;
     }

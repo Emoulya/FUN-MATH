@@ -241,7 +241,7 @@ export default function PilihSiswaClient({ initialSiswaList }: { initialSiswaLis
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="mt-2 rounded-full text-blue-600 border-blue-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 gap-2 shadow-sm font-bold animate-pulse">
                 <Info className="w-4 h-4" />
-                Tolong baca ini
+                Petunjuk Penggunaan
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
@@ -257,7 +257,7 @@ export default function PilihSiswaClient({ initialSiswaList }: { initialSiswaLis
                   <li>Masukkan PIN sesuai yang diberikan oleh guru.</li>
                   <li>Setelah itu pilih bagian <strong>Belajar</strong> di paling atas dan selesaikan semua tutorialnya.</li>
                   <li>Setelah semua tutorial selesai masuk ke bagian <strong>Penjumlahan</strong> atau <strong>Pengurangan</strong>, di situ kamu bisa memilih tingkat kesulitan dan belajar terlebih dahulu.</li>
-                  <li>Dan jangan lupa mengerjakan tugas dari ibu guru!</li>
+                  <li>Dan jangan lupa mengerjakan tugas dari guru!</li>
                 </ol>
               </div>
             </DialogContent>
