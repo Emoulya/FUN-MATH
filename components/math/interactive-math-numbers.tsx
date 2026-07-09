@@ -250,12 +250,25 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
               initial={{ opacity: 0, y: 10, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ delay: 0.3 }}
-              className="flex flex-col items-center gap-4 p-4 bg-emerald-50 rounded-xl border border-emerald-200 mt-2"
+              className="flex flex-col items-center gap-3 p-5 bg-emerald-50 rounded-2xl border border-emerald-200 mt-2 w-full text-center"
             >
-              <div className="text-base font-bold text-center text-emerald-800">
-                Hasilnya: {angka1} {simbol} {angka2} = {hasilAkhir}
+              <div className="flex flex-col gap-1.5 text-sm text-emerald-800">
+                <div className="font-semibold">
+                  Nilai Puluhan: <span style={{ color: 'var(--block-puluhan)' }}><b>{hasilPuluhan * 10}</b></span>
+                  &nbsp;&bull;&nbsp;
+                  Nilai Satuan: <span style={{ color: 'var(--block-satuan)' }}><b>{hasilSatuan}</b></span>
+                </div>
+                <div className="text-xs text-emerald-700/80 mt-1">
+                  Gabungkan puluhan dan satuan:
+                </div>
+                <div className="text-2xl font-black text-emerald-950 my-1 tabular-nums">
+                  {hasilPuluhan * 10} + {hasilSatuan} = {hasilAkhir}
+                </div>
               </div>
-              <Button onClick={onSelesai} size="lg" className="gap-2 px-8 shadow-md">
+              <div className="text-base font-bold text-emerald-900 border-t border-emerald-200/60 pt-3 w-full">
+                Hasil Akhir: {angka1} {simbol} {angka2} = {hasilAkhir}
+              </div>
+              <Button onClick={onSelesai} size="lg" className="gap-2 px-8 shadow-md mt-1">
                 Lanjut Belajar
               </Button>
             </motion.div>

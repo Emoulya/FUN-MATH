@@ -6,30 +6,19 @@
 // Menampilkan semua modul dalam urutan linear dengan lock system.
 // Siswa hanya bisa mengakses modul yang sudah unlocked.
 
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { RotateCcw, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ModulCard from '@/components/math/modul-card';
 import { useModulProgress } from '@/hooks/use-modul-progress';
+import { useTutorial } from '@/hooks/use-tutorial';
 import { MODUL_LIST } from '@/lib/constants';
 
 export default function PetaModulPage() {
   const router = useRouter();
-  const { getStatus, resetProgress, isLoading } = useModulProgress();
-
-  const [isTutorial, setIsTutorial] = useState(false);
-
-  useEffect(() => {
-    const siswaId = sessionStorage.getItem('siswaId');
-    if (siswaId) {
-      const tutorialDone = localStorage.getItem(`tutorial_done_${siswaId}`);
-      if (!tutorialDone) {
-        setIsTutorial(true);
-      }
-    }
-  }, []);
+  const { getStatus, resetProgress, isLoading: isProgressLoading } = useModulProgress();
+  const { isTutorial, setStep, isLoading: isTutorialLoading } = useTutorial();
 
   // Hitung progress keseluruhan
   const totalModul = MODUL_LIST.length;
@@ -38,6 +27,15 @@ export default function PetaModulPage() {
 
   // Cari modul pertama yang belum selesai untuk target tutorial
   const targetTutorialId = MODUL_LIST.find((m) => getStatus(m.id) !== 'completed')?.id || null;
+
+  const handleKembali = async () => {
+    if (isTutorial && !targetTutorialId) {
+      await setStep('PILIH_OPERASI');
+    }
+    router.push('/pilih-operasi');
+  };
+
+  const isLoading = isProgressLoading || isTutorialLoading;
 
   if (isLoading) {
     return (
@@ -73,15 +71,7 @@ export default function PetaModulPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => {
-              if (isTutorial && !targetTutorialId) {
-                const siswaId = sessionStorage.getItem('siswaId');
-                if (siswaId) {
-                  localStorage.setItem(`tutorial_step_${siswaId}`, 'PILIH_OPERASI');
-                }
-              }
-              router.push('/pilih-operasi');
-            }}
+            onClick={handleKembali}
             className="text-muted-foreground gap-1.5 hover:text-primary"
           >
             <ArrowLeft className="w-4 h-4" />

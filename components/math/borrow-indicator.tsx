@@ -17,6 +17,8 @@ interface BorrowIndicatorProps {
   onlyNewValue?: boolean;
   /** Apakah indicator visible */
   visible?: boolean;
+  /** Apakah borrow ini baru aktif/baru pada langkah saat ini */
+  isNew?: boolean;
 }
 
 export default function BorrowIndicator({
@@ -24,6 +26,7 @@ export default function BorrowIndicator({
   nilaiBaru,
   onlyNewValue = false,
   visible = true,
+  isNew = false,
 }: BorrowIndicatorProps) {
   if (!visible) return null;
 
@@ -41,9 +44,20 @@ export default function BorrowIndicator({
       )}
       {/* Angka baru */}
       <motion.span
-        initial={{ scale: 0.5, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.3 }}
+        initial={{ 
+          x: isNew ? "-3.125rem" : 0, 
+          scale: isNew ? 1.5 : 1, 
+          opacity: 0 
+        }}
+        animate={{ 
+          x: 0, 
+          scale: 1, 
+          opacity: 1 
+        }}
+        transition={{ 
+          duration: isNew ? 0.8 : 0.3,
+          ease: isNew ? [0.17, 0.89, 0.32, 1.1] : 'easeOut'
+        }}
         className="text-xs font-bold"
         style={{ color: 'var(--borrow-color)' }}
       >

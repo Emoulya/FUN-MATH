@@ -75,6 +75,7 @@ export default function InteractiveMathBlocks({ angka1, angka2, operasi, onSeles
 
   const [interactedSatuanIds, setInteractedSatuanIds] = useState<number[]>([]);
   const [interactedPuluhanIds, setInteractedPuluhanIds] = useState<number[]>([]);
+  const [isAnimatingOtomatis, setIsAnimatingOtomatis] = useState(false);
 
   // step logic
   const step = interactedSatuanIds.length < targetSatuan 
@@ -84,34 +85,65 @@ export default function InteractiveMathBlocks({ angka1, angka2, operasi, onSeles
       : 'selesai';
 
   const handleSatuanClick = (id: number) => {
-    if (step !== 'satuan') return;
+    if (step !== 'satuan' || isAnimatingOtomatis) return;
     if (!interactedSatuanIds.includes(id) && interactedSatuanIds.length < targetSatuan) {
       setInteractedSatuanIds(prev => [...prev, id]);
     }
   };
 
   const handlePuluhanClick = (id: number) => {
-    if (step !== 'puluhan') return;
+    if (step !== 'puluhan' || isAnimatingOtomatis) return;
     if (!interactedPuluhanIds.includes(id) && interactedPuluhanIds.length < targetPuluhan) {
       setInteractedPuluhanIds(prev => [...prev, id]);
     }
   };
 
   const handleOtomatis = () => {
+    if (isAnimatingOtomatis) return;
+    setIsAnimatingOtomatis(true);
+
     if (step === 'satuan') {
-      const newIds = [...interactedSatuanIds];
-      const maxIds = isPenjumlahan ? targetSatuan : satuan1;
-      for (let i = 0; i < maxIds && newIds.length < targetSatuan; i++) {
-        if (!newIds.includes(i)) newIds.push(i);
-      }
-      setInteractedSatuanIds(newIds);
+      let count = interactedSatuanIds.length;
+      const timer = setInterval(() => {
+        if (count < targetSatuan) {
+          setInteractedSatuanIds(prev => {
+            const next = [...prev];
+            const limit = isPenjumlahan ? targetSatuan : satuan1;
+            for (let i = 0; i < limit; i++) {
+              if (!next.includes(i)) {
+                next.push(i);
+                break;
+              }
+            }
+            return next;
+          });
+          count++;
+        } else {
+          clearInterval(timer);
+          setIsAnimatingOtomatis(false);
+        }
+      }, 500);
     } else if (step === 'puluhan') {
-      const newIds = [...interactedPuluhanIds];
-      const maxIds = isPenjumlahan ? targetPuluhan : puluhan1;
-      for (let i = 0; i < maxIds && newIds.length < targetPuluhan; i++) {
-        if (!newIds.includes(i)) newIds.push(i);
-      }
-      setInteractedPuluhanIds(newIds);
+      let count = interactedPuluhanIds.length;
+      const timer = setInterval(() => {
+        if (count < targetPuluhan) {
+          setInteractedPuluhanIds(prev => {
+            const next = [...prev];
+            const limit = isPenjumlahan ? targetPuluhan : puluhan1;
+            for (let i = 0; i < limit; i++) {
+              if (!next.includes(i)) {
+                next.push(i);
+                break;
+              }
+            }
+            return next;
+          });
+          count++;
+        } else {
+          clearInterval(timer);
+          setIsAnimatingOtomatis(false);
+        }
+      }, 500);
     }
   };
 
@@ -158,8 +190,8 @@ export default function InteractiveMathBlocks({ angka1, angka2, operasi, onSeles
         <p className="font-medium text-blue-700/80">{instruksi}</p>
         
         {step !== 'selesai' && (
-          <Button onClick={handleOtomatis} variant="secondary" size="sm" className="mt-3 gap-2 bg-white/80 hover:bg-white">
-            <Wand2 className="w-4 h-4" /> Kerjakan Otomatis
+          <Button onClick={handleOtomatis} disabled={isAnimatingOtomatis} variant="secondary" size="sm" className="mt-3 gap-2 bg-white/80 hover:bg-white">
+            <Wand2 className="w-4 h-4" /> {isAnimatingOtomatis ? 'Sedang Berjalan...' : 'Kerjakan Otomatis'}
           </Button>
         )}
       </div>
@@ -186,6 +218,8 @@ export default function InteractiveMathBlocks({ angka1, angka2, operasi, onSeles
                       className={isClickable ? 'cursor-pointer' : ''}
                       whileHover={isClickable ? { scale: 1.05 } : {}}
                       whileTap={isClickable ? { scale: 0.95 } : {}}
+                      animate={isAdded ? { x: [40, 0], opacity: [0, 1] } : {}}
+                      transition={{ duration: 0.5 }}
                     >
                       <PuluhanBlock ghost={!isAdded} />
                     </motion.div>
@@ -205,7 +239,8 @@ export default function InteractiveMathBlocks({ angka1, angka2, operasi, onSeles
                       className={isClickable ? 'cursor-pointer' : ''}
                       whileHover={isClickable ? { scale: 1.05, y: -5 } : {}}
                       whileTap={isClickable ? { scale: 0.95 } : {}}
-                      animate={{ opacity: isRemoved ? 0 : 1, scale: isRemoved ? 0.8 : 1 }}
+                      animate={{ opacity: isRemoved ? 0 : 1, y: isRemoved ? 50 : 0, scale: isRemoved ? 0.8 : 1 }}
+                      transition={{ duration: 0.5 }}
                     >
                       <PuluhanBlock />
                     </motion.div>
@@ -244,6 +279,8 @@ export default function InteractiveMathBlocks({ angka1, angka2, operasi, onSeles
                       className={isClickable ? 'cursor-pointer' : ''}
                       whileHover={isClickable ? { scale: 1.1 } : {}}
                       whileTap={isClickable ? { scale: 0.9 } : {}}
+                      animate={isAdded ? { x: [40, 0], opacity: [0, 1] } : {}}
+                      transition={{ duration: 0.5 }}
                     >
                       <SatuanBlock ghost={!isAdded} />
                     </motion.div>
@@ -263,7 +300,8 @@ export default function InteractiveMathBlocks({ angka1, angka2, operasi, onSeles
                       className={isClickable ? 'cursor-pointer' : ''}
                       whileHover={isClickable ? { scale: 1.1, y: -2 } : {}}
                       whileTap={isClickable ? { scale: 0.9 } : {}}
-                      animate={{ opacity: isRemoved ? 0 : 1, scale: isRemoved ? 0.5 : 1 }}
+                      animate={{ opacity: isRemoved ? 0 : 1, y: isRemoved ? 50 : 0, scale: isRemoved ? 0.5 : 1 }}
+                      transition={{ duration: 0.5 }}
                     >
                       <SatuanBlock />
                     </motion.div>
@@ -287,15 +325,28 @@ export default function InteractiveMathBlocks({ angka1, angka2, operasi, onSeles
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center gap-4 mt-4"
+            className="flex flex-col items-center gap-4 mt-4 bg-emerald-50/50 p-6 rounded-2xl border border-emerald-100 max-w-sm text-center"
           >
-            <div className="flex items-center gap-2 text-emerald-600 font-bold bg-emerald-50 px-6 py-3 rounded-full border border-emerald-200 text-lg">
-              <CheckCircle2 className="w-6 h-6" />
+            <div className="flex flex-col gap-1.5 text-sm text-emerald-800">
+              <div className="font-semibold">
+                Nilai Puluhan: <span style={{ color: 'var(--block-puluhan)' }}><b>{isPenjumlahan ? puluhan1 * 10 + interactedPuluhanIds.length * 10 : puluhan1 * 10 - interactedPuluhanIds.length * 10}</b></span>
+                &nbsp;&bull;&nbsp;
+                Nilai Satuan: <span style={{ color: 'var(--block-satuan)' }}><b>{isPenjumlahan ? satuan1 + interactedSatuanIds.length : satuan1 - interactedSatuanIds.length}</b></span>
+              </div>
+              <div className="text-xs text-emerald-700/80 mt-1">
+                Gabungkan puluhan dan satuan:
+              </div>
+              <div className="text-2xl font-black text-emerald-950 my-1 tabular-nums">
+                {isPenjumlahan ? puluhan1 * 10 + interactedPuluhanIds.length * 10 : puluhan1 * 10 - interactedPuluhanIds.length * 10} + {isPenjumlahan ? satuan1 + interactedSatuanIds.length : satuan1 - interactedSatuanIds.length} = {isPenjumlahan ? angka1 + angka2 : angka1 - angka2}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-emerald-600 font-bold text-base border-t border-emerald-200/60 pt-3 w-full justify-center">
+              <CheckCircle2 className="w-5 h-5" />
               <span>
-                Hasilnya adalah {isPenjumlahan ? angka1 + angka2 : angka1 - angka2}!
+                Hasil Akhir: {isPenjumlahan ? angka1 + angka2 : angka1 - angka2}
               </span>
             </div>
-            <Button onClick={onSelesai} size="lg" className="gap-2 px-8 shadow-md">
+            <Button onClick={onSelesai} size="lg" className="gap-2 px-8 shadow-md w-full mt-1">
               Lanjut ke Perhitungan Angka
             </Button>
           </motion.div>

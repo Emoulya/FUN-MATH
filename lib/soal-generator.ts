@@ -23,16 +23,16 @@ interface RangeAngka {
  */
 const RANGE_PER_KESULITAN: Record<Kesulitan, { angka1: RangeAngka; angka2: RangeAngka }> = {
   mudah: {
-    angka1: { min: 10, max: 25 },
-    angka2: { min: 10, max: 25 },
+    angka1: { min: 11, max: 19 },
+    angka2: { min: 2, max: 9 },
   },
   sedang: {
     angka1: { min: 15, max: 30 },
     angka2: { min: 10, max: 20 },
   },
   sulit: {
-    angka1: { min: 20, max: 35 },
-    angka2: { min: 10, max: 15 },
+    angka1: { min: 20, max: 50 },
+    angka2: { min: 15, max: 35 },
   },
 };
 
@@ -205,4 +205,43 @@ export function isValidSoal(soal: Soal): boolean {
   if (operasi === 'pengurangan' && angka1 < angka2) return false;
 
   return true;
+}
+
+/**
+ * Generate soal berurutan dari mudah → sedang → sulit.
+ * Digunakan di Peta Belajar agar soal tidak acak dan progresif.
+ * Soal acak hanya digunakan di evaluasi/latihan bebas.
+ */
+export function generateSesiSoalBerurutan(
+  operasi: Operasi,
+  jumlah: number
+): Soal[] {
+  const soalList: Soal[] = [];
+  const seen = new Set<string>();
+
+  // Bagi soal menjadi 3 grup: mudah, sedang, sulit
+  const perLevel = Math.ceil(jumlah / 3);
+  const levels: Kesulitan[] = ['mudah', 'sedang', 'sulit'];
+
+  for (const level of levels) {
+    const target = Math.min(perLevel, jumlah - soalList.length);
+    if (target <= 0) break;
+
+    for (let i = 0; i < target; i++) {
+      let soal: Soal;
+      let key: string;
+      let attempts = 0;
+
+      do {
+        soal = generateSoal(operasi, level);
+        key = `${soal.angka1}-${soal.angka2}`;
+        attempts++;
+      } while (seen.has(key) && attempts < 50);
+
+      seen.add(key);
+      soalList.push(soal);
+    }
+  }
+
+  return soalList;
 }

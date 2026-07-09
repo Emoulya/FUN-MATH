@@ -378,6 +378,7 @@ export default function MathBoard({
           const cState = mode === 'latihan' && operasi === 'perkalian'
             ? (semuaParsialSelesai ? carryJawabanState?.[kolom] : barisPerkalianCarryJawaban?.[barisLatihanAktifIdx]?.[kolom])
             : carryJawabanState?.[kolom];
+
           const isCarryActive = (() => {
             if (langkahAktif === undefined) return false;
             if (langkahAktif === perhitungan.langkahLangkah.length - 1) return false;
@@ -395,6 +396,13 @@ export default function MathBoard({
               langkah.carry > 0;
 
             return isNewlyGenerated || isBeingUsed;
+          })();
+
+          const isBorrowActive = (() => {
+            if (langkahAktif === undefined) return false;
+            const langkah = perhitungan.langkahLangkah[langkahAktif];
+            if (!langkah) return false;
+            return langkah.kolom === kolom && langkah.borrow === true;
           })();
 
           return (
@@ -416,8 +424,8 @@ export default function MathBoard({
                       disabled={isCarryDisabled(kolom)}
                       onFocusNext={() => {
                         const inputId = operasi === 'perkalian' && !semuaParsialSelesai
-                          ? `input-parsial-${barisLatihanAktifIdx}-${kolom}`
-                          : `input-kolom-${kolom}`;
+                           ? `input-parsial-${barisLatihanAktifIdx}-${kolom}`
+                           : `input-kolom-${kolom}`;
                         const nextInput = document.getElementById(inputId);
                         if (nextInput) (nextInput as HTMLInputElement).focus();
                       }}
@@ -432,6 +440,7 @@ export default function MathBoard({
                   nilaiAsli={borrow.nilaiSebelum}
                   nilaiBaru={borrow.nilaiSesudah}
                   onlyNewValue={true}
+                  isNew={isBorrowActive}
                 />
               )}
             </div>

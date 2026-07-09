@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { RotateCcw, Home, CheckCircle2, XCircle, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTutorial } from '@/hooks/use-tutorial';
 import { OPERASI_LABEL, OPERASI_SIMBOL, REWARD_EMOJI } from '@/lib/constants';
 import type { RekapSoal, Operasi } from '@/types/math';
 
@@ -21,15 +22,13 @@ export default function RekapPage() {
   const [isTutorialSelesai, setIsTutorialSelesai] = useState(false);
   const [rekapSource, setRekapSource] = useState<string | null>(null);
   const [fromModul, setFromModul] = useState<string | null>(null);
+  const { isTutorial, tutorialStep, completeTutorial } = useTutorial();
 
   useEffect(() => {
     const rekapJson = sessionStorage.getItem('rekap');
     const op = sessionStorage.getItem('operasi') as Operasi | null;
-    const siswaId = sessionStorage.getItem('siswaId');
     const source = sessionStorage.getItem('rekapSource');
     const fModul = sessionStorage.getItem('fromModul');
-    
-    const isTutorial = siswaId ? localStorage.getItem(`tutorial_step_${siswaId}`) === 'LATIHAN' : false;
     
     if (rekapJson) {
       setRekap(JSON.parse(rekapJson));
@@ -37,13 +36,14 @@ export default function RekapPage() {
     if (op) setOperasi(op);
     if (source) setRekapSource(source);
     if (fModul) setFromModul(fModul);
-    
-    if (isTutorial && siswaId) {
-      setIsTutorialSelesai(true);
-      localStorage.setItem(`tutorial_done_${siswaId}`, 'true');
-      localStorage.removeItem(`tutorial_step_${siswaId}`);
-    }
   }, []);
+
+  useEffect(() => {
+    if (isTutorial && tutorialStep === 'LATIHAN') {
+      setIsTutorialSelesai(true);
+      completeTutorial();
+    }
+  }, [isTutorial, tutorialStep, completeTutorial]);
 
   // Hitung skor
   const totalSoal = rekap.length;
