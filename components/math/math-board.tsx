@@ -668,13 +668,24 @@ export default function MathBoard({
                       : l.kolom === kolom
                   );
 
+              let textToRender: string | number = '';
+              if (isRevealed) {
+                const step = langkahAktif !== undefined ? perhitungan.langkahLangkah[langkahAktif] : null;
+                // Tampilkan hasil mentah (contoh: 10) jika sedang di langkah observasi sebelum di-carry
+                if (step && step.kolom === kolom && (operasi !== 'perkalian' || step.barisPerkalianIdx === undefined)) {
+                  textToRender = step.hasil;
+                } else {
+                  textToRender = paddedHasil[kolom];
+                }
+              }
+
               return (
                 <motion.div
                   key={`animasi-${kolom}`}
                   className="math-digit font-extrabold"
                   style={{ color: 'var(--primary)' }}
                 >
-                  {isRevealed ? paddedHasil[kolom] : ''}
+                  {isRevealed ? textToRender : ''}
                 </motion.div>
               );
             }

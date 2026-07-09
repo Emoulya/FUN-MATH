@@ -20,7 +20,12 @@ export default function PilihOperasiPage() {
   const router = useRouter();
   const [operasiTerpilih, setOperasiTerpilih] = useState<Operasi | null>(null);
   const [kesulitanTerpilih, setKesulitanTerpilih] = useState<Kesulitan | null>(null);
+  const [isTestUser, setIsTestUser] = useState(false);
   const { isTutorial, tutorialStep, setStep, resetTutorial } = useTutorial();
+
+  useEffect(() => {
+    setIsTestUser(sessionStorage.getItem('siswaNama') === 'test');
+  }, []);
 
   // Sinkronisasi reaktif tutorialStep dengan state halaman (menghindari soft lock akibat Back/Logout/Refresh)
   useEffect(() => {
@@ -81,15 +86,17 @@ export default function PilihOperasiPage() {
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-6 relative">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleUlangTutorial}
-        className="absolute top-4 left-4 z-50 bg-white/50 hover:bg-white text-muted-foreground shadow-sm rounded-full font-bold"
-      >
-        <RotateCcw className="w-4 h-4 mr-2" />
-        Ulang Tutorial
-      </Button>
+      {!isTestUser && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleUlangTutorial}
+          className="absolute top-4 left-4 z-50 bg-white/50 hover:bg-white text-muted-foreground shadow-sm rounded-full font-bold"
+        >
+          <RotateCcw className="w-4 h-4 mr-2" />
+          Ulang Tutorial
+        </Button>
+      )}
 
       <AnimatePresence mode="wait">
         {!operasiTerpilih ? (

@@ -69,24 +69,45 @@ export function solveAddition(a: number, b: number): HasilPerhitungan {
     const carryBaru = Math.floor(jumlah / 10);
 
     const namaKolom = ['satuan', 'puluhan', 'ratusan', 'ribuan'][i] ?? `kolom-${i}`;
-    let penjelasan = `Jumlahkan digit atas <b>${d1}</b> dengan digit bawah <b>${d2}</b>`;
-    if (carry > 0) penjelasan += ` ditambah simpanan <b>${carry}</b>`;
-    penjelasan += ` menjadi <b>${jumlah}</b>.`;
-    if (carryBaru > 0) {
-      penjelasan += ` Karena hasil &ge; 10, tulis <b>${hasilDigit}</b> di bawah, lalu simpan <b>${carryBaru}</b> di atas kolom berikutnya.`;
-    } else {
-      penjelasan += ` Tulis hasil <b>${hasilDigit}</b> di bawah.`;
-    }
+    let penjelasan1 = `Jumlahkan digit atas <b>${d1}</b> dengan digit bawah <b>${d2}</b>`;
+    if (carry > 0) penjelasan1 += ` ditambah simpanan <b>${carry}</b>`;
+    penjelasan1 += ` menjadi <b>${jumlah}</b>.`;
 
-    langkahLangkah.push({
-      kolom: i,
-      nilaiDigit1: d1,
-      nilaiDigit2: d2,
-      carry,
-      hasil: hasilDigit,
-      carryBaru: carryBaru > 0 ? carryBaru : undefined,
-      penjelasan: `Kolom <b>${namaKolom}</b>: ${penjelasan}`,
-    });
+    if (carryBaru > 0) {
+      // Step 1: Hitung jumlah
+      langkahLangkah.push({
+        kolom: i,
+        nilaiDigit1: d1,
+        nilaiDigit2: d2,
+        carry,
+        hasil: jumlah,
+        carryBaru: undefined,
+        penjelasan: `Kolom <b>${namaKolom}</b>: ${penjelasan1}`,
+      });
+
+      // Step 2: Simpan carry
+      const penjelasan2 = `Karena hasil &ge; 10, tulis <b>${hasilDigit}</b> di bawah, lalu simpan <b>${carryBaru}</b> di atas kolom berikutnya.`;
+      langkahLangkah.push({
+        kolom: i,
+        nilaiDigit1: d1,
+        nilaiDigit2: d2,
+        carry,
+        hasil: hasilDigit,
+        carryBaru,
+        penjelasan: `Kolom <b>${namaKolom}</b>: ${penjelasan2}`,
+      });
+    } else {
+      const penjelasan3 = ` Tulis hasil <b>${hasilDigit}</b> di bawah.`;
+      langkahLangkah.push({
+        kolom: i,
+        nilaiDigit1: d1,
+        nilaiDigit2: d2,
+        carry,
+        hasil: hasilDigit,
+        carryBaru: undefined,
+        penjelasan: `Kolom <b>${namaKolom}</b>: ${penjelasan1}${penjelasan3}`,
+      });
+    }
 
     carry = carryBaru;
   }

@@ -153,10 +153,14 @@ export function useTutorial(): UseTutorialReturn {
     }
   }, [siswaId]);
 
+  // Cek apakah ini akun test
+  const isTestAccount = typeof window !== 'undefined' ? sessionStorage.getItem('siswaNama') === 'test' : false;
+  const finalTutorialDone = isTestAccount ? true : tutorialDone;
+
   return {
-    isTutorial: !tutorialDone,
-    tutorialStep,
-    tutorialDone,
+    isTutorial: !finalTutorialDone,
+    tutorialStep: isTestAccount ? 'SELESAI' : tutorialStep,
+    tutorialDone: finalTutorialDone,
     isLoading,
     setStep,
     completeTutorial,

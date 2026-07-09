@@ -125,10 +125,10 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
             {step === 'puluhan' && !puluhanProcessed && puluhan2 > 0 && (
               <motion.div 
                 className="absolute -top-10 text-primary text-4xl"
-                animate={isPenjumlahan ? { y: [0, -8, 0] } : { x: [0, 8, 0] }}
+                animate={{ y: [0, 8, 0] }}
                 transition={{ repeat: Infinity, duration: 1 }}
               >
-                {isPenjumlahan ? '↑' : '→'}
+                ↓
               </motion.div>
             )}
 
@@ -143,18 +143,16 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
               </motion.div>
             )}
 
-            <AnimatePresence>
-              {(!puluhanProcessed || isPenjumlahan) && puluhan2 > 0 && (
-                <motion.div
-                  className={`relative z-10 w-full rounded-lg ${step === 'puluhan' && !puluhanProcessed ? 'cursor-pointer hover:scale-110 text-primary bg-primary/10' : ''}`}
-                  onClick={() => step === 'puluhan' && handlePuluhanClick()}
-                  exit={isPenjumlahan ? undefined : { x: 60, opacity: 0 }}
-                  transition={{ duration: 0.5, ease: "easeInOut" }}
-                >
-                  {puluhan2}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {puluhan2 > 0 && (
+              <motion.div
+                className={`relative z-10 w-full rounded-lg ${step === 'puluhan' && !puluhanProcessed ? 'cursor-pointer hover:scale-110 text-primary bg-primary/10' : ''}`}
+                onClick={() => step === 'puluhan' && handlePuluhanClick()}
+                animate={!isPenjumlahan && puluhanProcessed ? { opacity: 0.3 } : {}}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+              >
+                {puluhan2}
+              </motion.div>
+            )}
           </div>
           
           <div className="relative text-center flex justify-center items-center">
@@ -167,10 +165,10 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
             {step === 'satuan' && !satuanProcessed && (
               <motion.div 
                 className="absolute -top-10 text-primary text-4xl"
-                animate={isPenjumlahan ? { y: [0, -8, 0] } : { x: [0, 8, 0] }}
+                animate={{ y: [0, 8, 0] }}
                 transition={{ repeat: Infinity, duration: 1 }}
               >
-                {isPenjumlahan ? '↑' : '→'}
+                ↓
               </motion.div>
             )}
 
@@ -183,18 +181,14 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
               ← Mulai dari Satuan
             </motion.div>
 
-            <AnimatePresence>
-              {(!satuanProcessed || isPenjumlahan) && (
-                <motion.div
-                  className={`relative z-10 w-full rounded-lg ${step === 'satuan' && !satuanProcessed ? 'cursor-pointer hover:scale-110 text-primary bg-primary/10' : ''}`}
-                  onClick={() => step === 'satuan' && handleSatuanClick()}
-                  exit={isPenjumlahan ? undefined : { x: 60, opacity: 0 }}
-                  transition={{ duration: 0.5, ease: "easeInOut" }}
-                >
-                  {satuan2}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <motion.div
+              className={`relative z-10 w-full rounded-lg ${step === 'satuan' && !satuanProcessed ? 'cursor-pointer hover:scale-110 text-primary bg-primary/10' : ''}`}
+              onClick={() => step === 'satuan' && handleSatuanClick()}
+              animate={!isPenjumlahan && satuanProcessed ? { opacity: 0.3 } : {}}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+            >
+              {satuan2}
+            </motion.div>
           </div>
 
           {/* Garis pemisah */}
@@ -252,20 +246,7 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
               transition={{ delay: 0.3 }}
               className="flex flex-col items-center gap-3 p-5 bg-emerald-50 rounded-2xl border border-emerald-200 mt-2 w-full text-center"
             >
-              <div className="flex flex-col gap-1.5 text-sm text-emerald-800">
-                <div className="font-semibold">
-                  Nilai Puluhan: <span style={{ color: 'var(--block-puluhan)' }}><b>{hasilPuluhan * 10}</b></span>
-                  &nbsp;&bull;&nbsp;
-                  Nilai Satuan: <span style={{ color: 'var(--block-satuan)' }}><b>{hasilSatuan}</b></span>
-                </div>
-                <div className="text-xs text-emerald-700/80 mt-1">
-                  Gabungkan puluhan dan satuan:
-                </div>
-                <div className="text-2xl font-black text-emerald-950 my-1 tabular-nums">
-                  {hasilPuluhan * 10} + {hasilSatuan} = {hasilAkhir}
-                </div>
-              </div>
-              <div className="text-base font-bold text-emerald-900 border-t border-emerald-200/60 pt-3 w-full">
+              <div className="text-lg font-bold text-emerald-900 w-full">
                 Hasil Akhir: {angka1} {simbol} {angka2} = {hasilAkhir}
               </div>
               <Button onClick={onSelesai} size="lg" className="gap-2 px-8 shadow-md mt-1">
