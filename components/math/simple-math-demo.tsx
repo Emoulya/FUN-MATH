@@ -9,10 +9,10 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Eye } from 'lucide-react';
+import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Base10Blocks from '@/components/math/base10-blocks';
-import MathBoard from '@/components/math/math-board';
+import InteractiveMathBlocks from '@/components/math/interactive-math-blocks';
+import InteractiveMathNumbers from '@/components/math/interactive-math-numbers';
 import { OPERASI_SIMBOL } from '@/lib/constants';
 import type { Operasi } from '@/types/math';
 
@@ -64,7 +64,6 @@ const PHASES: DemoPhase[] = [
 
 export default function SimpleMathDemo({ onSelesai }: SimpleMathDemoProps) {
   const [phaseIndex, setPhaseIndex] = useState(0);
-  const [showHasil, setShowHasil] = useState(false);
 
   const phase = PHASES[phaseIndex];
   const operasi: Operasi = phase.includes('penjumlahan') ? 'penjumlahan' : 'pengurangan';
@@ -84,7 +83,6 @@ export default function SimpleMathDemo({ onSelesai }: SimpleMathDemoProps) {
   }, [soal, operasi]);
 
   const nextPhase = useCallback(() => {
-    setShowHasil(false);
     if (phaseIndex >= PHASES.length - 1) {
       onSelesai();
     } else {
@@ -93,7 +91,6 @@ export default function SimpleMathDemo({ onSelesai }: SimpleMathDemoProps) {
   }, [phaseIndex, onSelesai]);
 
   const prevPhase = useCallback(() => {
-    setShowHasil(false);
     if (phaseIndex > 0) {
       setPhaseIndex((prev) => prev - 1);
     }
@@ -138,50 +135,16 @@ export default function SimpleMathDemo({ onSelesai }: SimpleMathDemoProps) {
             exit={{ opacity: 0, x: -20 }}
             className="flex flex-col items-center gap-6 w-full"
           >
-            {/* Soal text */}
-            <div className="text-2xl font-black text-center tabular-nums">
+            <div className="text-2xl font-black text-center tabular-nums mb-4">
               {soal.angka1} {simbol} {soal.angka2}
-              {showHasil && (
-                <motion.span
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                >
-                  {' '}= {hasil}
-                </motion.span>
-              )}
             </div>
 
-            {/* Balok visual */}
-            <div className="flex items-end justify-center gap-8 flex-wrap">
-              <div className="flex flex-col items-center gap-2">
-                <Base10Blocks angka={soal.angka1} tampilkanLabel animasi ukuran="sm" />
-              </div>
-              <div className="text-3xl font-black self-center">{simbol}</div>
-              <div className="flex flex-col items-center gap-2">
-                <Base10Blocks angka={soal.angka2} tampilkanLabel animasi ukuran="sm" />
-              </div>
-            </div>
-
-            {/* Tombol lihat hasil */}
-            {!showHasil ? (
-              <Button onClick={() => setShowHasil(true)} variant="outline" className="gap-2">
-                <Eye className="w-4 h-4" />
-                Lihat Hasilnya
-              </Button>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center gap-3 p-4 bg-card rounded-xl border border-border"
-              >
-                <span className="text-sm font-medium text-muted-foreground">
-                  {operasi === 'penjumlahan'
-                    ? 'Balok-balok digabungkan menjadi:'
-                    : 'Setelah dikurangi:'}
-                </span>
-                <Base10Blocks angka={hasil} tampilkanLabel animasi ukuran="sm" />
-              </motion.div>
-            )}
+            <InteractiveMathBlocks
+              angka1={soal.angka1}
+              angka2={soal.angka2}
+              operasi={operasi}
+              onSelesai={nextPhase}
+            />
           </motion.div>
         ) : (
           <motion.div
@@ -191,51 +154,12 @@ export default function SimpleMathDemo({ onSelesai }: SimpleMathDemoProps) {
             exit={{ opacity: 0, x: -20 }}
             className="flex flex-col items-center gap-6 w-full"
           >
-            {/* MathBoard mode tampil */}
-            <MathBoard
+            <InteractiveMathNumbers
               angka1={soal.angka1}
               angka2={soal.angka2}
               operasi={operasi}
-              mode="tampil"
+              onSelesai={nextPhase}
             />
-
-            {/* Penjelasan per kolom */}
-            <div className="flex flex-col gap-2 w-full max-w-xs">
-              <motion.div
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="p-3 bg-card rounded-lg border border-border text-sm"
-              >
-                <span className="font-bold" style={{ color: 'var(--block-satuan)' }}>
-                  Kolom satuan:
-                </span>{' '}
-                {operasi === 'penjumlahan'
-                  ? `${soal.angka1 % 10} + ${soal.angka2 % 10} = ${(soal.angka1 % 10) + (soal.angka2 % 10)}`
-                  : `${soal.angka1 % 10} − ${soal.angka2 % 10} = ${(soal.angka1 % 10) - (soal.angka2 % 10)}`}
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="p-3 bg-card rounded-lg border border-border text-sm"
-              >
-                <span className="font-bold" style={{ color: 'var(--block-puluhan)' }}>
-                  Kolom puluhan:
-                </span>{' '}
-                {operasi === 'penjumlahan'
-                  ? `${Math.floor(soal.angka1 / 10)} + ${Math.floor(soal.angka2 / 10)} = ${Math.floor(soal.angka1 / 10) + Math.floor(soal.angka2 / 10)}`
-                  : `${Math.floor(soal.angka1 / 10)} − ${Math.floor(soal.angka2 / 10)} = ${Math.floor(soal.angka1 / 10) - Math.floor(soal.angka2 / 10)}`}
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
-                className="p-3 bg-primary/10 rounded-lg border border-primary/20 text-sm font-bold text-center"
-              >
-                Hasilnya: {soal.angka1} {simbol} {soal.angka2} = {hasil}
-              </motion.div>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
