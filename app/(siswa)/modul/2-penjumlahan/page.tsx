@@ -1,42 +1,36 @@
 'use client';
 
 // ============================================
-// Modul 2 — Penjumlahan Menyimpan
+// Modul 2 — Penjumlahan Menyimpan (Carry)
 // ============================================
-// Layar 1: Penjelasan step-by-step (MathBoard mode animasi)
-// Layar 2: Latihan 5 soal (MathBoard mode latihan)
-// Reuse komponen MathBoard, useAnimasi, useLatihan yang sudah ada.
+// Penjelasan konsep penjumlahan menyimpan dengan 3 contoh statis.
+// Setelah selesai belajar, dilanjutkan dengan latihan 5 soal statis yang divalidasi kolom per kolom.
+// Menyimpan progres ke database Supabase setelah selesai latihan.
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, RefreshCw, SkipForward } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RefreshCw, SkipForward, Play, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ErrorBoundary } from 'react-error-boundary';
 import MathBoard from '@/components/math/math-board';
 import StepControls from '@/components/math/step-controls';
 import FeedbackOverlay from '@/components/math/feedback-overlay';
-
 import { useAnimasi } from '@/hooks/use-animasi';
 import { useLatihan } from '@/hooks/use-latihan';
 import { useModulProgress } from '@/hooks/use-modul-progress';
 import { useTutorial } from '@/hooks/use-tutorial';
-import { generateSoal, generateSesiSoalBerurutan } from '@/lib/soal-generator';
-import {
-  MAX_PERCOBAAN,
-  SOAL_PER_SESI,
-  STORAGE_KEY_FROM_MODUL,
-} from '@/lib/constants';
+import { MODUL2_CONTOH, MODUL2_SOAL } from '@/lib/dataset-soal';
+import { MAX_PERCOBAAN, STORAGE_KEY_FROM_MODUL } from '@/lib/constants';
 
 type Layar = 'belajar' | 'latihan';
 
-/** Fallback ErrorBoundary */
 function ErrorFallback({ resetErrorBoundary }: { resetErrorBoundary: () => void }) {
   return (
-    <div className="p-4 bg-red-50 text-red-800 rounded-xl border border-red-200 text-center max-w-sm mx-auto my-10">
-      <h3 className="font-bold mb-2">Terjadi Kesalahan!</h3>
-      <p className="text-sm mb-4">
+    <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
+      <span className="text-4xl">⚠️</span>
+      <p className="text-sm text-red-500 font-medium">
         Ada masalah saat menampilkan modul ini.
       </p>
       <Button onClick={resetErrorBoundary}>Coba Lagi</Button>
@@ -50,35 +44,44 @@ export default function Modul2Page() {
   const latihan = useLatihan();
   const { selesaikanModul } = useModulProgress();
   const [layar, setLayar] = useState<Layar>('belajar');
+  const [indexContoh, setIndexContoh] = useState(0); // 0, 1, 2 contoh
   const { isTutorial } = useTutorial();
   const sesiMulaiRef = useRef(0);
 
+  // Load soal contoh berdasarkan indexContoh
   useEffect(() => {
-    const soal = generateSoal('penjumlahan', 'mudah');
-    animasi.setSoal(soal.angka1, soal.angka2, 'penjumlahan', 'mudah');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const soal = MODUL2_CONTOH[indexContoh];
+    if (soal) {
+      animasi.setSoal(soal.angka1, soal.angka2, 'penjumlahan', soal.kesulitan);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [indexContoh]);
 
   // Mulai latihan saat pindah ke layar latihan
   const mulaiLatihan = useCallback(() => {
     setLayar('latihan');
     sessionStorage.setItem('operasi', 'penjumlahan');
     sessionStorage.setItem('kesulitan', 'mudah');
-    // Soal berurutan dari mudah → sulit (bukan acak, sesuai feedback Prof)
-    const soalList = generateSesiSoalBerurutan('penjumlahan', SOAL_PER_SESI);
-    latihan.mulaiSesi(soalList);
+    // Mulai sesi latihan dengan dataset statis MODUL2_SOAL
+    latihan.mulaiSesi(MODUL2_SOAL);
     sesiMulaiRef.current = Date.now();
   }, [latihan]);
 
-  // Generate soal belajar baru
-  const soalBaruBelajar = useCallback(() => {
-    const soal = generateSoal('penjumlahan', 'mudah');
-    animasi.setSoal(soal.angka1, soal.angka2, 'penjumlahan', 'mudah');
-  }, [animasi]);
+  const contohBerikutnya = useCallback(() => {
+    if (indexContoh < 2) {
+      setIndexContoh((prev) => prev + 1);
+    }
+  }, [indexContoh]);
+
+  const contohSebelumnya = useCallback(() => {
+    if (indexContoh > 0) {
+      setIndexContoh((prev) => prev - 1);
+    }
+  }, [indexContoh]);
 
   // Saat sesi latihan selesai → simpan ke DB + tandai modul selesai
   useEffect(() => {
-    if (!latihan.sesiSelesai) return;
+    if (!latihan.sesiSelesai || layar !== 'latihan') return;
 
     const rekap = latihan.rekap;
     const benar = rekap.filter((r) => r.status === 'benar').length;
@@ -116,7 +119,7 @@ export default function Modul2Page() {
     sessionStorage.setItem('operasi', 'penjumlahan');
     sessionStorage.setItem(STORAGE_KEY_FROM_MODUL, 'modul2');
     router.push('/rekap');
-  }, [latihan.sesiSelesai, latihan.rekap, router, selesaikanModul]);
+  }, [latihan.sesiSelesai, latihan.rekap, layar, router, selesaikanModul]);
 
   return (
     <div className="flex-1 flex flex-col items-center gap-6 p-6">
@@ -129,7 +132,7 @@ export default function Modul2Page() {
         <h2 className="text-xl font-bold">➕ Penjumlahan Menyimpan</h2>
         <p className="text-sm text-muted-foreground mt-1">
           {layar === 'belajar'
-            ? 'Perhatikan cara menyimpan angka'
+            ? `Contoh Penjelasan ${indexContoh + 1}/3`
             : `Soal ${latihan.indexSoal + 1}/${latihan.totalSoal}`}
         </p>
       </motion.div>
@@ -146,18 +149,16 @@ export default function Modul2Page() {
           >
             {/* MathBoard mode animasi */}
             {animasi.perhitungan && (
-              <>
-                <MathBoard
-                  angka1={animasi.perhitungan.angka1}
-                  angka2={animasi.perhitungan.angka2}
-                  operasi="penjumlahan"
-                  mode="animasi"
-                  langkahAktif={animasi.langkahSekarang}
-                  carryVisible={animasi.carryVisible}
-                  borrowVisible={animasi.borrowVisible}
-                  perhitunganOverride={animasi.perhitungan}
-                />
-              </>
+              <MathBoard
+                angka1={animasi.perhitungan.angka1}
+                angka2={animasi.perhitungan.angka2}
+                operasi="penjumlahan"
+                mode="animasi"
+                langkahAktif={animasi.langkahSekarang}
+                carryVisible={animasi.carryVisible}
+                borrowVisible={animasi.borrowVisible}
+                perhitunganOverride={animasi.perhitungan}
+              />
             )}
 
             {/* Penjelasan langkah */}
@@ -184,16 +185,28 @@ export default function Modul2Page() {
               onTogglePlay={animasi.togglePlay}
             />
 
-            {/* Tombol aksi */}
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={soalBaruBelajar} className="gap-2">
-                <RefreshCw className="w-4 h-4" />
-                Contoh Lain
-              </Button>
-              <Button onClick={isTutorial ? () => { selesaikanModul('modul2'); router.push('/modul'); } : mulaiLatihan} className="gap-2">
-                {isTutorial ? "Selesai & Lanjut" : "Mulai Latihan"}
-                <ArrowRight className="w-4 h-4" />
-              </Button>
+            {/* Tombol aksi penjelasan */}
+            <div className="flex gap-3 justify-center items-center mt-2">
+              {/* Tombol Contoh Sebelumnya */}
+              {indexContoh > 0 && (
+                <Button variant="outline" onClick={contohSebelumnya} className="gap-2">
+                  <ArrowLeft className="w-4 h-4" />
+                  Sebelumnya
+                </Button>
+              )}
+
+              {/* Tombol Contoh Berikutnya / Mulai Latihan */}
+              {indexContoh < 2 ? (
+                <Button variant="outline" onClick={contohBerikutnya} className="gap-2 border-primary/50 text-primary">
+                  Contoh Berikutnya
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              ) : (
+                <Button onClick={isTutorial ? () => { selesaikanModul('modul2'); router.push('/modul'); } : mulaiLatihan} className="gap-2 shadow-md">
+                  {isTutorial ? "Selesai & Lanjut" : "Mulai Latihan"}
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              )}
             </div>
           </motion.div>
         ) : (
@@ -215,20 +228,18 @@ export default function Modul2Page() {
             {/* MathBoard mode latihan */}
             {latihan.soalAktif && (
               <ErrorBoundary FallbackComponent={ErrorFallback}>
-                <>
-                  <MathBoard
-                    angka1={latihan.soalAktif.angka1}
-                    angka2={latihan.soalAktif.angka2}
-                    operasi={latihan.soalAktif.operasi}
-                    mode="latihan"
-                    jawabanState={latihan.jawabanState}
-                    carryJawabanState={latihan.carryJawabanState}
-                    onJawaban={latihan.isiJawaban}
-                    onCarryJawaban={latihan.isiCarryJawaban}
+                <MathBoard
+                  angka1={latihan.soalAktif.angka1}
+                  angka2={latihan.soalAktif.angka2}
+                  operasi={latihan.soalAktif.operasi}
+                  mode="latihan"
+                  jawabanState={latihan.jawabanState}
+                  carryJawabanState={latihan.carryJawabanState}
+                  onJawaban={latihan.isiJawaban}
+                  onCarryJawaban={latihan.isiCarryJawaban}
                   carryVisible={latihan.carryVisible}
                   borrowVisible={latihan.borrowVisible}
                 />
-                </>
               </ErrorBoundary>
             )}
 

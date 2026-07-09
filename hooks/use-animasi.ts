@@ -86,20 +86,8 @@ export function useAnimasi(): UseAnimasiReturn {
     const maxLen = langkah.digitAtasAktif.length;
     const paddedA = padDigits(digitsA, maxLen);
     
-    // Cari kolom maksimum yang sudah diproses secara visual hingga langkah saat ini
-    let maxKolomTerproses = -1;
-    for (let idx = 0; idx <= langkahSekarang; idx++) {
-      const l = perhitungan.langkahLangkah[idx];
-      if (l && l.kolom !== -1) {
-        maxKolomTerproses = Math.max(maxKolomTerproses, l.kolom);
-      }
-    }
-    
     const listBorrow: { kolom: number; nilaiSebelum: number; nilaiSesudah: number }[] = [];
     for (let col = 0; col < maxLen; col++) {
-      // Perubahan borrow hanya ditampilkan jika kolom tersebut sudah mulai diproses/dilewati
-      if (col > maxKolomTerproses) continue;
-      
       const nilaiAsli = paddedA[col];
       const nilaiAktif = langkah.digitAtasAktif[col];
       if (nilaiAktif !== nilaiAsli) {

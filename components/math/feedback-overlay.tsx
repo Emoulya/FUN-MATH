@@ -26,7 +26,7 @@ interface FeedbackOverlayProps {
   /** Callback: coba lagi */
   onCobaLagi: () => void;
   /** Callback: lihat cara penyelesaian */
-  onLihatCara: () => void;
+  onLihatCara?: () => void;
   /** Callback: tutup overlay */
   onTutup: () => void;
 }
@@ -98,7 +98,7 @@ export default function FeedbackOverlay({
 
             {/* Tombol aksi */}
             <div className="flex gap-2">
-              {percobaan < maxPercobaan ? (
+              {percobaan < maxPercobaan || !onLihatCara ? (
                 <Button
                   onClick={onCobaLagi}
                   className="flex-1 gap-2"

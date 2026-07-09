@@ -185,8 +185,8 @@ export default function LatihanPage() {
           onJawaban={latihan.isiJawaban}
           onCarryJawaban={latihan.isiCarryJawaban}
           onParsialJawaban={latihan.isiParsialJawaban}
-          carryVisible={latihan.carryVisible}
-          borrowVisible={latihan.borrowVisible}
+          carryVisible={[]} // Latihan Mandiri: Sembunyikan petunjuk carry otomatis
+          borrowVisible={[]} // Latihan Mandiri: Sembunyikan petunjuk borrow otomatis
         />
       </ErrorBoundary>
 
@@ -261,7 +261,7 @@ export default function LatihanPage() {
         percobaan={latihan.percobaanAktif}
         maxPercobaan={MAX_PERCOBAAN}
         onCobaLagi={latihan.cobaLagi}
-        onLihatCara={latihan.lihatCara}
+        onLihatCara={undefined} // Latihan Mandiri: Sembunyikan tombol Lihat Cara agar siswa mencoba sendiri
         onTutup={latihan.tutupFeedback}
       />
     </div>

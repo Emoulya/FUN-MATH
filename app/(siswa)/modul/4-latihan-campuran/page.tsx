@@ -17,11 +17,10 @@ import MathBoard from '@/components/math/math-board';
 import FeedbackOverlay from '@/components/math/feedback-overlay';
 import { useLatihan } from '@/hooks/use-latihan';
 import { useModulProgress } from '@/hooks/use-modul-progress';
-import { generateSesiSoalBerurutan } from '@/lib/soal-generator';
+import { MODUL4_SOAL } from '@/lib/dataset-soal';
 
 import {
   MAX_PERCOBAAN,
-  SOAL_PER_SESI,
   STORAGE_KEY_FROM_MODUL,
 } from '@/lib/constants';
 
@@ -45,17 +44,8 @@ export default function Modul4Page() {
   const sesiMulaiRef = useRef(0);
 
   useEffect(() => {
-    // Soal berurutan dari mudah → sulit per operasi, lalu interleave
-    const soalPenjumlahan = generateSesiSoalBerurutan('penjumlahan', SOAL_PER_SESI);
-    const soalPengurangan = generateSesiSoalBerurutan('pengurangan', SOAL_PER_SESI);
-    // Interleave: penjumlahan, pengurangan, penjumlahan, ... (tetap teratur)
-    const soalCampuran = [];
-    const maxLen = Math.max(soalPenjumlahan.length, soalPengurangan.length);
-    for (let i = 0; i < maxLen; i++) {
-      if (i < soalPenjumlahan.length) soalCampuran.push(soalPenjumlahan[i]);
-      if (i < soalPengurangan.length) soalCampuran.push(soalPengurangan[i]);
-    }
-    latihan.mulaiSesi(soalCampuran);
+    // Memuat 10 soal statis campuran (5 penjumlahan + 5 pengurangan) sesuai dataset
+    latihan.mulaiSesi(MODUL4_SOAL);
     sesiMulaiRef.current = Date.now();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

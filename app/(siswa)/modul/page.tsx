@@ -6,6 +6,7 @@
 // Menampilkan semua modul dalam urutan linear dengan lock system.
 // Siswa hanya bisa mengakses modul yang sudah unlocked.
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { RotateCcw, ArrowLeft } from 'lucide-react';
@@ -18,7 +19,7 @@ import { MODUL_LIST } from '@/lib/constants';
 export default function PetaModulPage() {
   const router = useRouter();
   const { getStatus, resetProgress, isLoading: isProgressLoading } = useModulProgress();
-  const { isTutorial, setStep, isLoading: isTutorialLoading } = useTutorial();
+  const { isTutorial, completeTutorial, isLoading: isTutorialLoading } = useTutorial();
 
   // Hitung progress keseluruhan
   const totalModul = MODUL_LIST.length;
@@ -28,10 +29,14 @@ export default function PetaModulPage() {
   // Cari modul pertama yang belum selesai untuk target tutorial
   const targetTutorialId = MODUL_LIST.find((m) => getStatus(m.id) !== 'completed')?.id || null;
 
-  const handleKembali = async () => {
-    if (isTutorial && !targetTutorialId) {
-      await setStep('PILIH_OPERASI');
+  // Selesaikan tutorial secara otomatis jika semua modul di Peta Belajar selesai
+  useEffect(() => {
+    if (isTutorial && !isProgressLoading && !targetTutorialId) {
+      completeTutorial();
     }
+  }, [isTutorial, isProgressLoading, targetTutorialId, completeTutorial]);
+
+  const handleKembali = () => {
     router.push('/pilih-operasi');
   };
 

@@ -1,13 +1,14 @@
 // ============================================
-// Generator Soal — Random berdasarkan operasi + kesulitan
+// Generator Soal — Berdasarkan Dataset Statis & Acak
 // ============================================
-// Menghasilkan soal acak sesuai parameter.
-// Khusus pengurangan: angka1 selalu >= angka2 (hasil tidak negatif).
+// Menghasilkan soal untuk Latihan Mandiri dari dataset statis LATIHAN_MANDIRI_SOAL.
+// Khusus perkalian atau fallback, menggunakan generator acak bersyarat.
 
 import type { Operasi, Kesulitan, Soal } from '@/types/math';
+import { LATIHAN_MANDIRI_SOAL } from './dataset-soal';
 
 // ============================================
-// Range Angka per Kesulitan
+// Range Angka per Kesulitan (Fallback)
 // ============================================
 
 interface RangeAngka {
@@ -15,12 +16,6 @@ interface RangeAngka {
   max: number;
 }
 
-/**
- * Definisi range angka berdasarkan kesulitan.
- * - Mudah: 2 digit tanpa carry/borrow yang kompleks
- * - Sedang: 2 digit dengan kemungkinan carry/borrow
- * - Sulit: 2-3 digit dengan carry/borrow beruntun
- */
 const RANGE_PER_KESULITAN: Record<Kesulitan, { angka1: RangeAngka; angka2: RangeAngka }> = {
   mudah: {
     angka1: { min: 11, max: 19 },
@@ -36,9 +31,6 @@ const RANGE_PER_KESULITAN: Record<Kesulitan, { angka1: RangeAngka; angka2: Range
   },
 };
 
-/**
- * Range khusus perkalian — tidak dipakai, disesuaikan max 50
- */
 const RANGE_PERKALIAN: Record<Kesulitan, { angka1: RangeAngka; angka2: RangeAngka }> = {
   mudah: {
     angka1: { min: 10, max: 15 },
@@ -54,13 +46,6 @@ const RANGE_PERKALIAN: Record<Kesulitan, { angka1: RangeAngka; angka2: RangeAngk
   },
 };
 
-// ============================================
-// Utilitas Random
-// ============================================
-
-/**
- * Generate angka random antara min dan max (inklusif).
- */
 function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -70,15 +55,17 @@ function randomInt(min: number, max: number): number {
 // ============================================
 
 /**
- * Generate satu soal random berdasarkan operasi dan kesulitan.
- *
- * Untuk pengurangan:
- * - Memastikan angka1 >= angka2 sehingga hasil tidak negatif
- *
- * Untuk perkalian:
- * - Menggunakan range lebih kecil agar hasil tidak terlalu besar
+ * Generate satu soal. Mengutamakan mengambil dari dataset statis LATIHAN_MANDIRI_SOAL.
  */
 export function generateSoal(operasi: Operasi, kesulitan: Kesulitan): Soal {
+  // Ambil dari dataset statis LATIHAN_MANDIRI_SOAL jika tersedia
+  const customList = LATIHAN_MANDIRI_SOAL[operasi]?.[kesulitan];
+  if (customList && customList.length > 0) {
+    const idx = Math.floor(Math.random() * customList.length);
+    return { ...customList[idx] };
+  }
+
+  // Fallback acak untuk perkalian
   if (operasi === 'perkalian') {
     const range = RANGE_PERKALIAN[kesulitan];
     const angka1 = randomInt(range.angka1.min, range.angka1.max);
@@ -86,72 +73,22 @@ export function generateSoal(operasi: Operasi, kesulitan: Kesulitan): Soal {
     return { angka1, angka2, operasi, kesulitan };
   }
 
-  // Probabilitas 40% untuk memunculkan kombinasi Puluhan + Satuan atau Puluhan - Satuan
-  const isPuluhanSatuan = Math.random() < 0.4;
-
-  if (isPuluhanSatuan) {
-    if (operasi === 'penjumlahan') {
-      if (kesulitan === 'mudah') {
-        // Puluhan + Satuan tanpa menyimpan (carry)
-        const angka1 = randomInt(10, 39);
-        const s1 = angka1 % 10;
-        const maxSatuan = 9 - s1;
-        const angka2 = maxSatuan >= 1 ? randomInt(1, maxSatuan) : randomInt(1, 9);
-        return { angka1, angka2, operasi, kesulitan };
-      } else {
-        // Sedang / Sulit: Puluhan + Satuan dengan menyimpan (carry)
-        let angka1 = randomInt(11, 39);
-        while (angka1 % 10 === 0) {
-          angka1 = randomInt(11, 39);
-        }
-        const s1 = angka1 % 10;
-        const minSatuan = 10 - s1;
-        const angka2 = randomInt(minSatuan, 9);
-        return { angka1, angka2, operasi, kesulitan };
-      }
-    } else if (operasi === 'pengurangan') {
-      if (kesulitan === 'mudah') {
-        // Puluhan - Satuan tanpa meminjam (borrow)
-        let angka1 = randomInt(11, 39);
-        while (angka1 % 10 === 0) {
-          angka1 = randomInt(11, 39);
-        }
-        const s1 = angka1 % 10;
-        const angka2 = randomInt(1, s1);
-        return { angka1, angka2, operasi, kesulitan };
-      } else {
-        // Sedang / Sulit: Puluhan - Satuan dengan meminjam (borrow)
-        let angka1 = randomInt(11, 39);
-        while (angka1 % 10 === 9) {
-          angka1 = randomInt(11, 39);
-        }
-        const s1 = angka1 % 10;
-        const minSatuan = s1 + 1;
-        const angka2 = randomInt(minSatuan, 9);
-        return { angka1, angka2, operasi, kesulitan };
-      }
-    }
-  }
-
-  // Alur biasa (Puluhan dengan Puluhan)
   const range = RANGE_PER_KESULITAN[kesulitan];
   let angka1 = randomInt(range.angka1.min, range.angka1.max);
   let angka2 = randomInt(range.angka2.min, range.angka2.max);
 
   if (operasi === 'penjumlahan') {
     while (angka1 + angka2 > 50) {
-      const rangeVal = RANGE_PER_KESULITAN[kesulitan];
-      angka1 = randomInt(rangeVal.angka1.min, rangeVal.angka1.max);
-      angka2 = randomInt(rangeVal.angka2.min, rangeVal.angka2.max);
+      angka1 = randomInt(range.angka1.min, range.angka1.max);
+      angka2 = randomInt(range.angka2.min, range.angka2.max);
     }
   } else if (operasi === 'pengurangan') {
     if (angka1 < angka2) {
       [angka1, angka2] = [angka2, angka1];
     }
     while (angka1 > 50) {
-      const rangeVal = RANGE_PER_KESULITAN[kesulitan];
-      angka1 = randomInt(rangeVal.angka1.min, Math.min(50, rangeVal.angka1.max));
-      angka2 = randomInt(rangeVal.angka2.min, Math.min(angka1, rangeVal.angka2.max));
+      angka1 = randomInt(range.angka1.min, Math.min(50, range.angka1.max));
+      angka2 = randomInt(range.angka2.min, Math.min(angka1, range.angka2.max));
       if (angka1 < angka2) {
         [angka1, angka2] = [angka2, angka1];
       }
@@ -162,13 +99,22 @@ export function generateSoal(operasi: Operasi, kesulitan: Kesulitan): Soal {
 }
 
 /**
- * Generate array soal untuk satu sesi latihan.
+ * Generate array soal untuk satu sesi latihan mandiri.
+ * Menjamin list soal yang dikembalikan persis sesuai request pengguna.
  */
 export function generateSesiSoal(
   operasi: Operasi,
   kesulitan: Kesulitan,
   jumlah: number
 ): Soal[] {
+  // Ambil dari dataset statis LATIHAN_MANDIRI_SOAL jika tersedia
+  const customList = LATIHAN_MANDIRI_SOAL[operasi]?.[kesulitan];
+  if (customList && customList.length > 0) {
+    // Return copy array agar tidak termutasi
+    return customList.map(s => ({ ...s }));
+  }
+
+  // Fallback generator acak
   const soalList: Soal[] = [];
   const seen = new Set<string>();
 
@@ -176,11 +122,10 @@ export function generateSesiSoal(
     let soal: Soal;
     let key: string;
 
-    // Hindari soal duplikat dalam satu sesi
     do {
       soal = generateSoal(operasi, kesulitan);
       key = `${soal.angka1}-${soal.angka2}`;
-    } while (seen.has(key) && seen.size < 50); // safety limit
+    } while (seen.has(key) && seen.size < 50);
 
     seen.add(key);
     soalList.push(soal);
@@ -190,27 +135,19 @@ export function generateSesiSoal(
 }
 
 /**
- * Validasi apakah soal valid berdasarkan constraint.
+ * Validasi kebenaran constraints soal
  */
 export function isValidSoal(soal: Soal): boolean {
   const { angka1, angka2, operasi } = soal;
-
-  // Angka harus positif
   if (angka1 <= 0 || angka2 <= 0) return false;
-
-  // Angka harus dalam range 2-3 digit (kecuali pengali 1 digit untuk perkalian mudah)
   if (angka1 > 999 || angka2 > 999) return false;
-
-  // Pengurangan: angka1 harus >= angka2
   if (operasi === 'pengurangan' && angka1 < angka2) return false;
-
   return true;
 }
 
 /**
- * Generate soal berurutan dari mudah → sedang → sulit.
- * Digunakan di Peta Belajar agar soal tidak acak dan progresif.
- * Soal acak hanya digunakan di evaluasi/latihan bebas.
+ * Generate soal berurutan (tidak diacak) dari level mudah → sedang → sulit.
+ * Terutama untuk Peta Belajar (sekarang digantikan dataset statis per modul).
  */
 export function generateSesiSoalBerurutan(
   operasi: Operasi,
@@ -218,8 +155,6 @@ export function generateSesiSoalBerurutan(
 ): Soal[] {
   const soalList: Soal[] = [];
   const seen = new Set<string>();
-
-  // Bagi soal menjadi 3 grup: mudah, sedang, sulit
   const perLevel = Math.ceil(jumlah / 3);
   const levels: Kesulitan[] = ['mudah', 'sedang', 'sulit'];
 
