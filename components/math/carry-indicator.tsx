@@ -25,10 +25,10 @@ export default function CarryIndicator({ nilai, visible = true, isNew = true, hi
   return (
     <motion.span
       initial={{ 
-        x: isNew ? "3.125rem" : 0, 
-        y: isNew ? "11rem" : 8, 
-        scale: isNew ? 1.5 : 1, 
-        opacity: 0 
+        x: isNew ? "3.7rem" : 0, 
+        y: isNew ? "13rem" : 8, 
+        scale: isNew ? 2.3 : 1, 
+        opacity: isNew ? 1 : 0 
       }}
       animate={{ 
         x: 0,
