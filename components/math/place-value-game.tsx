@@ -23,9 +23,9 @@ interface PlaceValueGameProps {
   onSelesai: () => void;
 }
 
-/** Generate angka acak 2 digit (10-99) */
+/** Generate angka acak 2 digit (10-56) */
 function generateAngka(): number {
-  return Math.floor(Math.random() * 90) + 10;
+  return Math.floor(Math.random() * 47) + 10;
 }
 
 type SoalState = 'mengerjakan' | 'benar' | 'salah';

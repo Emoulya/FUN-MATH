@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Check } from 'lucide-react';
+import { Check, ArrowRight } from 'lucide-react';
 
 interface MatchItem {
   id: number;
@@ -16,25 +16,58 @@ interface PlaceValueMatchGameProps {
   onBenar: () => void;
 }
 
-export default function PlaceValueMatchGame({ onBenar }: PlaceValueMatchGameProps) {
-  // Soal mencocokkan statis atau dinamis
-  const [itemsLeft, setItemsLeft] = useState<MatchItem[]>([
-    { id: 1, angka: 25, puluhan: 2, satuan: 5 },
-    { id: 2, angka: 14, puluhan: 1, satuan: 4 },
-    { id: 3, angka: 32, puluhan: 3, satuan: 2 },
-  ]);
+/**
+ * Generate 6 angka acak unik (10 - 56) untuk 2 ronde mencocokkan.
+ * Menjamin tidak ada angka yang terduplikasi di antara kedua ronde.
+ */
+function generateMatchSoal(): { ronde1: MatchItem[]; ronde2: MatchItem[] } {
+  const setAngka = new Set<number>();
+  while (setAngka.size < 6) {
+    const randomVal = Math.floor(Math.random() * 47) + 10; // rentang 10 s.d. 56
+    setAngka.add(randomVal);
+  }
+  const allNumbers = Array.from(setAngka);
 
+  const ronde1 = allNumbers.slice(0, 3).map((angka, idx) => ({
+    id: idx + 1,
+    angka,
+    puluhan: Math.floor(angka / 10),
+    satuan: angka % 10,
+  }));
+
+  const ronde2 = allNumbers.slice(3, 6).map((angka, idx) => ({
+    id: idx + 4,
+    angka,
+    puluhan: Math.floor(angka / 10),
+    satuan: angka % 10,
+  }));
+
+  return { ronde1, ronde2 };
+}
+
+export default function PlaceValueMatchGame({ onBenar }: PlaceValueMatchGameProps) {
+  const [ronde, setRonde] = useState<1 | 2>(1);
+  const [soalData] = useState(() => generateMatchSoal());
+
+  const [itemsLeft, setItemsLeft] = useState<MatchItem[]>([]);
   const [itemsRight, setItemsRight] = useState<MatchItem[]>([]);
 
   const [selectedLeft, setSelectedLeft] = useState<number | null>(null);
   const [selectedRight, setSelectedRight] = useState<number | null>(null);
   const [matches, setMatches] = useState<number[]>([]); // Menyimpan id yang sudah cocok
 
-  // Shuffle items di sisi kanan saat inisialisasi
+  // Inisialisasi & Reset Data saat pergantian ronde
   useEffect(() => {
-    const shuffled = [...itemsLeft].sort(() => Math.random() - 0.5);
+    const currentList = ronde === 1 ? soalData.ronde1 : soalData.ronde2;
+    setItemsLeft(currentList);
+    // Shuffle items di sisi kanan
+    const shuffled = [...currentList].sort(() => Math.random() - 0.5);
     setItemsRight(shuffled);
-  }, []);
+    // Reset state pilihan dan matches
+    setMatches([]);
+    setSelectedLeft(null);
+    setSelectedRight(null);
+  }, [ronde, soalData]);
 
   const handleSelectLeft = (id: number) => {
     if (matches.includes(id)) return;
@@ -72,6 +105,9 @@ export default function PlaceValueMatchGame({ onBenar }: PlaceValueMatchGameProp
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-md p-6 bg-card rounded-3xl border border-border shadow-xl">
       <div className="text-center">
+        <div className="px-3 py-0.5 bg-blue-50 text-blue-600 dark:bg-blue-950/20 text-[10px] font-bold rounded-full inline-block mb-1">
+          Ronde {ronde} dari 2
+        </div>
         <h3 className="text-lg font-bold text-blue-600">Game Mencocokkan Nilai Tempat</h3>
         <p className="text-xs text-muted-foreground mt-1">
           Hubungkan angka dengan balok yang sesuai!
@@ -178,13 +214,24 @@ export default function PlaceValueMatchGame({ onBenar }: PlaceValueMatchGameProp
               exit={{ scale: 0.8, opacity: 0 }}
               className="flex flex-col items-center gap-2 w-full"
             >
-              <Button
-                onClick={onBenar}
-                className="w-full gap-2 rounded-2xl shadow-md"
-                size="lg"
-              >
-                Lanjut ke Game Drag-Drop
-              </Button>
+              {ronde === 1 ? (
+                <Button
+                  onClick={() => setRonde(2)}
+                  className="w-full gap-2 rounded-2xl shadow-md bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                  size="lg"
+                >
+                  Lanjut
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={onBenar}
+                  className="w-full gap-2 rounded-2xl shadow-md"
+                  size="lg"
+                >
+                  Lanjut ke Game Drag-Drop
+                </Button>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

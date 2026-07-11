@@ -12,7 +12,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ArrowRight, Wand2, CheckCircle2 } from 'lucide-react';
+import { Check, ArrowRight, Wand2, CheckCircle2, SkipBack, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface InteractiveMathBlocksProps {
@@ -89,7 +89,7 @@ export default function InteractiveMathBlocks({
   const targetSatuan = isPenjumlahan ? satuan1 + satuan2 : satuan1 - satuan2;
   const targetPuluhan = isPenjumlahan ? puluhan1 + puluhan2 : puluhan1 - puluhan2;
 
-  // Refs untuk deteksi koordinat dinamis & responsif (100% tepat menunjuk ke balok)
+  // Refs untuk deteksi koordinat dinamis & responsif
   const puluhan1Ref = useRef<HTMLDivElement>(null);
   const satuan1Ref = useRef<HTMLDivElement>(null);
   const puluhan2Ref = useRef<HTMLDivElement>(null);
@@ -149,13 +149,16 @@ export default function InteractiveMathBlocks({
 
   // State alur langkah: 'satuan' -> 'puluhan' -> 'selesai'
   const [step, setStep] = useState<'satuan' | 'puluhan' | 'selesai'>('satuan');
-  const [satuanAnimateCount, setSatuanAnimateCount] = useState(0);
-  const [puluhanAnimateCount, setPuluhanAnimateCount] = useState(0);
+  const [satuanAnimateCount, setSatuanAnimateCount] = useState(satuan1);
+  const [puluhanAnimateCount, setPuluhanAnimateCount] = useState(puluhan1);
   const [isAnimating, setIsAnimating] = useState(false);
+
+  // Kontrol navigasi animasi manual
+  const [langkahSekarang, setLangkahSekarang] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
 
   // Update koordinat secara real-time saat mount, window resize, atau step berubah
   useEffect(() => {
-    // Berikan jeda sedikit agar layout rendering stabil sebelum koordinat diukur
     const timer = setTimeout(updateCoords, 100);
     window.addEventListener('resize', updateCoords);
     return () => {
@@ -164,65 +167,112 @@ export default function InteractiveMathBlocks({
     };
   }, [step, updateCoords]);
 
-  // Animasi otomatis saat berpindah step
+  // Sinkronisasi status visual berdasarkan langkahSekarang
+  useEffect(() => {
+    if (langkahSekarang === 0) {
+      setStep('satuan');
+      setSatuanAnimateCount(satuan1);
+    } else if (langkahSekarang === 1) {
+      setStep('puluhan');
+      setSatuanAnimateCount(targetSatuan);
+      setPuluhanAnimateCount(puluhan1);
+    } else if (langkahSekarang === 2) {
+      setStep('selesai');
+      setSatuanAnimateCount(targetSatuan);
+      setPuluhanAnimateCount(targetPuluhan);
+    }
+  }, [langkahSekarang, satuan1, puluhan1, targetSatuan, targetPuluhan]);
+
+  // Animasi otomatis penambahan/pengurangan satuan & puluhan
   useEffect(() => {
     if (step === 'satuan') {
       setIsAnimating(true);
-      setSatuanAnimateCount(satuan1); // Mulai dari jumlah satuan angka1
-      const interval = setInterval(() => {
-        setSatuanAnimateCount((prev) => {
-          if (isPenjumlahan) {
-            if (prev >= targetSatuan) {
-              clearInterval(interval);
-              setIsAnimating(false);
-              return targetSatuan;
+      if (isPlaying) {
+        const interval = setInterval(() => {
+          setSatuanAnimateCount((prev) => {
+            if (isPenjumlahan) {
+              if (prev >= targetSatuan) {
+                clearInterval(interval);
+                setIsAnimating(false);
+                return targetSatuan;
+              }
+              return prev + 1;
+            } else {
+              if (prev <= targetSatuan) {
+                clearInterval(interval);
+                setIsAnimating(false);
+                return targetSatuan;
+              }
+              return prev - 1;
             }
-            return prev + 1;
-          } else {
-            if (prev <= targetSatuan) {
-              clearInterval(interval);
-              setIsAnimating(false);
-              return targetSatuan;
-            }
-            return prev - 1;
-          }
-        });
-      }, 500);
-      return () => clearInterval(interval);
+          });
+        }, 1000);
+        return () => clearInterval(interval);
+      } else {
+        setIsAnimating(false);
+      }
     } else if (step === 'puluhan') {
       setIsAnimating(true);
-      setPuluhanAnimateCount(puluhan1); // Mulai dari jumlah puluhan angka1
-      const interval = setInterval(() => {
-        setPuluhanAnimateCount((prev) => {
-          if (isPenjumlahan) {
-            if (prev >= targetPuluhan) {
-              clearInterval(interval);
-              setIsAnimating(false);
-              return targetPuluhan;
+      if (isPlaying) {
+        const interval = setInterval(() => {
+          setPuluhanAnimateCount((prev) => {
+            if (isPenjumlahan) {
+              if (prev >= targetPuluhan) {
+                clearInterval(interval);
+                setIsAnimating(false);
+                return targetPuluhan;
+              }
+              return prev + 1;
+            } else {
+              if (prev <= targetPuluhan) {
+                clearInterval(interval);
+                setIsAnimating(false);
+                return targetPuluhan;
+              }
+              return prev - 1;
             }
-            return prev + 1;
-          } else {
-            if (prev <= targetPuluhan) {
-              clearInterval(interval);
-              setIsAnimating(false);
-              return targetPuluhan;
-            }
-            return prev - 1;
-          }
-        });
-      }, 600);
-      return () => clearInterval(interval);
+          });
+        }, 1200);
+        return () => clearInterval(interval);
+      } else {
+        setIsAnimating(false);
+      }
     }
-  }, [step, satuan1, puluhan1, targetSatuan, targetPuluhan, isPenjumlahan]);
+  }, [step, targetSatuan, targetPuluhan, isPenjumlahan, isPlaying]);
 
-  const handleNextStep = () => {
-    if (isAnimating) return;
-    if (step === 'satuan') {
-      setStep('puluhan');
-    } else if (step === 'puluhan') {
-      setStep('selesai');
+  // Transisi otomatis langkah jika isPlaying aktif dan animasi hitungan selesai
+  useEffect(() => {
+    if (isPlaying && !isAnimating) {
+      if (langkahSekarang === 0 && satuanAnimateCount === targetSatuan) {
+        const timer = setTimeout(() => {
+          setLangkahSekarang(1);
+        }, 3000);
+        return () => clearTimeout(timer);
+      } else if (langkahSekarang === 1 && puluhanAnimateCount === targetPuluhan) {
+        const timer = setTimeout(() => {
+          setLangkahSekarang(2);
+        }, 3000);
+        return () => clearTimeout(timer);
+      }
     }
-  };
+  }, [langkahSekarang, isPlaying, isAnimating, satuanAnimateCount, puluhanAnimateCount, targetSatuan, targetPuluhan]);
+
+  // Visualisasi balok dan angka dinamis untuk Kotak 1 pada Pengurangan
+  const puluhanTerdisplay = (!isPenjumlahan && step === 'puluhan')
+    ? puluhanAnimateCount
+    : (!isPenjumlahan && step === 'selesai')
+      ? targetPuluhan
+      : puluhan1;
+
+  const satuanTerdisplay = (!isPenjumlahan && step === 'satuan')
+    ? satuanAnimateCount
+    : (!isPenjumlahan && (step === 'puluhan' || step === 'selesai'))
+      ? targetSatuan
+      : satuan1;
+
+  const angka1Terdisplay = isPenjumlahan
+    ? angka1
+    : (puluhanTerdisplay * 10) + satuanTerdisplay;
 
   const simbol = isPenjumlahan ? '+' : '−';
 
@@ -246,7 +296,7 @@ export default function InteractiveMathBlocks({
         {/* BARIS 1: Angka Awal (Kotak 1 & Kotak 2) */}
         {step !== 'selesai' && (
           <div className="flex items-center justify-center gap-8 w-full z-10">
-            {/* Kotak Angka 1 */}
+            {/* Kotak Angka 1 (Dinamis berkurang jika pengurangan) */}
             <div className={`flex flex-col items-center gap-2 bg-white p-4 rounded-2xl border-2 shadow-sm transition-all duration-300 ${
               step === 'satuan' ? 'border-blue-400' : step === 'puluhan' ? 'border-emerald-400' : 'border-slate-200'
             }`}>
@@ -260,7 +310,7 @@ export default function InteractiveMathBlocks({
                       : 'border border-transparent'
                   }`}
                 >
-                  {Array.from({ length: puluhan1 }).map((_, i) => (
+                  {Array.from({ length: puluhanTerdisplay }).map((_, i) => (
                     <PuluhanBlock key={`p1-${i}`} />
                   ))}
                 </div>
@@ -273,12 +323,12 @@ export default function InteractiveMathBlocks({
                       : 'border border-transparent'
                   }`}
                 >
-                  {Array.from({ length: satuan1 }).map((_, i) => (
+                  {Array.from({ length: satuanTerdisplay }).map((_, i) => (
                     <SatuanBlock key={`s1-${i}`} />
                   ))}
                 </div>
               </div>
-              <span className="text-xl font-black text-slate-700 mt-2">{angka1}</span>
+              <span className="text-xl font-black text-slate-700 mt-2">{angka1Terdisplay}</span>
             </div>
 
             {/* Simbol Operasi */}
@@ -303,7 +353,6 @@ export default function InteractiveMathBlocks({
                       <PuluhanBlock key={`p2-${i}`} />
                     ))
                   ) : (
-                    // Tanda silang merah halus jika dikurangi
                     <div className="text-xs text-red-500 font-bold px-2">-{puluhan2} puluhan</div>
                   )}
                 </div>
@@ -330,7 +379,7 @@ export default function InteractiveMathBlocks({
           </div>
         )}
 
-        {/* SVG Garis Panah Penghubung Dinamis (100% Presisi Mengikuti Letak Balok) */}
+        {/* SVG Garis Panah Penghubung Dinamis */}
         {step !== 'selesai' && (
           <svg ref={svgRef} className="absolute inset-0 w-full h-full pointer-events-none z-0">
             <defs>
@@ -345,7 +394,6 @@ export default function InteractiveMathBlocks({
             {/* Garis Panah Satuan (Langkah 1) */}
             {step === 'satuan' && (
               <AnimatePresence>
-                {/* Panah dari Satuan 1 (Kiri) ke Wadah Satuan Hasil (Kanan Bawah) */}
                 <motion.path
                   key="arrow-s1"
                   initial={{ pathLength: 0, opacity: 0 }}
@@ -358,7 +406,6 @@ export default function InteractiveMathBlocks({
                   strokeDasharray="6,6"
                   markerEnd="url(#arrow-blue)"
                 />
-                {/* Panah dari Satuan 2 (Kanan) ke Wadah Satuan Hasil (Kanan Bawah) */}
                 <motion.path
                   key="arrow-s2"
                   initial={{ pathLength: 0, opacity: 0 }}
@@ -377,7 +424,6 @@ export default function InteractiveMathBlocks({
             {/* Garis Panah Puluhan (Langkah 2) */}
             {step === 'puluhan' && (
               <AnimatePresence>
-                {/* Panah dari Puluhan 1 (Kiri) ke Wadah Puluhan Hasil (Kiri Bawah) */}
                 <motion.path
                   key="arrow-p1"
                   initial={{ pathLength: 0, opacity: 0 }}
@@ -390,7 +436,6 @@ export default function InteractiveMathBlocks({
                   strokeDasharray="6,6"
                   markerEnd="url(#arrow-emerald)"
                 />
-                {/* Panah dari Puluhan 2 (Kanan) ke Wadah Puluhan Hasil (Kiri Bawah) - Melengkung Rapi Menghindari Simbol + */}
                 <motion.path
                   key="arrow-p2"
                   initial={{ pathLength: 0, opacity: 0 }}
@@ -507,7 +552,7 @@ export default function InteractiveMathBlocks({
                 </div>
               </div>
 
-              {/* Teks Penjelasan Sesuai Gambar Prof */}
+              {/* Teks Penjelasan */}
               <div className="text-center flex flex-col gap-1">
                 <span className="text-slate-500 text-xs font-semibold">
                   {targetPuluhan * 10} + {targetSatuan} = {isPenjumlahan ? angka1 + angka2 : angka1 - angka2}
@@ -520,19 +565,87 @@ export default function InteractiveMathBlocks({
           )}
         </AnimatePresence>
 
-        {/* Kontrol Langkah */}
-        {step !== 'selesai' && (
-          <div className="mt-4 w-full flex justify-end z-10">
+        {/* Panel Kontrol Navigasi Langkah Manual */}
+        <div className="flex flex-col gap-3 w-full max-w-sm mx-auto mt-4 border-t border-border pt-4 z-10">
+          {/* Progress bar */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-muted-foreground w-12 text-right">
+              Langkah {langkahSekarang + 1} / 3
+            </span>
+            <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-blue-500 transition-all duration-300" 
+                style={{ width: `${((langkahSekarang + 1) / 3) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Tombol-tombol kontrol */}
+          <div className="flex items-center justify-center gap-3">
+            {/* Ulangi */}
             <Button
-              onClick={handleNextStep}
-              disabled={isAnimating}
-              className="gap-2 px-6 shadow-md rounded-2xl transition-all animate-bounce"
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                setLangkahSekarang(0);
+                setIsPlaying(true);
+              }}
+              disabled={langkahSekarang === 0 && !isPlaying}
+              title="Ulangi dari awal"
+              className="rounded-xl w-10 h-10"
             >
-              Lanjut Langkah
-              <ArrowRight className="w-4 h-4" />
+              <SkipBack className="w-4 h-4" />
+            </Button>
+
+            {/* Sebelumnya */}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                if (langkahSekarang > 0) {
+                  setLangkahSekarang((prev) => prev - 1);
+                }
+              }}
+              disabled={langkahSekarang === 0}
+              title="Langkah sebelumnya"
+              className="rounded-xl w-10 h-10"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+
+            {/* Play/Pause */}
+            <Button
+              variant="default"
+              size="icon"
+              onClick={() => setIsPlaying((prev) => !prev)}
+              disabled={langkahSekarang === 2 && !isPlaying}
+              title={isPlaying ? 'Jeda' : 'Putar otomatis'}
+              className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+            >
+              {isPlaying ? (
+                <Pause className="w-5 h-5" />
+              ) : (
+                <Play className="w-5 h-5 ml-0.5" />
+              )}
+            </Button>
+
+            {/* Berikutnya */}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                if (langkahSekarang < 2) {
+                  setLangkahSekarang((prev) => prev + 1);
+                }
+              }}
+              disabled={langkahSekarang === 2}
+              title="Langkah berikutnya"
+              className="rounded-xl w-10 h-10"
+            >
+              <ChevronRight className="w-5 h-5" />
             </Button>
           </div>
-        )}
+        </div>
 
         {/* Tombol Lanjut ke Angka (Hanya saat Selesai) */}
         {step === 'selesai' && (
@@ -546,8 +659,9 @@ export default function InteractiveMathBlocks({
               <CheckCircle2 className="w-4 h-4" />
               <span>Selesai! Kamu hebat!</span>
             </div>
-            <Button onClick={onSelesai} size="lg" className="gap-2 px-8 shadow-md rounded-2xl w-full max-w-xs mt-2">
+            <Button onClick={onSelesai} size="lg" className="gap-2 px-8 shadow-md rounded-2xl w-full max-w-xs mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
               Lanjut ke Perhitungan Angka
+              <ArrowRight className="w-4 h-4" />
             </Button>
           </motion.div>
         )}
