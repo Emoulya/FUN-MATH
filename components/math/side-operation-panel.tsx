@@ -13,7 +13,7 @@ interface SideOperationPanelProps {
 export default function SideOperationPanel({ langkah, operasi, visible, mode = 'animasi' }: SideOperationPanelProps) {
   if (!visible || !langkah || langkah.kolom === -1) {
     return (
-      <div className="w-48 h-full min-h-[8rem] flex items-center justify-center border border-dashed border-border/50 rounded-2xl bg-card/30 text-muted-foreground text-sm p-4 text-center">
+      <div className="w-32 aspect-square self-end flex items-center justify-center border border-dashed border-border/50 rounded-2xl bg-card/30 text-muted-foreground text-sm p-4 text-center">
         Proses detail...
       </div>
     );
@@ -28,13 +28,10 @@ export default function SideOperationPanel({ langkah, operasi, visible, mode = '
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: -20, opacity: 0 }}
       key={`side-op-${langkah.kolom}-${langkah.penjelasan}`}
-      className="w-48 min-h-[8rem] p-4 bg-card rounded-2xl shadow-sm border border-border flex flex-col justify-center gap-3 relative overflow-hidden"
+      className="w-32 aspect-square self-end p-4 bg-card rounded-2xl shadow-sm border border-border flex flex-col justify-center gap-2 relative overflow-hidden"
     >
       <div className="absolute top-0 right-0 w-12 h-12 bg-primary/5 rounded-bl-full -z-10" />
-      
-      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider text-center border-b border-border pb-2 mb-1">
-        Detail Kolom
-      </p>
+
 
       {/* Operasi Penjumlahan */}
       {operasi === 'penjumlahan' && (

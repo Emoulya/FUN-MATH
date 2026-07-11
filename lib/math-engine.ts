@@ -111,26 +111,26 @@ export function solveAddition(a: number, b: number): HasilPerhitungan {
 
     // C. Jika ada carryBaru (menyimpan)
     if (carryBaru > 0) {
-      // Info Menyimpan
-      langkahLangkah.push({
-        kolom: -1,
-        nilaiDigit1: d1,
-        nilaiDigit2: d2,
-        carry,
-        hasil: 0,
-        highlightBaris1: [i],
-        highlightBaris2: [i],
-        penjelasan: `Karena <b>${jumlah}</b> lebih dari 9, kita simpan <b>${carryBaru}</b> ke kolom puluhan.`,
-      });
-
-      // Tulis Satuan
+      // Tulis Hasil Penuh Terlebih Dahulu
       langkahLangkah.push({
         kolom: i,
         nilaiDigit1: d1,
         nilaiDigit2: d2,
         carry,
-        hasil: hasilDigit,
-        penjelasan: `Tulis angka satuan <b>${hasilDigit}</b> di bawah.`,
+        hasil: jumlah,
+        penjelasan: `Tulis <b>${jumlah}</b> di bawah terlebih dahulu.`,
+      });
+
+      // Info Menyimpan
+      langkahLangkah.push({
+        kolom: i,
+        nilaiDigit1: d1,
+        nilaiDigit2: d2,
+        carry,
+        hasil: jumlah,
+        highlightBaris1: [i],
+        highlightBaris2: [i],
+        penjelasan: `Karena <b>${jumlah}</b> lebih dari 9, angka puluhannya (<b>${carryBaru}</b>) harus dipindah ke atas.`,
       });
 
       // Simpan Carry (Pemicu Animasi)
@@ -141,7 +141,7 @@ export function solveAddition(a: number, b: number): HasilPerhitungan {
         carry,
         hasil: hasilDigit,
         carryBaru,
-        penjelasan: `Simpan <b>${carryBaru}</b> meluncur ke atas puluhan!`,
+        penjelasan: `Simpan <b>${carryBaru}</b> meluncur ke atas puluhan, dan sisakan <b>${hasilDigit}</b> di bawah!`,
       });
     } else {
       // Tanpa Menyimpan: Tulis Hasil
