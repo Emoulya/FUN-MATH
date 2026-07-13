@@ -24,7 +24,14 @@ import { useTutorial } from '@/hooks/use-tutorial';
 import { MODUL3_CONTOH, MODUL3_SOAL } from '@/lib/dataset-soal';
 import { MAX_PERCOBAAN, STORAGE_KEY_FROM_MODUL } from '@/lib/constants';
 
-type Layar = 'belajar' | 'latihan';
+import InteractiveRegroupingBlocks from '@/components/math/interactive-regrouping-blocks';
+
+type Layar = 'belajar' | 'interaktif' | 'latihan';
+
+const INTERAKTIF_SOAL = [
+  { initialTens: 3, initialOnes: 0, targetSubtractTens: 2, targetSubtractOnes: 5 }, // 30 - 25
+  { initialTens: 4, initialOnes: 2, targetSubtractTens: 1, targetSubtractOnes: 8 }  // 42 - 18
+];
 
 function ErrorFallback({ resetErrorBoundary }: { resetErrorBoundary: () => void }) {
   return (
@@ -43,7 +50,8 @@ export default function Modul3Page() {
   const animasi = useAnimasi();
   const latihan = useLatihan();
   const { selesaikanModul } = useModulProgress();
-  const [layar, setLayar] = useState<Layar>('belajar');
+  const [layar, setLayar] = useState<Layar>('interaktif');
+  const [indexInteraktif, setIndexInteraktif] = useState(0);
   const [indexContoh, setIndexContoh] = useState(0); // 0, 1, 2 contoh
   const { isTutorial } = useTutorial();
   const sesiMulaiRef = useRef(0);
@@ -208,6 +216,29 @@ export default function Modul3Page() {
                 </Button>
               )}
             </div>
+          </motion.div>
+        ) : layar === 'interaktif' ? (
+          <motion.div
+            key={`interaktif-${indexInteraktif}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col items-center gap-6 w-full max-w-2xl"
+          >
+            <InteractiveRegroupingBlocks
+              mode="pengurangan"
+              initialTens={INTERAKTIF_SOAL[indexInteraktif].initialTens}
+              initialOnes={INTERAKTIF_SOAL[indexInteraktif].initialOnes}
+              targetSubtractTens={INTERAKTIF_SOAL[indexInteraktif].targetSubtractTens}
+              targetSubtractOnes={INTERAKTIF_SOAL[indexInteraktif].targetSubtractOnes}
+              onComplete={() => {
+                if (indexInteraktif < INTERAKTIF_SOAL.length - 1) {
+                  setIndexInteraktif((prev) => prev + 1);
+                } else {
+                  setLayar('belajar');
+                }
+              }}
+            />
           </motion.div>
         ) : (
           <motion.div

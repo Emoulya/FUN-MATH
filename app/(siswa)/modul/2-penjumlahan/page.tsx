@@ -24,7 +24,14 @@ import { useTutorial } from '@/hooks/use-tutorial';
 import { MODUL2_CONTOH, MODUL2_SOAL } from '@/lib/dataset-soal';
 import { MAX_PERCOBAAN, STORAGE_KEY_FROM_MODUL } from '@/lib/constants';
 
-type Layar = 'belajar' | 'latihan';
+import InteractiveRegroupingBlocks from '@/components/math/interactive-regrouping-blocks';
+
+type Layar = 'belajar' | 'interaktif' | 'latihan';
+
+const INTERAKTIF_SOAL = [
+  { initialTens: 2, initialOnes: 13, problemText: "28 + 5 = ?" },  // 2 tens, 13 ones -> 20 + 13 = 33
+  { initialTens: 3, initialOnes: 15, problemText: "29 + 16 = ?" }  // 3 tens, 15 ones -> 30 + 15 = 45
+];
 
 function ErrorFallback({ resetErrorBoundary }: { resetErrorBoundary: () => void }) {
   return (
@@ -43,7 +50,8 @@ export default function Modul2Page() {
   const animasi = useAnimasi();
   const latihan = useLatihan();
   const { selesaikanModul } = useModulProgress();
-  const [layar, setLayar] = useState<Layar>('belajar');
+  const [layar, setLayar] = useState<Layar>('interaktif');
+  const [indexInteraktif, setIndexInteraktif] = useState(0);
   const [indexContoh, setIndexContoh] = useState(0); // 0, 1, 2 contoh
   const { isTutorial } = useTutorial();
   const sesiMulaiRef = useRef(0);
@@ -208,6 +216,28 @@ export default function Modul2Page() {
                 </Button>
               )}
             </div>
+          </motion.div>
+        ) : layar === 'interaktif' ? (
+          <motion.div
+            key={`interaktif-${indexInteraktif}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col items-center gap-6 w-full max-w-2xl"
+          >
+            <InteractiveRegroupingBlocks
+              mode="penjumlahan"
+              initialTens={INTERAKTIF_SOAL[indexInteraktif].initialTens}
+              initialOnes={INTERAKTIF_SOAL[indexInteraktif].initialOnes}
+              problemText={INTERAKTIF_SOAL[indexInteraktif].problemText}
+              onComplete={() => {
+                if (indexInteraktif < INTERAKTIF_SOAL.length - 1) {
+                  setIndexInteraktif((prev) => prev + 1);
+                } else {
+                  setLayar('belajar');
+                }
+              }}
+            />
           </motion.div>
         ) : (
           <motion.div
