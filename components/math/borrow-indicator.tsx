@@ -58,9 +58,10 @@ export default function BorrowIndicator({
           duration: isNew ? 0.8 : 0.3,
           ease: isNew ? [0.17, 0.89, 0.32, 1.1] : 'easeOut'
         }}
-        className="text-xs font-bold"
+        className="text-xs font-bold flex items-center gap-0.5"
         style={{ color: 'var(--borrow-color)' }}
       >
+        <span className="text-[0.6rem] opacity-70">→</span>
         {nilaiBaru}
       </motion.span>
     </motion.div>
