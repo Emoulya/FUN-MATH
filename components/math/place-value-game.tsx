@@ -3,6 +3,7 @@
 // ============================================
 // PlaceValueGame — Game Isian Nilai Tempat
 // ============================================
+// Alur stage: 1. Drag-Drop → 2. Mencocokkan → 3. Isian
 // Siswa melihat representasi balok Base-10, lalu mengisi:
 // __ puluhan __ satuan = __
 // Tanpa timer, tanpa skor ketat — sesuai prinsip AHD.
@@ -40,7 +41,9 @@ export default function PlaceValueGame({
   const [inputSatuan, setInputSatuan] = useState('');
   const [inputAngka, setInputAngka] = useState('');
   const [soalState, setSoalState] = useState<SoalState>('mengerjakan');
-  const [stage, setStage] = useState<'mencocokkan' | 'gameplay'>('mencocokkan');
+
+  // Urutan baru: drag-drop → mencocokkan → isian
+  const [stage, setStage] = useState<'dragdrop' | 'mencocokkan' | 'isian'>('dragdrop');
 
   const puluhanRef = useRef<HTMLInputElement>(null);
   const satuanRef = useRef<HTMLInputElement>(null);
@@ -53,7 +56,7 @@ export default function PlaceValueGame({
 
   // Focus input puluhan saat soal baru
   useEffect(() => {
-    if (soalState === 'mengerjakan' && stage === 'gameplay') {
+    if (soalState === 'mengerjakan' && stage === 'isian') {
       puluhanRef.current?.focus();
     }
   }, [angka, soalState, stage]);
@@ -120,10 +123,69 @@ export default function PlaceValueGame({
     }
   };
 
-  // 1. Tampilkan Game Mencocokkan terlebih dahulu
-  if (stage === 'mencocokkan') {
-    return <PlaceValueMatchGame onBenar={() => setStage('gameplay')} />;
+  // ============================================
+  // Stage 1: Game Drag-Drop (2 soal pertama)
+  // ============================================
+  if (stage === 'dragdrop') {
+    if (indexSoal < 2) {
+      return (
+        <div className="flex flex-col items-center gap-6 w-full max-w-md">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="font-semibold">
+              Soal {indexSoal + 1} dari {jumlahSoal}
+            </span>
+          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={angka}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="w-full"
+            >
+              <PlaceValueDragDrop
+                angka={angka}
+                onBenar={() => {
+                  const nextIndex = indexSoal + 1;
+                  setIndexSoal(nextIndex);
+                  if (nextIndex >= 2) {
+                    // Pindah ke stage mencocokkan
+                    setStage('mencocokkan');
+                  } else {
+                    setAngka(generateAngka());
+                  }
+                }}
+              />
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      );
+    }
+    // Fallback: jika sudah 2 soal, pindah ke mencocokkan
+    setStage('mencocokkan');
   }
+
+  // ============================================
+  // Stage 2: Game Mencocokkan
+  // ============================================
+  if (stage === 'mencocokkan') {
+    return (
+      <PlaceValueMatchGame
+        onBenar={() => {
+          setStage('isian');
+          setAngka(generateAngka());
+          setInputPuluhan('');
+          setInputSatuan('');
+          setInputAngka('');
+          setSoalState('mengerjakan');
+        }}
+      />
+    );
+  }
+
+  // ============================================
+  // Stage 3: Game Isian
+  // ============================================
 
   // Tampilan selesai
   if (selesaiSemua) {
@@ -147,29 +209,6 @@ export default function PlaceValueGame({
           Lanjut <ArrowRight className="w-4 h-4" />
         </Button>
       </motion.div>
-    );
-  }
-
-  if (indexSoal < 2) {
-    return (
-      <div className="flex flex-col items-center gap-6 w-full max-w-md">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="font-semibold">
-            Soal {indexSoal + 1} dari {jumlahSoal}
-          </span>
-        </div>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={angka}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="w-full"
-          >
-            <PlaceValueDragDrop angka={angka} onBenar={soalBerikutnya} />
-          </motion.div>
-        </AnimatePresence>
-      </div>
     );
   }
 

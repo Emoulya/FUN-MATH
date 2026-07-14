@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Check, ArrowRight } from 'lucide-react';
+import { Check, ArrowRight, X } from 'lucide-react';
 
 interface MatchItem {
   id: number;
@@ -45,6 +45,12 @@ function generateMatchSoal(): { ronde1: MatchItem[]; ronde2: MatchItem[] } {
   return { ronde1, ronde2 };
 }
 
+type FeedbackState = {
+  type: 'benar' | 'salah';
+  leftId: number;
+  rightId: number;
+} | null;
+
 export default function PlaceValueMatchGame({ onBenar }: PlaceValueMatchGameProps) {
   const [ronde, setRonde] = useState<1 | 2>(1);
   const [soalData] = useState(() => generateMatchSoal());
@@ -55,6 +61,7 @@ export default function PlaceValueMatchGame({ onBenar }: PlaceValueMatchGameProp
   const [selectedLeft, setSelectedLeft] = useState<number | null>(null);
   const [selectedRight, setSelectedRight] = useState<number | null>(null);
   const [matches, setMatches] = useState<number[]>([]); // Menyimpan id yang sudah cocok
+  const [feedback, setFeedback] = useState<FeedbackState>(null);
 
   // Inisialisasi & Reset Data saat pergantian ronde
   useEffect(() => {
@@ -67,21 +74,20 @@ export default function PlaceValueMatchGame({ onBenar }: PlaceValueMatchGameProp
     setMatches([]);
     setSelectedLeft(null);
     setSelectedRight(null);
+    setFeedback(null);
   }, [ronde, soalData]);
 
   const handleSelectLeft = (id: number) => {
-    if (matches.includes(id)) return;
+    if (matches.includes(id) || feedback !== null) return;
     setSelectedLeft(id);
-    // Jika di kanan sudah dipilih, periksa kecocokan
     if (selectedRight !== null) {
       checkMatch(id, selectedRight);
     }
   };
 
   const handleSelectRight = (id: number) => {
-    if (matches.includes(id)) return;
+    if (matches.includes(id) || feedback !== null) return;
     setSelectedRight(id);
-    // Jika di kiri sudah dipilih, periksa kecocokan
     if (selectedLeft !== null) {
       checkMatch(selectedLeft, id);
     }
@@ -89,18 +95,34 @@ export default function PlaceValueMatchGame({ onBenar }: PlaceValueMatchGameProp
 
   const checkMatch = (leftId: number, rightId: number) => {
     if (leftId === rightId) {
-      // Cocok!
-      setMatches((prev) => [...prev, leftId]);
-      setSelectedLeft(null);
-      setSelectedRight(null);
+      // Cocok! — tampilkan feedback benar
+      setFeedback({ type: 'benar', leftId, rightId });
+      setTimeout(() => {
+        setMatches((prev) => [...prev, leftId]);
+        setSelectedLeft(null);
+        setSelectedRight(null);
+        setFeedback(null);
+      }, 600);
     } else {
-      // Salah
-      setSelectedLeft(null);
-      setSelectedRight(null);
+      // Salah — tampilkan feedback salah
+      setFeedback({ type: 'salah', leftId, rightId });
+      setTimeout(() => {
+        setSelectedLeft(null);
+        setSelectedRight(null);
+        setFeedback(null);
+      }, 700);
     }
   };
 
-  const isSelesai = matches.length === itemsLeft.length;
+  // Cek apakah kartu mendapat feedback (untuk styling)
+  const getCardFeedback = (id: number, side: 'left' | 'right') => {
+    if (!feedback) return null;
+    if (side === 'left' && feedback.leftId === id) return feedback.type;
+    if (side === 'right' && feedback.rightId === id) return feedback.type;
+    return null;
+  };
+
+  const isSelesai = matches.length === itemsLeft.length && itemsLeft.length > 0;
 
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-md p-6 bg-card rounded-3xl border border-border shadow-xl">
@@ -121,22 +143,66 @@ export default function PlaceValueMatchGame({ onBenar }: PlaceValueMatchGameProp
           {itemsLeft.map((item) => {
             const isMatched = matches.includes(item.id);
             const isSelected = selectedLeft === item.id;
+            const cardFeedback = getCardFeedback(item.id, 'left');
             return (
               <motion.button
                 key={`left-${item.id}`}
                 onClick={() => handleSelectLeft(item.id)}
-                disabled={isMatched}
-                whileHover={!isMatched ? { scale: 1.05 } : {}}
-                whileTap={!isMatched ? { scale: 0.95 } : {}}
-                className={`flex items-center justify-center p-5 rounded-2xl border-2 text-2xl font-black transition-all h-20 ${
+                disabled={isMatched || feedback !== null}
+                whileHover={!isMatched && !feedback ? { scale: 1.05 } : {}}
+                whileTap={!isMatched && !feedback ? { scale: 0.95 } : {}}
+                animate={
+                  cardFeedback === 'salah'
+                    ? { x: [0, -8, 8, -6, 6, 0] }
+                    : cardFeedback === 'benar'
+                    ? { scale: [1, 1.1, 1] }
+                    : {}
+                }
+                transition={
+                  cardFeedback === 'salah'
+                    ? { duration: 0.4 }
+                    : cardFeedback === 'benar'
+                    ? { duration: 0.3 }
+                    : {}
+                }
+                className={`relative flex items-center justify-center p-5 rounded-2xl border-2 text-2xl font-black transition-colors h-20 ${
                   isMatched
                     ? 'border-emerald-200 bg-emerald-50 text-emerald-500 opacity-60'
+                    : cardFeedback === 'benar'
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-600 ring-2 ring-emerald-500/30'
+                    : cardFeedback === 'salah'
+                    ? 'border-red-500 bg-red-50 text-red-600 ring-2 ring-red-500/30'
                     : isSelected
                     ? 'border-blue-500 bg-blue-50 text-blue-600 shadow-md ring-2 ring-blue-500/20'
                     : 'border-border bg-slate-50 hover:bg-slate-100 text-slate-700'
                 }`}
               >
-                {isMatched ? <Check className="w-6 h-6" /> : item.angka}
+                {isMatched ? (
+                  <Check className="w-6 h-6" />
+                ) : (
+                  <>
+                    {item.angka}
+                    {/* Ikon feedback overlay */}
+                    {cardFeedback === 'benar' && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-2 -right-2 w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center shadow-md"
+                      >
+                        <Check className="w-4 h-4 text-white" />
+                      </motion.div>
+                    )}
+                    {cardFeedback === 'salah' && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center shadow-md"
+                      >
+                        <X className="w-4 h-4 text-white" />
+                      </motion.div>
+                    )}
+                  </>
+                )}
               </motion.button>
             );
           })}
@@ -148,16 +214,35 @@ export default function PlaceValueMatchGame({ onBenar }: PlaceValueMatchGameProp
           {itemsRight.map((item) => {
             const isMatched = matches.includes(item.id);
             const isSelected = selectedRight === item.id;
+            const cardFeedback = getCardFeedback(item.id, 'right');
             return (
               <motion.button
                 key={`right-${item.id}`}
                 onClick={() => handleSelectRight(item.id)}
-                disabled={isMatched}
-                whileHover={!isMatched ? { scale: 1.05 } : {}}
-                whileTap={!isMatched ? { scale: 0.95 } : {}}
-                className={`flex items-center justify-center p-3 rounded-2xl border-2 transition-all h-20 overflow-hidden ${
+                disabled={isMatched || feedback !== null}
+                whileHover={!isMatched && !feedback ? { scale: 1.05 } : {}}
+                whileTap={!isMatched && !feedback ? { scale: 0.95 } : {}}
+                animate={
+                  cardFeedback === 'salah'
+                    ? { x: [0, -8, 8, -6, 6, 0] }
+                    : cardFeedback === 'benar'
+                    ? { scale: [1, 1.1, 1] }
+                    : {}
+                }
+                transition={
+                  cardFeedback === 'salah'
+                    ? { duration: 0.4 }
+                    : cardFeedback === 'benar'
+                    ? { duration: 0.3 }
+                    : {}
+                }
+                className={`relative flex items-center justify-center p-3 rounded-2xl border-2 transition-colors h-20 overflow-hidden ${
                   isMatched
                     ? 'border-emerald-200 bg-emerald-50 opacity-60'
+                    : cardFeedback === 'benar'
+                    ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-500/30'
+                    : cardFeedback === 'salah'
+                    ? 'border-red-500 bg-red-50 ring-2 ring-red-500/30'
                     : isSelected
                     ? 'border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-500/20'
                     : 'border-border bg-slate-50 hover:bg-slate-100'
@@ -166,38 +251,59 @@ export default function PlaceValueMatchGame({ onBenar }: PlaceValueMatchGameProp
                 {isMatched ? (
                   <Check className="w-6 h-6 text-emerald-500" />
                 ) : (
-                  <div className="flex items-end justify-center gap-2 h-full py-1">
-                    {/* Batang puluhan */}
-                    <div className="flex items-end gap-0.5">
-                      {Array.from({ length: item.puluhan }).map((_, idx) => (
-                        <div
-                          key={idx}
-                          style={{
-                            width: 6,
-                            height: 40,
-                            backgroundColor: 'var(--block-puluhan)',
-                            border: '0.5px solid black',
-                            borderRadius: 1,
-                          }}
-                        />
-                      ))}
+                  <>
+                    <div className="flex items-end justify-center gap-2 h-full py-1">
+                      {/* Batang puluhan */}
+                      <div className="flex items-end gap-0.5">
+                        {Array.from({ length: item.puluhan }).map((_, idx) => (
+                          <div
+                            key={idx}
+                            style={{
+                              width: 6,
+                              height: 40,
+                              backgroundColor: 'var(--block-puluhan)',
+                              border: '0.5px solid black',
+                              borderRadius: 1,
+                            }}
+                          />
+                        ))}
+                      </div>
+                      {/* Kotak satuan */}
+                      <div className="flex flex-wrap max-w-[30px] gap-0.5 content-end justify-center">
+                        {Array.from({ length: item.satuan }).map((_, idx) => (
+                          <div
+                            key={idx}
+                            style={{
+                              width: 6,
+                              height: 6,
+                              backgroundColor: 'var(--block-satuan)',
+                              border: '0.5px solid black',
+                              borderRadius: 0.5,
+                            }}
+                          />
+                        ))}
+                      </div>
                     </div>
-                    {/* Kotak satuan */}
-                    <div className="flex flex-wrap max-w-[30px] gap-0.5 content-end justify-center">
-                      {Array.from({ length: item.satuan }).map((_, idx) => (
-                        <div
-                          key={idx}
-                          style={{
-                            width: 6,
-                            height: 6,
-                            backgroundColor: 'var(--block-satuan)',
-                            border: '0.5px solid black',
-                            borderRadius: 0.5,
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
+                    {/* Ikon feedback overlay */}
+                    {cardFeedback === 'benar' && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-2 -right-2 w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center shadow-md"
+                      >
+                        <Check className="w-4 h-4 text-white" />
+                      </motion.div>
+                    )}
+                    {cardFeedback === 'salah' && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center shadow-md"
+                      >
+                        <X className="w-4 h-4 text-white" />
+                      </motion.div>
+                    )}
+                  </>
                 )}
               </motion.button>
             );
@@ -229,7 +335,7 @@ export default function PlaceValueMatchGame({ onBenar }: PlaceValueMatchGameProp
                   className="w-full gap-2 rounded-2xl shadow-md"
                   size="lg"
                 >
-                  Lanjut ke Game Drag-Drop
+                  Lanjut ke Game Isian
                 </Button>
               )}
             </motion.div>
