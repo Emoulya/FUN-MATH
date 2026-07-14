@@ -218,12 +218,18 @@ export default function Base10Blocks({
         </div>
       )}
 
-      {/* Blok visual — sejajarkan di bawah (items-end) */}
-      <div className="flex items-end justify-center flex-wrap" style={{ gap: gap * 5 }}>
+      {/* Blok visual — Layout 2 Kolom: Puluhan (kiri) | Satuan (kanan) */}
+      <div className="flex items-start justify-center" style={{ gap: gap * 6 }}>
 
-        {/* ── Ratusan ── */}
+        {/* ── Ratusan (jika ada) ── */}
         {ratusan > 0 && (
-          <div className="flex flex-col items-center" style={{ gap: gap }}>
+          <div className="flex flex-col items-center" style={{ gap }}>
+            <span
+              className="text-xs font-bold uppercase tracking-wider"
+              style={{ color: 'var(--block-ratusan)' }}
+            >
+              Ratusan
+            </span>
             <div className="flex flex-wrap justify-center" style={{ gap }}>
               {Array.from({ length: ratusan }).map((_, i) => (
                 <RatusanBlock
@@ -235,25 +241,20 @@ export default function Base10Blocks({
                 />
               ))}
             </div>
-            {tampilkanLabel && (
-              <motion.span
-                initial={animasi ? { opacity: 0, y: 4 } : undefined}
-                animate={animasi ? { opacity: 1, y: 0 } : undefined}
-                transition={animasi ? { delay: baseDelay + ratusan * 0.15 + 0.2 } : undefined}
-                className="text-xs font-bold"
-                style={{ color: 'var(--block-ratusan)' }}
-              >
-                Ratusan ({ratusan})
-              </motion.span>
-            )}
           </div>
         )}
 
-        {/* ── Puluhan ── */}
-        {puluhan > 0 && (
-          <div className="flex flex-col items-center" style={{ gap }}>
-            <div className="flex items-end" style={{ gap }}>
-              {Array.from({ length: puluhan }).map((_, i) => (
+        {/* ── Kolom Puluhan (kiri) ── */}
+        <div className="flex flex-col items-center" style={{ gap }}>
+          <span
+            className="text-xs font-bold uppercase tracking-wider"
+            style={{ color: 'var(--block-puluhan)' }}
+          >
+            Puluhan
+          </span>
+          <div className="flex items-end justify-center" style={{ gap }}>
+            {puluhan > 0 ? (
+              Array.from({ length: puluhan }).map((_, i) => (
                 <PuluhanBlock
                   key={`p-${i}`}
                   w={w}
@@ -261,33 +262,30 @@ export default function Base10Blocks({
                   delay={baseDelay + ratusan * 0.15 + i * 0.1}
                   animasi={animasi}
                 />
-              ))}
-            </div>
-            {tampilkanLabel && (
-              <motion.span
-                initial={animasi ? { opacity: 0, y: 4 } : undefined}
-                animate={animasi ? { opacity: 1, y: 0 } : undefined}
-                transition={animasi ? { delay: baseDelay + ratusan * 0.15 + puluhan * 0.1 + 0.2 } : undefined}
-                className="text-xs font-bold"
-                style={{ color: 'var(--block-puluhan)' }}
-              >
-                Puluhan ({puluhan})
-              </motion.span>
+              ))
+            ) : (
+              <span className="text-xs text-muted-foreground italic">—</span>
             )}
           </div>
-        )}
+        </div>
 
-        {/* ── Satuan ── */}
-        {satuan > 0 && (
-          <div className="flex flex-col items-center" style={{ gap }}>
-            <div
-              className="grid"
-              style={{
-                gridTemplateColumns: `repeat(${Math.min(satuan, 5)}, ${w}px)`,
-                gap,
-              }}
-            >
-              {Array.from({ length: satuan }).map((_, i) => (
+        {/* ── Kolom Satuan (kanan) ── */}
+        <div className="flex flex-col items-center" style={{ gap }}>
+          <span
+            className="text-xs font-bold uppercase tracking-wider"
+            style={{ color: 'var(--block-satuan)' }}
+          >
+            Satuan
+          </span>
+          <div
+            className="grid"
+            style={{
+              gridTemplateColumns: `repeat(${Math.min(satuan || 1, 5)}, ${w}px)`,
+              gap,
+            }}
+          >
+            {satuan > 0 ? (
+              Array.from({ length: satuan }).map((_, i) => (
                 <SatuanBlock
                   key={`s-${i}`}
                   w={w}
@@ -295,21 +293,12 @@ export default function Base10Blocks({
                   delay={baseDelay + ratusan * 0.15 + puluhan * 0.1 + i * 0.08}
                   animasi={animasi}
                 />
-              ))}
-            </div>
-            {tampilkanLabel && (
-              <motion.span
-                initial={animasi ? { opacity: 0, y: 4 } : undefined}
-                animate={animasi ? { opacity: 1, y: 0 } : undefined}
-                transition={animasi ? { delay: baseDelay + ratusan * 0.15 + puluhan * 0.1 + satuan * 0.08 + 0.2 } : undefined}
-                className="text-xs font-bold"
-                style={{ color: 'var(--block-satuan)' }}
-              >
-                Satuan ({satuan})
-              </motion.span>
+              ))
+            ) : (
+              <span className="text-xs text-muted-foreground italic">—</span>
             )}
           </div>
-        )}
+        </div>
 
       </div>
     </div>

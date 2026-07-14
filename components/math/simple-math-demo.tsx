@@ -109,7 +109,7 @@ export default function SimpleMathDemo({ onSelesai }: SimpleMathDemoProps) {
         <h3 className="text-lg font-black tracking-tight text-slate-800">
           {subPhase === 'gambar' ? '🎨 Contoh Konsep (Gambar Balok)' : '🔢 Contoh Perhitungan (Susun Angka)'}
         </h3>
-        <p className="text-xs font-semibold text-muted-foreground mt-1 uppercase tracking-wider text-primary">
+        <p className="text-xs font-semibold mt-1 uppercase tracking-wider text-primary">
           {operasi === 'penjumlahan' ? 'Penjumlahan Sederhana' : 'Pengurangan Sederhana'} — Contoh {indexContoh + 1}
         </p>
       </motion.div>

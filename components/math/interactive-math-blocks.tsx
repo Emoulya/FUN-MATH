@@ -19,7 +19,8 @@ interface InteractiveMathBlocksProps {
   angka1: number;
   angka2: number;
   operasi: 'penjumlahan' | 'pengurangan';
-  onSelesai: () => void;
+  onSelesai?: () => void;
+  compact?: boolean;
 }
 
 // ---------------------------------------------
@@ -77,6 +78,7 @@ export default function InteractiveMathBlocks({
   angka2,
   operasi,
   onSelesai,
+  compact = false,
 }: InteractiveMathBlocksProps) {
   const isPenjumlahan = operasi === 'penjumlahan';
 
@@ -294,8 +296,7 @@ export default function InteractiveMathBlocks({
       <div className="relative flex flex-col items-center gap-12 w-full p-6 bg-slate-50/50 rounded-3xl border border-slate-100 min-h-[450px]">
         
         {/* BARIS 1: Angka Awal (Kotak 1 & Kotak 2) */}
-        {step !== 'selesai' && (
-          <div className="flex items-center justify-center gap-8 w-full z-10">
+        <div className="flex items-center justify-center gap-8 w-full z-10">
             {/* Kotak Angka 1 (Dinamis berkurang jika pengurangan) */}
             <div className={`flex flex-col items-center gap-2 bg-white p-4 rounded-2xl border-2 shadow-sm transition-all duration-300 ${
               step === 'satuan' ? 'border-blue-400' : step === 'puluhan' ? 'border-emerald-400' : 'border-slate-200'
@@ -377,12 +378,10 @@ export default function InteractiveMathBlocks({
               <span className="text-xl font-black text-slate-700 mt-2">{angka2}</span>
             </div>
           </div>
-        )}
 
         {/* SVG Garis Panah Penghubung Dinamis */}
-        {step !== 'selesai' && (
-          <svg ref={svgRef} className="absolute inset-0 w-full h-full pointer-events-none z-0">
-            <defs>
+        <svg ref={svgRef} className="absolute inset-0 w-full h-full pointer-events-none z-0">
+          <defs>
               <marker id="arrow-blue" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6" />
               </marker>
@@ -451,12 +450,10 @@ export default function InteractiveMathBlocks({
               </AnimatePresence>
             )}
           </svg>
-        )}
 
         {/* BARIS 2: Wadah Hasil Sementara */}
-        {step !== 'selesai' && (
-          <div className="flex gap-16 justify-center w-full mt-6 z-10">
-            {/* Wadah Target Puluhan */}
+        <div className="flex gap-16 justify-center w-full mt-6 z-10">
+          {/* Wadah Target Puluhan */}
             <div 
               ref={wadahPuluhanRef}
               className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all w-40 min-h-[160px] bg-white ${
@@ -506,7 +503,6 @@ export default function InteractiveMathBlocks({
               </span>
             </div>
           </div>
-        )}
 
         {/* BARIS 3: Hasil Akhir (Hanya muncul ketika selesai) */}
         <AnimatePresence>
@@ -647,7 +643,7 @@ export default function InteractiveMathBlocks({
           </div>
         </div>
 
-        {/* Tombol Lanjut ke Angka (Hanya saat Selesai) */}
+        {/* Tombol Lanjut ke Angka */}
         {step === 'selesai' && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -659,10 +655,12 @@ export default function InteractiveMathBlocks({
               <CheckCircle2 className="w-4 h-4" />
               <span>Selesai! Kamu hebat!</span>
             </div>
-            <Button onClick={onSelesai} size="lg" className="gap-2 px-8 shadow-md rounded-2xl w-full max-w-xs mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
-              Lanjut ke Perhitungan Angka
-              <ArrowRight className="w-4 h-4" />
-            </Button>
+            {!compact && onSelesai && (
+              <Button onClick={onSelesai} size="lg" className="gap-2 px-8 shadow-md rounded-2xl w-full max-w-xs mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                Lanjut ke Perhitungan Angka
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            )}
           </motion.div>
         )}
 

@@ -11,10 +11,11 @@ interface InteractiveMathNumbersProps {
   angka1: number;
   angka2: number;
   operasi: Operasi;
-  onSelesai: () => void;
+  onSelesai?: () => void;
+  compact?: boolean;
 }
 
-export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSelesai }: InteractiveMathNumbersProps) {
+export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSelesai, compact = false }: InteractiveMathNumbersProps) {
   const isPenjumlahan = operasi === 'penjumlahan';
   const simbol = OPERASI_SIMBOL[operasi];
   
@@ -27,9 +28,9 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
   const hasilPuluhan = isPenjumlahan ? puluhan1 + puluhan2 : puluhan1 - puluhan2;
   const hasilAkhir = isPenjumlahan ? angka1 + angka2 : angka1 - angka2;
 
-  const [step, setStep] = useState<'satuan' | 'puluhan' | 'selesai'>('satuan');
-  const [satuanProcessed, setSatuanProcessed] = useState(false);
-  const [puluhanProcessed, setPuluhanProcessed] = useState(false);
+  const [step, setStep] = useState<'satuan' | 'puluhan' | 'selesai'>(compact ? 'selesai' : 'satuan');
+  const [satuanProcessed, setSatuanProcessed] = useState(compact ? true : false);
+  const [puluhanProcessed, setPuluhanProcessed] = useState(compact ? true : false);
 
   const handleSatuanClick = () => {
     if (step !== 'satuan') return;
@@ -67,13 +68,14 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
 
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-md">
-      {/* Instruksi */}
+      {/* Instruksi (Hanya tampil jika tidak compact) */}
+      {!compact && (
       <div className={`text-center p-4 rounded-xl w-full shadow-sm transition-colors duration-500 ${step === 'selesai' ? 'bg-emerald-50 border border-emerald-200' : 'bg-blue-50 border border-blue-200'}`}>
         <h3 className="font-bold mb-3 text-lg">
           {isPenjumlahan ? 'Hitung Susun: Penjumlahan' : 'Hitung Susun: Pengurangan'}
         </h3>
         
-        <div className="flex flex-col gap-2 text-left bg-white/60 p-3 rounded-lg inline-block border border-blue-200/50 shadow-sm mx-auto max-w-sm">
+        <div className="flex-col gap-2 text-left bg-white/60 p-3 rounded-lg inline-block border border-blue-200/50 shadow-sm mx-auto max-w-sm">
           <div className={`flex items-start gap-2 ${step !== 'satuan' ? 'opacity-70 text-slate-600' : 'font-bold text-blue-800'}`}>
             <span className="shrink-0 mt-0.5">1.</span>
             <span>{instruksiSatuan}</span>
@@ -103,6 +105,7 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
           </Button>
         )}
       </div>
+      )}
 
       {/* Board Hitung Susun */}
       <div className="bg-white p-8 rounded-3xl shadow-md border border-slate-200 relative min-w-[280px]">
@@ -249,9 +252,11 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
               <div className="text-lg font-bold text-emerald-900 w-full">
                 Hasil Akhir: {angka1} {simbol} {angka2} = {hasilAkhir}
               </div>
-              <Button onClick={onSelesai} size="lg" className="gap-2 px-8 shadow-md mt-1">
-                Lanjut Belajar
-              </Button>
+              {!compact && onSelesai && (
+                <Button onClick={onSelesai} size="lg" className="gap-2 px-8 shadow-md mt-1">
+                  Lanjut Belajar
+                </Button>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

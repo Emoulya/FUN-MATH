@@ -50,10 +50,20 @@ export function PlaceValueDragDrop({ angka, onBenar }: DragDropGameProps) {
   };
 
   return (
-    <div className="flex flex-col items-center gap-8 w-full max-w-md">
-      <div className="text-center mb-4">
-        <p className="text-lg font-bold text-blue-600 mb-2">Geser (Drag) balok ke wadah di bawah!</p>
-        <p className="text-xs text-slate-500">Bisa digeser balik ke atas untuk mengurangi</p>
+    <div className="flex flex-col items-center gap-6 w-full max-w-md">
+      {/* Soal Tertulis */}
+      <div className="text-center w-full bg-amber-50 border-2 border-amber-200 rounded-2xl p-4">
+        <p className="text-base font-bold text-slate-700 mb-1">
+          Susun balok untuk angka <span className="text-2xl font-black text-amber-600">{angka}</span>
+        </p>
+        <p className="text-sm text-slate-500">
+          Taruh <span className="font-bold" style={{ color: 'var(--block-puluhan)' }}>{puluhanBenar} puluhan</span> dan{' '}
+          <span className="font-bold" style={{ color: 'var(--block-satuan)' }}>{satuanBenar} satuan</span> ke wadah!
+        </p>
+      </div>
+
+      <div className="text-center">
+        <p className="text-xs text-slate-500">Geser balok ke wadah · Bisa digeser balik ke atas</p>
       </div>
 
       {/* Sumber Balok */}
@@ -138,7 +148,9 @@ export function PlaceValueDragDrop({ angka, onBenar }: DragDropGameProps) {
               ))}
             </div>
           </div>
-          <span className="font-bold">{puluhanDiWadah}</span>
+          <span className="font-bold text-sm" style={{ color: 'var(--block-puluhan)' }}>
+            {puluhanDiWadah} / {puluhanBenar}
+          </span>
         </div>
 
         {/* Wadah Satuan */}
@@ -166,7 +178,9 @@ export function PlaceValueDragDrop({ angka, onBenar }: DragDropGameProps) {
               />
             ))}
           </div>
-          <span className="font-bold">{satuanDiWadah}</span>
+          <span className="font-bold text-sm" style={{ color: 'var(--block-satuan)' }}>
+            {satuanDiWadah} / {satuanBenar}
+          </span>
         </div>
       </div>
 
