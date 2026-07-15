@@ -29,8 +29,8 @@ import InteractiveRegroupingBlocks from '@/components/math/interactive-regroupin
 type Layar = 'belajar' | 'interaktif' | 'latihan';
 
 const INTERAKTIF_SOAL = [
-  { initialTens: 2, initialOnes: 13, problemText: "28 + 5 = ?" },  // 2 tens, 13 ones -> 20 + 13 = 33
-  { initialTens: 3, initialOnes: 15, problemText: "29 + 16 = ?" }  // 3 tens, 15 ones -> 30 + 15 = 45
+  { initialTens: 2, initialOnes: 8, targetSubtractTens: 0, targetSubtractOnes: 5, problemText: "28 + 5 = ?" },  // 2 tens, 8 ones + 5 ones -> 20 + 8 + 5 = 33
+  { initialTens: 2, initialOnes: 9, targetSubtractTens: 1, targetSubtractOnes: 6, problemText: "29 + 16 = ?" }  // 2 tens, 9 ones + 1 ten, 6 ones -> 29 + 16 = 45
 ];
 
 function ErrorFallback({ resetErrorBoundary }: { resetErrorBoundary: () => void }) {
@@ -229,6 +229,8 @@ export default function Modul2Page() {
               mode="penjumlahan"
               initialTens={INTERAKTIF_SOAL[indexInteraktif].initialTens}
               initialOnes={INTERAKTIF_SOAL[indexInteraktif].initialOnes}
+              targetSubtractTens={INTERAKTIF_SOAL[indexInteraktif].targetSubtractTens}
+              targetSubtractOnes={INTERAKTIF_SOAL[indexInteraktif].targetSubtractOnes}
               problemText={INTERAKTIF_SOAL[indexInteraktif].problemText}
               onComplete={() => {
                 if (indexInteraktif < INTERAKTIF_SOAL.length - 1) {

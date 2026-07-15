@@ -26,7 +26,7 @@ export default function CarryIndicator({ nilai, visible = true, isNew = true, hi
     <motion.span
       initial={{ 
         x: isNew ? "3.7rem" : 0, 
-        y: isNew ? "13rem" : 8, 
+        y: isNew ? "7.5rem" : 8, 
         scale: isNew ? 2.3 : 1, 
         opacity: isNew ? 1 : 0 
       }}
@@ -42,9 +42,12 @@ export default function CarryIndicator({ nilai, visible = true, isNew = true, hi
         duration: isNew ? 0.8 : 0.3, 
         ease: isNew ? [0.17, 0.89, 0.32, 1.1] : 'easeOut' // Bouncy effect when flying up diagonal
       }}
-      className={`carry-indicator animate-slide-in-up transition-colors duration-300 rounded px-1 ${highlight ? 'font-bold' : ''}`}
+      className={`relative flex items-center justify-center animate-slide-in-up transition-colors duration-300 rounded px-1 ${highlight ? 'font-bold' : ''}`}
       style={{
-        color: isNew || highlight ? 'var(--carry-color)' : 'var(--muted-foreground)',
+        color: 'var(--carry-color)',
+        fontSize: '1.75rem', // Same size as math-digit
+        lineHeight: 1,
+        zIndex: 10
       }}
       aria-label={`Simpanan ${nilai}`}
     >

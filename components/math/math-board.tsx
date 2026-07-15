@@ -356,6 +356,16 @@ export default function MathBoard({
 
   return (
     <div className="inline-flex flex-row items-stretch gap-4">
+      {/* Side Panel Khusus Mode Animasi/Belajar dan Latihan (KIRI) */}
+      {isSidePanelVisible && langkahSekarang && langkahSekarang.kolom > 0 && (
+        <SideOperationPanel
+          langkah={langkahSekarang}
+          operasi={operasi}
+          visible={true}
+          mode={mode === 'animasi' || mode === 'latihan' ? mode : undefined}
+        />
+      )}
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -673,7 +683,7 @@ export default function MathBoard({
                 const step = langkahAktif !== undefined ? perhitungan.langkahLangkah[langkahAktif] : null;
                 // Tampilkan hasil mentah (contoh: 10) jika sedang di langkah observasi sebelum di-carry
                 if (step && step.kolom === kolom && (operasi !== 'perkalian' || step.barisPerkalianIdx === undefined)) {
-                  textToRender = step.hasil;
+                  textToRender = step.hasil > 9 ? '' : step.hasil;
                 } else {
                   textToRender = paddedHasil[kolom];
                 }
@@ -735,8 +745,8 @@ export default function MathBoard({
       </AnimatePresence>
       </motion.div>
 
-      {/* Side Panel Khusus Mode Animasi/Belajar dan Latihan */}
-      {isSidePanelVisible && (
+      {/* Side Panel Khusus Mode Animasi/Belajar dan Latihan (KANAN) */}
+      {isSidePanelVisible && (!langkahSekarang || langkahSekarang.kolom <= 0) && (
         <SideOperationPanel
           langkah={langkahSekarang}
           operasi={operasi}

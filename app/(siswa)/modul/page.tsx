@@ -6,7 +6,7 @@
 // Menampilkan semua modul dalam urutan linear dengan lock system.
 // Siswa hanya bisa mengakses modul yang sudah unlocked.
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { RotateCcw, ArrowLeft } from 'lucide-react';
@@ -18,8 +18,13 @@ import { MODUL_LIST } from '@/lib/constants';
 
 export default function PetaModulPage() {
   const router = useRouter();
-  const { getStatus, resetProgress, isLoading: isProgressLoading } = useModulProgress();
+  const { getStatus, resetProgress, selesaikanModul, isLoading: isProgressLoading } = useModulProgress();
   const { isTutorial, completeTutorial, isLoading: isTutorialLoading } = useTutorial();
+  const [isTestUser, setIsTestUser] = useState(false);
+
+  useEffect(() => {
+    setIsTestUser(sessionStorage.getItem('siswaNama') === 'test');
+  }, []);
 
   // Hitung progress keseluruhan
   const totalModul = MODUL_LIST.length;
@@ -127,12 +132,26 @@ export default function PetaModulPage() {
                 </motion.div>
               )}
               <div className={isTargetTutorial ? 'bg-white ring-4 ring-primary rounded-2xl shadow-2xl scale-[1.02] transition-transform' : ''}>
-                <ModulCard
-                  modul={modul}
-                  status={getStatus(modul.id)}
-                  index={index}
-                  onClick={() => router.push(modul.href)}
-                />
+                <div className="flex gap-2 items-center">
+                  <div className="flex-1">
+                    <ModulCard
+                      modul={modul}
+                      status={getStatus(modul.id)}
+                      index={index}
+                      onClick={() => router.push(modul.href)}
+                    />
+                  </div>
+                  {isTestUser && (modul.id === 'modul2' || modul.id === 'modul3') && getStatus(modul.id) !== 'completed' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => selesaikanModul(modul.id)}
+                      className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 border-orange-300"
+                    >
+                      Skip
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           );

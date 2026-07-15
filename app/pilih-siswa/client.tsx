@@ -96,7 +96,14 @@ export default function PilihSiswaClient({ initialSiswaList }: { initialSiswaLis
         body: JSON.stringify({ siswa_id: selectedSiswa.id, pin: value }),
       });
 
-      const data = await res.json();
+      let data;
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(`Server Error: ${res.status} ${text.substring(0, 50)}`);
+      }
 
       if (data.valid) {
         sessionStorage.setItem('siswaId', selectedSiswa.id);
@@ -104,18 +111,19 @@ export default function PilihSiswaClient({ initialSiswaList }: { initialSiswaLis
         sessionStorage.setItem('siswaAvatar', selectedSiswa.avatar_url ?? '');
         router.push('/pilih-operasi');
       } else {
-        setError('PIN salah, coba lagi!');
+        setError(data.error || 'PIN salah, coba lagi!');
         setTimeout(() => {
           setPin('');
           setError('');
         }, 1500);
       }
-    } catch {
-      setError('Gagal memverifikasi PIN');
+    } catch (err: any) {
+      console.error('PIN Verifikasi Error:', err);
+      setError(`Gagal: ${err.message || 'Error jaringan'}`);
       setTimeout(() => {
         setPin('');
         setError('');
-      }, 1500);
+      }, 3000);
     } finally {
       setVerifying(false);
     }

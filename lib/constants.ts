@@ -148,7 +148,7 @@ export const MODUL_LIST: ModulInfo[] = [
   },
   {
     id: 'modul4',
-    judul: 'Latihan Campuran',
+    judul: 'Latihan',
     deskripsi: 'Kombinasi tambah & kurang',
     ikon: 'Shuffle',
     warna: 'violet',

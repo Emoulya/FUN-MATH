@@ -35,22 +35,24 @@ export default function BorrowIndicator({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="borrow-indicator flex flex-col items-center leading-none"
-      aria-label={`Dipinjam: ${nilaiAsli} menjadi ${nilaiBaru}`}
+      className="absolute flex justify-center items-end pointer-events-none"
+      style={{
+        bottom: 0,
+        left: 0,
+        width: '100%',
+        zIndex: 10
+      }}
+      aria-label={`Menjadi ${nilaiBaru}`}
     >
-      {/* Angka asli dicoret */}
-      {!onlyNewValue && (
-        <span className="borrow-strikethrough text-xs">{nilaiAsli}</span>
-      )}
       {/* Angka baru */}
       <motion.span
         initial={{ 
-          x: isNew ? "-3.125rem" : 0, 
+          y: isNew ? "2rem" : 0, 
           scale: isNew ? 1.5 : 1, 
           opacity: 0 
         }}
         animate={{ 
-          x: 0, 
+          y: 0, 
           scale: 1, 
           opacity: 1 
         }}
@@ -58,10 +60,13 @@ export default function BorrowIndicator({
           duration: isNew ? 0.8 : 0.3,
           ease: isNew ? [0.17, 0.89, 0.32, 1.1] : 'easeOut'
         }}
-        className="text-xs font-bold flex items-center gap-0.5"
-        style={{ color: 'var(--borrow-color)' }}
+        className="font-bold flex items-center justify-center"
+        style={{ 
+          color: 'var(--borrow-color)',
+          fontSize: '1.75rem',
+          lineHeight: 1
+        }}
       >
-        <span className="text-[0.6rem] opacity-70">→</span>
         {nilaiBaru}
       </motion.span>
     </motion.div>
