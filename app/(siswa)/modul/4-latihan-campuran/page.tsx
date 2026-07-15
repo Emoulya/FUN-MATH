@@ -109,7 +109,7 @@ export default function Modul4Page() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center w-full max-w-sm"
       >
-        <h2 className="text-xl font-bold">🔀 Latihan Campuran</h2>
+        <h2 className="text-xl font-bold">🔀 Latihan</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Soal {latihan.indexSoal + 1}/{latihan.totalSoal}
           {' • '}

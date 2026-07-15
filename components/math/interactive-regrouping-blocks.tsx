@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Info } from 'lucide-react';
+import { Check, Info, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface InteractiveRegroupingBlocksProps {
@@ -93,9 +93,13 @@ export default function InteractiveRegroupingBlocks({
 }: InteractiveRegroupingBlocksProps) {
   const isPenjumlahan = mode === 'penjumlahan';
   
-  // States
   const [tens, setTens] = useState<{ id: string }[]>([]);
   const [ones, setOnes] = useState<{ id: string }[]>([]);
+  const [isTestUser, setIsTestUser] = useState(false);
+  
+  // Addition states Box 2
+  const [tens2, setTens2] = useState<{ id: string }[]>([]);
+  const [ones2, setOnes2] = useState<{ id: string }[]>([]);
   
   // Addition states
   const [groupedOnes, setGroupedOnes] = useState<{ id: string }[]>([]);
@@ -115,11 +119,19 @@ export default function InteractiveRegroupingBlocks({
   useEffect(() => {
     setTens(Array.from({ length: initialTens }).map((_, i) => ({ id: `t-init-${i}` })));
     setOnes(Array.from({ length: initialOnes }).map((_, i) => ({ id: `s-init-${i}` })));
+    
+    if (mode === 'penjumlahan') {
+      setTens2(Array.from({ length: targetSubtractTens || 0 }).map((_, i) => ({ id: `t2-init-${i}` })));
+      setOnes2(Array.from({ length: targetSubtractOnes || 0 }).map((_, i) => ({ id: `s2-init-${i}` })));
+    }
+    
     setGroupedOnes([]);
     setBreakingTens([]);
     setSubtractedTens([]);
     setSubtractedOnes([]);
-  }, [initialTens, initialOnes]);
+    
+    setIsTestUser(sessionStorage.getItem('siswaNama') === 'test');
+  }, [initialTens, initialOnes, targetSubtractTens, targetSubtractOnes, mode]);
 
   // Handle Dragging Ones
   const handleDragOneEnd = (e: any, info: any, id: string) => {
@@ -138,8 +150,8 @@ export default function InteractiveRegroupingBlocks({
         point.x >= boxLeft - MARGIN && point.x <= boxRight + MARGIN &&
         point.y >= boxTop - MARGIN && point.y <= boxBottom + MARGIN
       ) {
-        setOnes((prev) => prev.filter((o) => o.id !== id));
-        setGroupedOnes((prev) => [...prev, { id }]);
+        setOnes2((prev) => prev.filter((o) => o.id !== id));
+        setOnes((prev) => [...prev, { id }]);
       }
     } else {
       if (!takeAwayBoxRef.current) return;
@@ -163,10 +175,26 @@ export default function InteractiveRegroupingBlocks({
 
   // Handle Dragging Tens
   const handleDragTenEnd = (e: any, info: any, id: string) => {
-    if (isPenjumlahan) return; // Cannot drag tens in addition mode
-
     const point = { x: info.point.x, y: info.point.y };
     const MARGIN = 100; // Increase margin significantly for easier drops
+
+    if (isPenjumlahan) {
+      if (!tensBoxRef.current) return;
+      const boxRect = tensBoxRef.current.getBoundingClientRect();
+      const boxLeft = boxRect.left + window.scrollX;
+      const boxRight = boxRect.right + window.scrollX;
+      const boxTop = boxRect.top + window.scrollY;
+      const boxBottom = boxRect.bottom + window.scrollY;
+
+      if (
+        point.x >= boxLeft - MARGIN && point.x <= boxRight + MARGIN &&
+        point.y >= boxTop - MARGIN && point.y <= boxBottom + MARGIN
+      ) {
+        setTens2((prev) => prev.filter((t) => t.id !== id));
+        setTens((prev) => [...prev, { id }]);
+      }
+      return;
+    }
 
     // 1. Check Drop to Take Away Box
     if (takeAwayBoxRef.current) {
@@ -215,20 +243,26 @@ export default function InteractiveRegroupingBlocks({
 
   // Check for merge condition (Addition)
   useEffect(() => {
-    if (isPenjumlahan && groupedOnes.length >= 10 && !isMerging) {
+    if (isPenjumlahan && ones.length >= 10 && !isMerging) {
+      const onesToMerge = ones.slice(0, 10);
+      const remainingOnes = ones.slice(10);
+      
       setIsMerging(true);
+      setGroupedOnes(onesToMerge);
+      setOnes(remainingOnes);
+      
       setTimeout(() => {
-        setGroupedOnes((prev) => prev.slice(10));
+        setGroupedOnes([]);
         setTens((prev) => [...prev, { id: `t-new-${Date.now()}` }]);
         setIsMerging(false);
       }, 600);
     }
-  }, [groupedOnes, isPenjumlahan, isMerging]);
+  }, [ones, isPenjumlahan, isMerging]);
 
-  const totalValue = tens.length * 10 + ones.length + groupedOnes.length + breakingTens.length;
+  const totalValue = tens.length * 10 + ones.length + groupedOnes.length + breakingTens.length + tens2.length * 10 + ones2.length;
 
   const isSubtractComplete = !isPenjumlahan && subtractedTens.length === targetSubtractTens && subtractedOnes.length === targetSubtractOnes;
-  const isAdditionComplete = isPenjumlahan && ones.length < 10;
+  const isAdditionComplete = isPenjumlahan && ones2.length === 0 && tens2.length === 0 && !isMerging && ones.length < 10;
   const isComplete = isPenjumlahan ? isAdditionComplete : isSubtractComplete;
 
   const targetNumber = targetSubtractTens * 10 + targetSubtractOnes;
@@ -252,168 +286,220 @@ export default function InteractiveRegroupingBlocks({
         <Info className="w-5 h-5 shrink-0" />
         <div className="flex flex-col gap-1">
           {isPenjumlahan ? (
-            <p>Tarik (geser) 10 Kotak Satuan ke area Puluhan untuk mengubahnya menjadi 1 Kotak Puluhan (Hijau).</p>
+            <p>Tarik (geser) semua Kotak dari Kotak Jawaban 2 ke Kotak Jawaban 1 untuk menjumlahkan. Jika Satuan mencapai 10, ia akan melebur menjadi 1 Puluhan (Hijau).</p>
           ) : (
             <>
-              <p><strong>Langkah 1:</strong> Tarik 1 balok Puluhan ke Kotak Satuan untuk meminjam (dipecah jadi 10 satuan) jika satuan tidak cukup.</p>
-              <p><strong>Langkah 2:</strong> Tarik sejumlah {targetSubtractTens} Puluhan dan {targetSubtractOnes} Satuan ke Kotak Pengurang (Buang) untuk menguranginya.</p>
+              <p><strong>Langkah 1:</strong> Tarik (geser) balok ke Kotak Pengurang sesuai target untuk menguranginya.</p>
+              <p><strong>Langkah 2:</strong> Jika satuan tidak cukup, tarik 1 balok Puluhan ke Area Satuan di Kotak Kiri untuk meminjam (dipecah jadi 10 satuan).</p>
             </>
           )}
         </div>
       </div>
 
       <div className="flex gap-6 w-full">
-        {/* Kolom Kiri: Puluhan dan Satuan */}
-        <div className="flex-1 flex gap-4">
-          {/* Kotak Puluhan */}
-          <div className="flex-1 flex flex-col gap-2">
-            <div className="text-center font-bold text-emerald-600 bg-emerald-50 py-2 rounded-xl border border-emerald-200 shadow-sm">
-              Kotak Puluhan
-            </div>
-            <div 
-              ref={tensBoxRef}
-              className={`flex flex-wrap items-end content-end justify-center gap-3 p-6 rounded-2xl border-4 min-h-[250px] transition-colors relative ${isPenjumlahan ? 'border-dashed border-emerald-300 bg-emerald-50/30' : 'border-emerald-100 bg-white shadow-inner'}`}
-            >
-              <AnimatePresence>
-                {isMerging && (
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: [0, 1.5, 1], opacity: [0, 1, 0] }}
-                    exit={{ opacity: 0 }}
-                    className="absolute text-emerald-500 font-bold text-xl pointer-events-none drop-shadow-md bg-white/80 px-3 py-1 rounded-full z-20"
-                    style={{ top: '30%' }}
-                  >
-                    ✨ Gabung!
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              
-              <AnimatePresence>
-                {isShattering && (
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: [0, 1.5, 1], opacity: [0, 1, 0] }}
-                    exit={{ opacity: 0 }}
-                    className="absolute text-rose-500 font-bold text-xl pointer-events-none drop-shadow-md bg-white/80 px-3 py-1 rounded-full z-20"
-                    style={{ top: '30%' }}
-                  >
-                    💥 Pecah!
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <AnimatePresence>
-                {tens.map((t) => (
-                  <PuluhanBlock 
-                    key={t.id} 
-                    id={t.id} 
-                    isDraggable={!isPenjumlahan} 
-                    onDragEnd={handleDragTenEnd}
-                  />
-                ))}
-              </AnimatePresence>
-
-              {isPenjumlahan && groupedOnes.length > 0 && (
-                <div className="flex flex-col-reverse gap-[1px] bg-blue-50/50 p-1 rounded-lg border border-blue-200 shadow-sm self-end h-[160px] justify-start ml-2">
-                  <AnimatePresence>
-                    {groupedOnes.map((o) => (
+        {isPenjumlahan ? (
+          <>
+            {/* Box 1 (Kotak Jawaban 1) */}
+            <div className="flex-1 flex flex-col gap-2">
+              <div className="text-center font-bold text-emerald-600 bg-emerald-50 py-2 rounded-xl border border-emerald-200 shadow-sm">
+                Kotak Jawaban 1 (Tujuan)
+              </div>
+              <div 
+                ref={tensBoxRef}
+                className="flex justify-center gap-6 p-6 rounded-2xl border-4 border-dashed border-emerald-300 bg-emerald-50/30 min-h-[250px] transition-colors relative"
+              >
+                {/* Tens Area */}
+                <div className="flex gap-2 items-end min-w-[40px] justify-end">
+                   <AnimatePresence>
+                    {isMerging && (
                       <motion.div
-                        key={o.id}
-                        layoutId={o.id}
-                        initial={{ scale: 1 }}
-                        animate={isMerging ? { scale: [1, 1.2, 0], backgroundColor: 'var(--block-puluhan)', opacity: 0 } : { scale: 1 }}
-                        transition={{ duration: 0.5 }}
-                        style={{
-                          width: 16,
-                          height: 15,
-                          backgroundColor: 'var(--block-satuan)',
-                          border: '1px solid color-mix(in oklch, var(--block-satuan) 70%, black)',
-                          borderRadius: 2,
-                        }}
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: [0, 1.5, 1], opacity: [0, 1, 0] }}
+                        exit={{ opacity: 0 }}
+                        className="absolute text-emerald-500 font-bold text-xl pointer-events-none drop-shadow-md bg-white/80 px-3 py-1 rounded-full z-20"
+                        style={{ top: '30%', left: '50%', transform: 'translateX(-50%)' }}
+                      >
+                        ✨ Gabung!
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  
+                  <AnimatePresence>
+                    {tens.map((t) => (
+                      <PuluhanBlock key={t.id} id={t.id} isDraggable={false} />
+                    ))}
+                  </AnimatePresence>
+                </div>
+                {/* Ones Area */}
+                <div className="flex flex-col-reverse flex-wrap gap-[2px] w-[80px] h-[178px] justify-start content-start self-end">
+                  <AnimatePresence>
+                    {ones.map((o) => (
+                      <SatuanBlock key={o.id} id={o.id} isDraggable={false} />
+                    ))}
+                  </AnimatePresence>
+                  
+                  {groupedOnes.length > 0 && (
+                    <div className="flex flex-col-reverse gap-[1px] bg-blue-50/50 p-1 rounded-lg border border-blue-200 shadow-sm self-end h-[160px] justify-start ml-2">
+                      <AnimatePresence>
+                        {groupedOnes.map((o) => (
+                          <motion.div
+                            key={o.id}
+                            layoutId={o.id}
+                            initial={{ scale: 1 }}
+                            animate={isMerging ? { scale: [1, 1.2, 0], backgroundColor: 'var(--block-puluhan)', opacity: 0 } : { scale: 1 }}
+                            transition={{ duration: 0.5 }}
+                            style={{
+                              width: 16,
+                              height: 15,
+                              backgroundColor: 'var(--block-satuan)',
+                              border: '1px solid color-mix(in oklch, var(--block-satuan) 70%, black)',
+                              borderRadius: 2,
+                            }}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Box 2 (Kotak Jawaban 2) */}
+            <div className="flex-1 flex flex-col gap-2 max-w-[250px]">
+              <div className="text-center font-bold text-blue-600 bg-blue-50 py-2 rounded-xl border border-blue-200 shadow-sm">
+                Kotak Jawaban 2
+              </div>
+              <div 
+                className="flex justify-center gap-6 p-6 rounded-2xl border-4 border-dashed border-blue-300 bg-blue-50/30 min-h-[250px] transition-colors relative"
+              >
+                {/* Tens Area */}
+                <div className="flex gap-2 items-end min-w-[40px] justify-end">
+                  <AnimatePresence>
+                    {tens2.map((t) => (
+                      <PuluhanBlock 
+                        key={t.id} 
+                        id={t.id} 
+                        isDraggable={true}
+                        onDragEnd={handleDragTenEnd}
                       />
                     ))}
                   </AnimatePresence>
                 </div>
-              )}
-              
-              {!isPenjumlahan && breakingTens.length > 0 && (
-                <div className="flex flex-col-reverse gap-[1px] bg-blue-50/50 p-1 rounded-lg border border-blue-200 shadow-sm self-end h-[160px] justify-start ml-2">
+                {/* Ones Area */}
+                <div className="flex flex-wrap gap-2 w-[80px] justify-start content-end h-full">
                   <AnimatePresence>
-                    {breakingTens.map((o) => (
-                      <SatuanBlock key={o.id} id={o.id} isDraggable={false} />
+                    {ones2.map((o) => (
+                      <SatuanBlock 
+                        key={o.id} 
+                        id={o.id} 
+                        isDraggable={true}
+                        onDragEnd={handleDragOneEnd}
+                      />
                     ))}
                   </AnimatePresence>
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Kotak Satuan */}
-          <div className="flex-1 flex flex-col gap-2">
-            <div className="text-center font-bold text-blue-600 bg-blue-50 py-2 rounded-xl border border-blue-200 shadow-sm">
-              Kotak Satuan
-            </div>
-            <div 
-              ref={onesBoxRef}
-              className={`flex flex-wrap items-end content-start gap-2 p-4 rounded-2xl border-4 min-h-[250px] transition-colors relative ${!isPenjumlahan ? 'border-dashed border-blue-300 bg-blue-50/30' : 'border-blue-100 bg-white shadow-inner'}`}
-            >
-              <AnimatePresence>
-                {ones.map((o) => (
-                  <SatuanBlock 
-                    key={o.id} 
-                    id={o.id} 
-                    isDraggable={isPenjumlahan || targetSubtractOnes > 0} 
-                    onDragEnd={handleDragOneEnd}
-                  />
-                ))}
-              </AnimatePresence>
-            </div>
-          </div>
-        </div>
-
-        {/* Kolom Kanan: Kotak Pengurang (Hanya Pengurangan) */}
-        {!isPenjumlahan && (
-          <div className="flex-1 flex flex-col gap-2 max-w-[250px]">
-            <div className="text-center font-bold text-rose-600 bg-rose-50 py-2 rounded-xl border border-rose-200 shadow-sm">
-              Kotak Pengurang (Buang)
-            </div>
-            <div 
-              ref={takeAwayBoxRef}
-              className={`flex flex-col justify-end p-4 rounded-2xl border-4 border-dashed border-rose-300 bg-rose-50/30 min-h-[250px] transition-colors relative overflow-hidden`}
-            >
-              {/* Petunjuk Target */}
-              <div className="absolute top-4 left-0 right-0 text-center font-semibold text-rose-500 opacity-60 text-sm">
-                Target Buang: <br/> {targetSubtractTens} Puluhan, {targetSubtractOnes} Satuan
               </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Box 1 (Kotak Nilai Awal) */}
+            <div className="flex-1 flex flex-col gap-2">
+              <div className="text-center font-bold text-emerald-600 bg-emerald-50 py-2 rounded-xl border border-emerald-200 shadow-sm">
+                Kotak Nilai Awal
+              </div>
+              <div 
+                className="flex justify-center gap-6 p-6 rounded-2xl border-4 border-dashed border-emerald-300 bg-emerald-50/30 min-h-[250px] transition-colors relative"
+              >
+                {/* Tens Area */}
+                <div ref={tensBoxRef} className="flex gap-2 items-end min-w-[40px] justify-end relative">
+                  <AnimatePresence>
+                    {isShattering && (
+                      <motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: [0, 1.5, 1], opacity: [0, 1, 0] }}
+                        exit={{ opacity: 0 }}
+                        className="absolute text-rose-500 font-bold text-xl pointer-events-none drop-shadow-md bg-white/80 px-3 py-1 rounded-full z-20"
+                        style={{ top: '30%', left: '50%', transform: 'translateX(-50%)' }}
+                      >
+                        💥 Pecah!
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
-              <div className="flex gap-4 items-end mt-12 justify-center w-full">
-                {/* Area puluhan yang dibuang */}
-                <div className="flex gap-1.5 h-[160px] items-end min-w-[30px] justify-end">
+                  <AnimatePresence>
+                    {tens.map((t) => (
+                      <PuluhanBlock 
+                        key={t.id} 
+                        id={t.id} 
+                        isDraggable={!isPenjumlahan} 
+                        onDragEnd={handleDragTenEnd}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+
+                {/* Ones Area */}
+                <div ref={onesBoxRef} className="flex flex-col-reverse flex-wrap gap-[2px] w-[80px] h-[178px] justify-start content-start self-end">
+                  <AnimatePresence>
+                    {ones.map((o) => (
+                      <SatuanBlock 
+                        key={o.id} 
+                        id={o.id} 
+                        isDraggable={targetSubtractOnes > 0} 
+                        onDragEnd={handleDragOneEnd}
+                      />
+                    ))}
+                  </AnimatePresence>
+                  
+                  {breakingTens.length > 0 && (
+                    <div className="flex flex-col-reverse gap-[1px] bg-blue-50/50 p-1 rounded-lg border border-blue-200 shadow-sm self-end h-[160px] justify-start ml-2">
+                      <AnimatePresence>
+                        {breakingTens.map((o) => (
+                          <SatuanBlock key={o.id} id={o.id} isDraggable={false} />
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Box 2 (Kotak Pengurang) */}
+            {!isSubtractComplete && (
+              <div className="flex-1 flex flex-col gap-2 max-w-[250px]">
+                <div className="text-center font-bold text-rose-600 bg-rose-50 py-2 rounded-xl border border-rose-200 shadow-sm">
+                Kotak Pengurang
+              </div>
+              <div 
+                ref={takeAwayBoxRef}
+                className="flex justify-center items-end gap-6 p-6 rounded-2xl border-4 border-dashed border-rose-300 bg-rose-50/30 min-h-[250px] transition-colors relative"
+              >
+                {/* Petunjuk Target */}
+                <div className="absolute top-4 left-0 right-0 text-center font-semibold text-rose-500 opacity-60 text-sm">
+                  Target: {targetSubtractTens > 0 ? `${targetSubtractTens} Puluhan, ` : ''}{targetSubtractOnes} Satuan
+                </div>
+
+                {/* Tens Area */}
+                <div className="flex gap-2 items-end min-w-[40px] justify-end">
                   <AnimatePresence>
                     {subtractedTens.map((t) => (
                       <PuluhanBlock key={t.id} id={t.id} isDraggable={false} />
                     ))}
-                    {/* Placeholder kosong jika belum cukup */}
-                    {Array.from({ length: targetSubtractTens - subtractedTens.length }).map((_, i) => (
-                      <div key={`empty-t-${i}`} className="w-[16px] h-[160px] border-2 border-dashed border-rose-300 rounded opacity-50 shrink-0" />
-                    ))}
                   </AnimatePresence>
                 </div>
-                {/* Area satuan yang dibuang */}
-                <div className="flex flex-wrap gap-1.5 w-[60px] justify-start content-end h-full">
+                {/* Ones Area */}
+                <div className="flex flex-wrap gap-2 w-[80px] justify-start content-end">
                   <AnimatePresence>
                     {subtractedOnes.map((o) => (
                       <SatuanBlock key={o.id} id={o.id} isDraggable={false} />
-                    ))}
-                    {/* Placeholder kosong */}
-                    {Array.from({ length: targetSubtractOnes - subtractedOnes.length }).map((_, i) => (
-                      <div key={`empty-o-${i}`} className="w-[16px] h-[16px] border-2 border-dashed border-rose-300 rounded opacity-50 shrink-0" />
                     ))}
                   </AnimatePresence>
                 </div>
               </div>
             </div>
-          </div>
+            )}
+          </>
         )}
       </div>
       
@@ -427,6 +513,7 @@ export default function InteractiveRegroupingBlocks({
             {tens.map((t, i) => (
               <div
                 key={`final-t-${i}`}
+                className="shrink-0"
                 style={{
                   width: 14,
                   height: 140,
@@ -437,10 +524,11 @@ export default function InteractiveRegroupingBlocks({
               />
             ))}
           </div>
-          <div className="flex flex-wrap gap-1.5 max-w-[120px] justify-start content-end h-full">
+          <div className="flex flex-wrap gap-2 w-[120px] justify-start content-end">
             {[...ones, ...groupedOnes, ...breakingTens].map((o, i) => (
               <div
                 key={`final-s-${i}`}
+                className="shrink-0"
                 style={{
                   width: 14,
                   height: 14,
@@ -454,7 +542,7 @@ export default function InteractiveRegroupingBlocks({
         </div>
       </div>
 
-      <div className="mt-2 flex flex-col items-center gap-4">
+      <div className="mt-2 flex items-center justify-center gap-4">
         {onComplete && (
           <Button 
             onClick={() => onComplete(tens.length, ones.length)}
@@ -464,6 +552,21 @@ export default function InteractiveRegroupingBlocks({
             disabled={!isComplete}
           >
             <Check className="w-5 h-5" /> Selesai
+          </Button>
+        )}
+        
+        {isTestUser && onComplete && (
+          <Button 
+            onClick={() => {
+               const finalTens = Math.floor(totalValue / 10);
+               const finalOnes = totalValue % 10;
+               onComplete(finalTens, finalOnes);
+            }}
+            className="gap-2 px-8 shadow-md rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-700 border-orange-300"
+            variant="outline"
+            size="lg"
+          >
+            <SkipForward className="w-5 h-5" /> Skip (Test)
           </Button>
         )}
       </div>
