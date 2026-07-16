@@ -173,17 +173,18 @@ export default function InteractiveMathBlocks({
   useEffect(() => {
     if (langkahSekarang === 0) {
       setStep('satuan');
-      setSatuanAnimateCount(satuan1);
+      setSatuanAnimateCount(isPenjumlahan ? 0 : satuan1);
+      setPuluhanAnimateCount(isPenjumlahan ? 0 : puluhan1);
     } else if (langkahSekarang === 1) {
       setStep('puluhan');
       setSatuanAnimateCount(targetSatuan);
-      setPuluhanAnimateCount(puluhan1);
+      setPuluhanAnimateCount(isPenjumlahan ? 0 : puluhan1);
     } else if (langkahSekarang === 2) {
       setStep('selesai');
       setSatuanAnimateCount(targetSatuan);
       setPuluhanAnimateCount(targetPuluhan);
     }
-  }, [langkahSekarang, satuan1, puluhan1, targetSatuan, targetPuluhan]);
+  }, [langkahSekarang, satuan1, puluhan1, targetSatuan, targetPuluhan, isPenjumlahan]);
 
   // Animasi otomatis penambahan/pengurangan satuan & puluhan
   useEffect(() => {
@@ -259,22 +260,72 @@ export default function InteractiveMathBlocks({
     }
   }, [langkahSekarang, isPlaying, isAnimating, satuanAnimateCount, puluhanAnimateCount, targetSatuan, targetPuluhan]);
 
-  // Visualisasi balok dan angka dinamis untuk Kotak 1 pada Pengurangan
-  const puluhanTerdisplay = (!isPenjumlahan && step === 'puluhan')
-    ? puluhanAnimateCount
-    : (!isPenjumlahan && step === 'selesai')
-      ? targetPuluhan
-      : puluhan1;
-
-  const satuanTerdisplay = (!isPenjumlahan && step === 'satuan')
+  // --- SATUAN ---
+  // Wadah hasil satuan di bawah
+  const satuanWadahCount = isPenjumlahan
     ? satuanAnimateCount
-    : (!isPenjumlahan && (step === 'puluhan' || step === 'selesai'))
-      ? targetSatuan
-      : satuan1;
+    : (step === 'satuan'
+        ? Math.floor(((satuan1 - satuanAnimateCount) / Math.max(1, satuan2)) * targetSatuan)
+        : targetSatuan
+      );
 
-  const angka1Terdisplay = isPenjumlahan
-    ? angka1
-    : (puluhanTerdisplay * 10) + satuanTerdisplay;
+  // Kotak 1 Satuan (Kiri)
+  const satuan1Terdisplay = isPenjumlahan
+    ? (step === 'satuan'
+        ? (satuanAnimateCount <= satuan2
+            ? satuan1
+            : Math.max(0, satuan1 - (satuanAnimateCount - satuan2))
+          )
+        : (step === 'puluhan' || step === 'selesai' ? 0 : satuan1)
+      )
+    : (step === 'satuan'
+        ? satuanAnimateCount
+        : (step === 'puluhan' || step === 'selesai' ? targetSatuan : satuan1)
+      );
+
+  // Kotak 2 Satuan (Kanan)
+  const satuan2Terdisplay = isPenjumlahan
+    ? (step === 'satuan'
+        ? Math.max(0, satuan2 - satuanAnimateCount)
+        : 0
+      )
+    : satuan2;
+
+  // --- PULUHAN ---
+  // Wadah hasil puluhan di bawah
+  const puluhanWadahCount = isPenjumlahan
+    ? puluhanAnimateCount
+    : (step === 'puluhan'
+        ? Math.floor(((puluhan1 - puluhanAnimateCount) / Math.max(1, puluhan2)) * targetPuluhan)
+        : (step === 'selesai' ? targetPuluhan : 0)
+      );
+
+  // Kotak 1 Puluhan (Kiri)
+  const puluhan1Terdisplay = isPenjumlahan
+    ? (step === 'puluhan'
+        ? (puluhanAnimateCount <= puluhan2
+            ? puluhan1
+            : Math.max(0, puluhan1 - (puluhanAnimateCount - puluhan2))
+          )
+        : (step === 'selesai' ? 0 : puluhan1)
+      )
+    : (step === 'puluhan'
+        ? puluhanAnimateCount
+        : (step === 'selesai' ? targetPuluhan : puluhan1)
+      );
+
+  // Kotak 2 Puluhan (Kanan)
+  const puluhan2Terdisplay = isPenjumlahan
+    ? (step === 'puluhan'
+        ? Math.max(0, puluhan2 - puluhanAnimateCount)
+        : 0
+      )
+    : puluhan2;
+
+  const angka1Terdisplay = (puluhan1Terdisplay * 10) + satuan1Terdisplay;
+  const angka2Terdisplay = isPenjumlahan
+    ? (puluhan2Terdisplay * 10) + satuan2Terdisplay
+    : angka2;
 
   const simbol = isPenjumlahan ? '+' : '−';
 
@@ -311,7 +362,7 @@ export default function InteractiveMathBlocks({
                       : 'border border-transparent'
                   }`}
                 >
-                  {Array.from({ length: puluhanTerdisplay }).map((_, i) => (
+                  {Array.from({ length: puluhan1Terdisplay }).map((_, i) => (
                     <PuluhanBlock key={`p1-${i}`} />
                   ))}
                 </div>
@@ -324,7 +375,7 @@ export default function InteractiveMathBlocks({
                       : 'border border-transparent'
                   }`}
                 >
-                  {Array.from({ length: satuanTerdisplay }).map((_, i) => (
+                  {Array.from({ length: satuan1Terdisplay }).map((_, i) => (
                     <SatuanBlock key={`s1-${i}`} />
                   ))}
                 </div>
@@ -350,7 +401,7 @@ export default function InteractiveMathBlocks({
                   }`}
                 >
                   {isPenjumlahan ? (
-                    Array.from({ length: puluhan2 }).map((_, i) => (
+                    Array.from({ length: puluhan2Terdisplay }).map((_, i) => (
                       <PuluhanBlock key={`p2-${i}`} />
                     ))
                   ) : (
@@ -367,7 +418,7 @@ export default function InteractiveMathBlocks({
                   }`}
                 >
                   {isPenjumlahan ? (
-                    Array.from({ length: satuan2 }).map((_, i) => (
+                    Array.from({ length: satuan2Terdisplay }).map((_, i) => (
                       <SatuanBlock key={`s2-${i}`} />
                     ))
                   ) : (
@@ -375,7 +426,7 @@ export default function InteractiveMathBlocks({
                   )}
                 </div>
               </div>
-              <span className="text-xl font-black text-slate-700 mt-2">{angka2}</span>
+              <span className="text-xl font-black text-slate-700 mt-2">{angka2Terdisplay}</span>
             </div>
           </div>
 
@@ -462,7 +513,7 @@ export default function InteractiveMathBlocks({
             >
               <span className="text-xs font-bold text-emerald-600">Hasil Puluhan</span>
               <div className="flex gap-1 items-end flex-1 justify-center min-h-[90px]">
-                {Array.from({ length: puluhanAnimateCount }).map((_, i) => (
+                {Array.from({ length: puluhanWadahCount }).map((_, i) => (
                   <motion.div
                     key={`res-p-${i}`}
                     initial={{ y: -50, scale: 0, opacity: 0 }}
@@ -474,7 +525,7 @@ export default function InteractiveMathBlocks({
                 ))}
               </div>
               <span className="text-lg font-black text-emerald-700 mt-1">
-                {step === 'puluhan' || puluhanAnimateCount > 0 ? puluhanAnimateCount * 10 : '?'}
+                {step === 'puluhan' || puluhanWadahCount > 0 ? puluhanWadahCount * 10 : '?'}
               </span>
             </div>
 
@@ -487,7 +538,7 @@ export default function InteractiveMathBlocks({
             >
               <span className="text-xs font-bold text-blue-600">Hasil Satuan</span>
               <div className="flex flex-wrap max-w-[85px] gap-1 items-end flex-1 justify-center min-h-[90px] content-end">
-                {Array.from({ length: satuanAnimateCount }).map((_, i) => (
+                {Array.from({ length: satuanWadahCount }).map((_, i) => (
                   <motion.div
                     key={`res-s-${i}`}
                     initial={{ y: -50, scale: 0, opacity: 0 }}
@@ -499,7 +550,7 @@ export default function InteractiveMathBlocks({
                 ))}
               </div>
               <span className="text-lg font-black text-blue-700 mt-1">
-                {satuanAnimateCount}
+                {satuanWadahCount}
               </span>
             </div>
           </div>

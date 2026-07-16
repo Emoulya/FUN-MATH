@@ -38,6 +38,7 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
     setTimeout(() => {
       // Jika tidak ada puluhan2 (misal angka2 < 10), langsung selesai
       if (puluhan2 === 0) {
+        setPuluhanProcessed(true);
         setStep('selesai');
       } else {
         setStep('puluhan');
