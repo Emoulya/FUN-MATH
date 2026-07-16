@@ -3,7 +3,7 @@
 // ============================================
 // PlaceValueGame — Game Isian Nilai Tempat
 // ============================================
-// Alur stage: 1. Drag-Drop → 2. Mencocokkan → 3. Isian
+// Alur stage: 1. Drag-Drop (2 soal) → 2. Mencocokkan (2 ronde) → 3. Isian (2 soal)
 // Siswa melihat representasi balok Base-10, lalu mengisi:
 // __ puluhan __ satuan = __
 // Tanpa timer, tanpa skor ketat — sesuai prinsip AHD.
@@ -15,11 +15,8 @@ import { Button } from '@/components/ui/button';
 import Base10Blocks from '@/components/math/base10-blocks';
 import { PlaceValueDragDrop } from '@/components/math/place-value-drag-drop';
 import PlaceValueMatchGame from '@/components/math/place-value-match-game';
-import { MIN_SOAL_GAME } from '@/lib/constants';
 
 interface PlaceValueGameProps {
-  /** Jumlah soal dalam game */
-  jumlahSoal?: number;
   /** Callback saat semua soal selesai */
   onSelesai: () => void;
 }
@@ -29,14 +26,16 @@ function generateAngka(): number {
   return Math.floor(Math.random() * 47) + 10;
 }
 
+// Jumlah soal per stage
+const SOAL_DRAG_DROP = 2;
+const SOAL_ISIAN = 2;
+
 type SoalState = 'mengerjakan' | 'benar' | 'salah';
 
 export default function PlaceValueGame({
-  jumlahSoal = MIN_SOAL_GAME,
   onSelesai,
 }: PlaceValueGameProps) {
   const [angka, setAngka] = useState(() => generateAngka());
-  const [indexSoal, setIndexSoal] = useState(0);
   const [inputPuluhan, setInputPuluhan] = useState('');
   const [inputSatuan, setInputSatuan] = useState('');
   const [inputAngka, setInputAngka] = useState('');
@@ -45,14 +44,16 @@ export default function PlaceValueGame({
   // Urutan baru: drag-drop → mencocokkan → isian
   const [stage, setStage] = useState<'dragdrop' | 'mencocokkan' | 'isian'>('dragdrop');
 
+  // Counter per stage (bukan global)
+  const [dragDropIndex, setDragDropIndex] = useState(0);
+  const [isianIndex, setIsianIndex] = useState(0);
+
   const puluhanRef = useRef<HTMLInputElement>(null);
   const satuanRef = useRef<HTMLInputElement>(null);
   const angkaRef = useRef<HTMLInputElement>(null);
 
   const puluhanBenar = Math.floor(angka / 10);
   const satuanBenar = angka % 10;
-
-  const selesaiSemua = indexSoal >= jumlahSoal;
 
   // Focus input puluhan saat soal baru
   useEffect(() => {
@@ -71,19 +72,18 @@ export default function PlaceValueGame({
       setSoalState('benar');
     } else {
       setSoalState('salah');
-      // Kembali ke mengerjakan setelah 1.5 detik
       setTimeout(() => {
         setSoalState('mengerjakan');
       }, 1500);
     }
   }, [inputPuluhan, inputSatuan, inputAngka, puluhanBenar, satuanBenar, angka]);
 
-  /** Lanjut ke soal berikutnya */
-  const soalBerikutnya = useCallback(() => {
-    const nextIndex = indexSoal + 1;
-    setIndexSoal(nextIndex);
+  /** Lanjut ke soal isian berikutnya */
+  const soalIsianBerikutnya = useCallback(() => {
+    const nextIndex = isianIndex + 1;
+    setIsianIndex(nextIndex);
 
-    if (nextIndex >= jumlahSoal) {
+    if (nextIndex >= SOAL_ISIAN) {
       return; // Akan tampilkan tombol "Lanjut"
     }
 
@@ -92,7 +92,7 @@ export default function PlaceValueGame({
     setInputSatuan('');
     setInputAngka('');
     setSoalState('mengerjakan');
-  }, [indexSoal, jumlahSoal]);
+  }, [isianIndex]);
 
   /** Handle input — auto pindah ke field berikutnya */
   const handleInputPuluhan = (val: string) => {
@@ -124,16 +124,24 @@ export default function PlaceValueGame({
   };
 
   // ============================================
-  // Stage 1: Game Drag-Drop (2 soal pertama)
+  // Stage 1: Game Drag-Drop
   // ============================================
   if (stage === 'dragdrop') {
-    if (indexSoal < 2) {
+    if (dragDropIndex < SOAL_DRAG_DROP) {
       return (
         <div className="flex flex-col items-center gap-6 w-full max-w-md">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center justify-between w-full text-sm text-muted-foreground">
             <span className="font-semibold">
-              Soal {indexSoal + 1} dari {jumlahSoal}
+              Soal {dragDropIndex + 1} dari {SOAL_DRAG_DROP}
             </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setStage('mencocokkan')}
+              className="text-xs text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+            >
+              Lewati (Skip) ⏭️
+            </Button>
           </div>
           <AnimatePresence mode="wait">
             <motion.div
@@ -146,10 +154,9 @@ export default function PlaceValueGame({
               <PlaceValueDragDrop
                 angka={angka}
                 onBenar={() => {
-                  const nextIndex = indexSoal + 1;
-                  setIndexSoal(nextIndex);
-                  if (nextIndex >= 2) {
-                    // Pindah ke stage mencocokkan
+                  const nextIndex = dragDropIndex + 1;
+                  setDragDropIndex(nextIndex);
+                  if (nextIndex >= SOAL_DRAG_DROP) {
                     setStage('mencocokkan');
                   } else {
                     setAngka(generateAngka());
@@ -161,7 +168,6 @@ export default function PlaceValueGame({
         </div>
       );
     }
-    // Fallback: jika sudah 2 soal, pindah ke mencocokkan
     setStage('mencocokkan');
   }
 
@@ -169,17 +175,32 @@ export default function PlaceValueGame({
   // Stage 2: Game Mencocokkan
   // ============================================
   if (stage === 'mencocokkan') {
+    const skipKeIsian = () => {
+      setStage('isian');
+      setAngka(generateAngka());
+      setInputPuluhan('');
+      setInputSatuan('');
+      setInputAngka('');
+      setSoalState('mengerjakan');
+      setIsianIndex(0);
+    };
+
     return (
-      <PlaceValueMatchGame
-        onBenar={() => {
-          setStage('isian');
-          setAngka(generateAngka());
-          setInputPuluhan('');
-          setInputSatuan('');
-          setInputAngka('');
-          setSoalState('mengerjakan');
-        }}
-      />
+      <div className="flex flex-col items-center gap-4 w-full">
+        <div className="flex justify-end w-full max-w-md px-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={skipKeIsian}
+            className="text-xs text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+          >
+            Lewati (Skip) ⏭️
+          </Button>
+        </div>
+        <PlaceValueMatchGame
+          onBenar={skipKeIsian}
+        />
+      </div>
     );
   }
 
@@ -188,7 +209,7 @@ export default function PlaceValueGame({
   // ============================================
 
   // Tampilan selesai
-  if (selesaiSemua) {
+  if (isianIndex >= SOAL_ISIAN) {
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
@@ -217,7 +238,7 @@ export default function PlaceValueGame({
       {/* Progress indicator */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <span className="font-semibold">
-          Soal {indexSoal + 1} dari {jumlahSoal}
+          Soal {isianIndex + 1} dari {SOAL_ISIAN}
         </span>
       </div>
 
@@ -350,8 +371,8 @@ export default function PlaceValueGame({
                 Benar!
               </span>
             </div>
-            <Button onClick={soalBerikutnya} className="gap-2">
-              {indexSoal + 1 >= jumlahSoal ? 'Selesai' : 'Soal Berikutnya'}
+            <Button onClick={soalIsianBerikutnya} className="gap-2">
+              {isianIndex + 1 >= SOAL_ISIAN ? 'Selesai' : 'Soal Berikutnya'}
               <ArrowRight className="w-4 h-4" />
             </Button>
           </motion.div>

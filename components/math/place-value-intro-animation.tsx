@@ -32,8 +32,8 @@ const CONTOH_DEKOMPOSISI = [
 
 const TOTAL_LANGKAH_PER_CONTOH = 4;
 
-// Sub-komponen: Batang Puluhan
-function PuluhanBar({ animate = false }: { animate?: boolean }) {
+// Sub-komponen: Batang Puluhan dengan animasi stack satu-satu
+function PuluhanBar({ animate = false, delayOffset = 0 }: { animate?: boolean; delayOffset?: number }) {
   return (
     <motion.div
       className="flex flex-col overflow-hidden rounded-[4px]"
@@ -41,11 +41,11 @@ function PuluhanBar({ animate = false }: { animate?: boolean }) {
         width: 20,
         height: 120,
         border: '2px solid color-mix(in oklch, var(--block-puluhan) 60%, black)',
-        backgroundColor: 'color-mix(in oklch, var(--block-puluhan) 15%, transparent)', // Hollow look before fill
+        backgroundColor: 'color-mix(in oklch, var(--block-puluhan) 15%, transparent)',
       }}
       variants={animate ? {
         hidden: {},
-        show: { transition: { staggerChildren: 0.4, staggerDirection: -1 } }
+        show: { transition: { staggerChildren: 0.35, delayChildren: delayOffset, staggerDirection: -1 } }
       } : undefined}
       initial={animate ? 'hidden' : 'show'}
       animate="show"
@@ -74,14 +74,17 @@ function PuluhanBar({ animate = false }: { animate?: boolean }) {
   );
 }
 
+// Durasi animasi 1 batang puluhan (10 segmen * 0.12s stagger)
+const DURASI_SATU_BAR = 10 * 0.35;
+
 // Sub-komponen: Kotak Satuan
-function SatuanBox({ animate = false, delayIndex = 0 }: { animate?: boolean, delayIndex?: number }) {
+function SatuanBox({ animate = false, delayIndex = 0 }: { animate?: boolean; delayIndex?: number }) {
   return (
     <motion.div
       className="rounded-[3px]"
       variants={animate ? {
         hidden: { opacity: 0, scale: 0.3 },
-        show: { opacity: 1, scale: 1, transition: { delay: delayIndex * 0.5 } }
+        show: { opacity: 1, scale: 1, transition: { delay: delayIndex * 0.8 } }
       } : undefined}
       initial={animate ? 'hidden' : 'show'}
       animate="show"
@@ -102,26 +105,83 @@ export default function PlaceValueIntroAnimation({
   const [langkah, setLangkah] = useState(0); // 0-3 per contoh
   const [isPlaying, setIsPlaying] = useState(true);
 
+  // State untuk animasi angka yang mengikuti stack per-segmen
+  const [animatedSegmentCount, setAnimatedSegmentCount] = useState(0);
+  const [animatedSatuanCount, setAnimatedSatuanCount] = useState(0);
+
   const contoh = CONTOH_DEKOMPOSISI[contohIndex];
   const isContohTerakhir = contohIndex === CONTOH_DEKOMPOSISI.length - 1;
   const isLangkahTerakhir = langkah === TOTAL_LANGKAH_PER_CONTOH - 1;
 
+  // Hitung durasi animasi stack pada langkah 1 (puluhan)
+  // Setiap bar dimulai setelah bar sebelumnya selesai
+  const durasiAnimasiPuluhan = contoh.puluhan * DURASI_SATU_BAR + 1; // +1s untuk badge
+  const durasiAnimasiSatuan = contoh.satuan * 0.8 + 1; // satuan delay * jumlah + badge
+
+  // Animasi angka mengikuti stack per-segmen pada langkah 1 (puluhan)
+  // Setiap segmen = +1, total = puluhan * 10 segmen
+  // staggerDirection: -1 artinya visual: segmen bawah muncul duluan, naik ke atas
+  useEffect(() => {
+    if (langkah === 1) {
+      setAnimatedSegmentCount(0);
+      const totalSegments = contoh.puluhan * 10;
+      const intervals: NodeJS.Timeout[] = [];
+      for (let seg = 0; seg < totalSegments; seg++) {
+        const barIndex = Math.floor(seg / 10);
+        const segWithinBar = seg % 10; // 0 = pertama muncul (bawah)
+        const delay = barIndex * DURASI_SATU_BAR * 1000 + segWithinBar * 0.35 * 1000;
+        const timer = setTimeout(() => {
+          setAnimatedSegmentCount(seg + 1);
+        }, delay + 100);
+        intervals.push(timer);
+      }
+      return () => intervals.forEach(clearTimeout);
+    }
+  }, [langkah, contoh.puluhan]);
+
+  // Animasi angka mengikuti stack pada langkah 2 (satuan)
+  useEffect(() => {
+    if (langkah === 2) {
+      setAnimatedSatuanCount(0);
+      const intervals: NodeJS.Timeout[] = [];
+      for (let i = 0; i < contoh.satuan; i++) {
+        const timer = setTimeout(() => {
+          setAnimatedSatuanCount(i + 1);
+        }, i * 800 + 400);
+        intervals.push(timer);
+      }
+      return () => intervals.forEach(clearTimeout);
+    }
+  }, [langkah, contoh.satuan]);
+
   // Transisi otomatis antar langkah
   useEffect(() => {
     if (isPlaying && langkah < TOTAL_LANGKAH_PER_CONTOH - 1) {
-      // Delay diperpanjang agar animasi tumpukan yang lebih lambat bisa selesai
-      const delay = langkah === 0 ? 3500 : langkah === 1 ? 4500 : 3500;
+      let delay: number;
+      if (langkah === 0) {
+        delay = 3500;
+      } else if (langkah === 1) {
+        // Sesuaikan dengan durasi animasi stack puluhan
+        delay = durasiAnimasiPuluhan * 1000 + 1500;
+      } else if (langkah === 2) {
+        // Sesuaikan dengan durasi animasi stack satuan
+        delay = durasiAnimasiSatuan * 1000 + 1500;
+      } else {
+        delay = 3500;
+      }
       const timer = setTimeout(() => {
         setLangkah((prev) => prev + 1);
       }, delay);
       return () => clearTimeout(timer);
     }
-  }, [langkah, isPlaying]);
+  }, [langkah, isPlaying, durasiAnimasiPuluhan, durasiAnimasiSatuan]);
 
   // Reset saat ganti contoh
   useEffect(() => {
     setLangkah(0);
     setIsPlaying(true);
+    setAnimatedSegmentCount(0);
+    setAnimatedSatuanCount(0);
   }, [contohIndex]);
 
   // Label penjelasan per langkah
@@ -222,7 +282,7 @@ export default function PlaceValueIntroAnimation({
               </div>
             )}
 
-            {/* Langkah 1: Lingkari Puluhan */}
+            {/* Langkah 1: Lingkari Puluhan — stack satu-satu */}
             {langkah === 1 && (
               <div className="flex items-end gap-10 justify-center">
                 {/* Puluhan — dilingkari */}
@@ -234,21 +294,27 @@ export default function PlaceValueIntroAnimation({
                   <div className="relative p-3 rounded-2xl border-[3px] border-emerald-500 bg-emerald-50/40 shadow-md">
                     <div className="flex gap-1.5">
                       {Array.from({ length: contoh.puluhan }).map((_, i) => (
-                        <PuluhanBar key={`p-h-${i}`} animate={true} />
+                        <PuluhanBar
+                          key={`p-h-${i}`}
+                          animate={true}
+                          delayOffset={i * DURASI_SATU_BAR}
+                        />
                       ))}
                     </div>
-                    {/* Badge label */}
+                    {/* Badge label — muncul setelah semua bar selesai */}
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ delay: 0.5, type: 'spring' }}
+                      transition={{ delay: contoh.puluhan * DURASI_SATU_BAR + 0.3, type: 'spring' }}
                       className="absolute -top-4 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-sm font-black px-3 py-0.5 rounded-full shadow"
                     >
                       {contoh.puluhan * 10}
                     </motion.div>
                   </div>
+                  {/* Angka mengikuti animasi per-segmen */}
                   <span className="text-xs font-bold text-emerald-600">
-                    {contoh.puluhan} Puluhan
+                    {animatedSegmentCount > 0 ? animatedSegmentCount : '...'}{' '}
+                    {animatedSegmentCount >= 10 && `(${Math.floor(animatedSegmentCount / 10)} Puluhan)`}
                   </span>
                 </motion.div>
 
@@ -264,7 +330,7 @@ export default function PlaceValueIntroAnimation({
               </div>
             )}
 
-            {/* Langkah 2: Lingkari Satuan */}
+            {/* Langkah 2: Lingkari Satuan — stack satu-satu */}
             {langkah === 2 && (
               <div className="flex items-end gap-10 justify-center">
                 {/* Puluhan — sudah dilingkari */}
@@ -284,14 +350,15 @@ export default function PlaceValueIntroAnimation({
                   </span>
                 </div>
 
-                {/* Satuan — dilingkari */}
+                {/* Satuan — dilingkari, stack satu-satu */}
                 <motion.div
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   className="flex flex-col items-center gap-3"
                 >
                   <div className="relative p-3 rounded-2xl border-[3px] border-blue-500 bg-blue-50/40 shadow-md">
-                    <div className="flex flex-wrap gap-1.5 max-w-[80px] content-end">
+                    {/* Satuan disusun 2 per baris (grid 2 kolom) */}
+                    <div className="grid grid-cols-2 gap-1.5">
                       {Array.from({ length: contoh.satuan }).map((_, i) => (
                         <SatuanBox key={`s-h-${i}`} animate={true} delayIndex={i} />
                       ))}
@@ -299,14 +366,16 @@ export default function PlaceValueIntroAnimation({
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ delay: 0.5, type: 'spring' }}
+                      transition={{ delay: contoh.satuan * 0.3 + 0.3, type: 'spring' }}
                       className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-sm font-black px-3 py-0.5 rounded-full shadow"
                     >
                       {contoh.satuan}
                     </motion.div>
                   </div>
+                  {/* Angka mengikuti animasi */}
                   <span className="text-xs font-bold text-blue-600">
-                    {contoh.satuan} Satuan
+                    {animatedSatuanCount > 0 ? animatedSatuanCount : '...'}{' '}
+                    ({animatedSatuanCount} Satuan)
                   </span>
                 </motion.div>
               </div>
@@ -343,14 +412,14 @@ export default function PlaceValueIntroAnimation({
                     +
                   </motion.span>
 
-                  {/* Satuan mendekat ke tengah */}
+                  {/* Satuan mendekat ke tengah — disusun grid 2 kolom */}
                   <motion.div
                     initial={{ x: 40 }}
                     animate={{ x: 0 }}
                     transition={{ type: 'spring', stiffness: 120, damping: 12 }}
                     className="flex flex-col items-center gap-2 p-3 rounded-2xl border-[3px] border-blue-500 bg-blue-50/40"
                   >
-                    <div className="flex flex-wrap gap-1.5 max-w-[80px] content-end">
+                    <div className="grid grid-cols-2 gap-1.5">
                       {Array.from({ length: contoh.satuan }).map((_, i) => (
                         <SatuanBox key={`s-f-${i}`} />
                       ))}
