@@ -159,6 +159,32 @@ export default function InteractiveMathBlocks({
   const [langkahSekarang, setLangkahSekarang] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
 
+  // States untuk melacak balok satuan dan puluhan terbang saat pengurangan
+  const [flyingUnits, setFlyingUnits] = useState<{ id: number }[]>([]);
+  const [flyingPuluhan, setFlyingPuluhan] = useState<{ id: number }[]>([]);
+
+  const removeFlyingUnit = (id: number) => {
+    setFlyingUnits((prev) => prev.filter((u) => u.id !== id));
+  };
+
+  const removeFlyingPuluhan = (id: number) => {
+    setFlyingPuluhan((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  useEffect(() => {
+    if (!isPenjumlahan && step === 'satuan' && satuanAnimateCount < satuan1) {
+      const newId = Date.now() + Math.random();
+      setFlyingUnits((prev) => [...prev, { id: newId }]);
+    }
+  }, [satuanAnimateCount, isPenjumlahan, step, satuan1]);
+
+  useEffect(() => {
+    if (!isPenjumlahan && step === 'puluhan' && puluhanAnimateCount < puluhan1) {
+      const newId = Date.now() + Math.random();
+      setFlyingPuluhan((prev) => [...prev, { id: newId }]);
+    }
+  }, [puluhanAnimateCount, isPenjumlahan, step, puluhan1]);
+
   // Update koordinat secara real-time saat mount, window resize, atau step berubah
   useEffect(() => {
     const timer = setTimeout(updateCoords, 100);
@@ -289,7 +315,10 @@ export default function InteractiveMathBlocks({
         ? Math.max(0, satuan2 - satuanAnimateCount)
         : 0
       )
-    : satuan2;
+    : (step === 'satuan'
+        ? Math.max(0, satuan1 - satuanAnimateCount)
+        : 0
+      );
 
   // --- PULUHAN ---
   // Wadah hasil puluhan di bawah
@@ -320,12 +349,13 @@ export default function InteractiveMathBlocks({
         ? Math.max(0, puluhan2 - puluhanAnimateCount)
         : 0
       )
-    : puluhan2;
+    : (step === 'puluhan'
+        ? Math.max(0, puluhan1 - puluhanAnimateCount)
+        : 0
+      );
 
   const angka1Terdisplay = (puluhan1Terdisplay * 10) + satuan1Terdisplay;
-  const angka2Terdisplay = isPenjumlahan
-    ? (puluhan2Terdisplay * 10) + satuan2Terdisplay
-    : angka2;
+  const angka2Terdisplay = (puluhan2Terdisplay * 10) + satuan2Terdisplay;
 
   const simbol = isPenjumlahan ? '+' : '−';
 
@@ -400,13 +430,9 @@ export default function InteractiveMathBlocks({
                       : 'border border-transparent'
                   }`}
                 >
-                  {isPenjumlahan ? (
-                    Array.from({ length: puluhan2Terdisplay }).map((_, i) => (
-                      <PuluhanBlock key={`p2-${i}`} />
-                    ))
-                  ) : (
-                    <div className="text-xs text-red-500 font-bold px-2">-{puluhan2} puluhan</div>
-                  )}
+                  {Array.from({ length: puluhan2Terdisplay }).map((_, i) => (
+                    <PuluhanBlock key={`p2-${i}`} />
+                  ))}
                 </div>
                 {/* Satuan Angka 2 */}
                 <div 
@@ -417,13 +443,9 @@ export default function InteractiveMathBlocks({
                       : 'border border-transparent'
                   }`}
                 >
-                  {isPenjumlahan ? (
-                    Array.from({ length: satuan2Terdisplay }).map((_, i) => (
-                      <SatuanBlock key={`s2-${i}`} />
-                    ))
-                  ) : (
-                    <div className="text-xs text-red-500 font-bold px-2">-{satuan2} satuan</div>
-                  )}
+                  {Array.from({ length: satuan2Terdisplay }).map((_, i) => (
+                    <SatuanBlock key={`s2-${i}`} />
+                  ))}
                 </div>
               </div>
               <span className="text-xl font-black text-slate-700 mt-2">{angka2Terdisplay}</span>
@@ -444,67 +466,102 @@ export default function InteractiveMathBlocks({
             {/* Garis Panah Satuan (Langkah 1) */}
             {step === 'satuan' && (
               <AnimatePresence>
-                <motion.path
-                  key="arrow-s1"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 0.8 }}
-                  transition={{ duration: 0.8 }}
-                  d={`M ${coords.s1.x},${coords.s1.y} Q ${(coords.s1.x + coords.ws.x) / 2},${Math.min(coords.s1.y, coords.ws.y) - 20} ${coords.ws.x},${coords.ws.y - 80}`}
-                  fill="none"
-                  stroke="#3b82f6"
-                  strokeWidth="4"
-                  strokeDasharray="6,6"
-                  markerEnd="url(#arrow-blue)"
-                />
-                <motion.path
-                  key="arrow-s2"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 0.8 }}
-                  transition={{ duration: 0.8, delay: 0.2 }}
-                  d={`M ${coords.s2.x},${coords.s2.y} Q ${(coords.s2.x + coords.ws.x) / 2},${Math.min(coords.s2.y, coords.ws.y) - 30} ${coords.ws.x},${coords.ws.y - 80}`}
-                  fill="none"
-                  stroke="#3b82f6"
-                  strokeWidth="4"
-                  strokeDasharray="6,6"
-                  markerEnd="url(#arrow-blue)"
-                />
+                {isPenjumlahan ? (
+                  <>
+                    <motion.path
+                      key="arrow-s1"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 0.8 }}
+                      transition={{ duration: 0.8 }}
+                      d={`M ${coords.s1.x},${coords.s1.y} Q ${(coords.s1.x + coords.ws.x) / 2},${Math.min(coords.s1.y, coords.ws.y) - 20} ${coords.ws.x},${coords.ws.y - 80}`}
+                      fill="none"
+                      stroke="#3b82f6"
+                      strokeWidth="4"
+                      strokeDasharray="6,6"
+                      markerEnd="url(#arrow-blue)"
+                    />
+                    <motion.path
+                      key="arrow-s2"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 0.8 }}
+                      transition={{ duration: 0.8, delay: 0.2 }}
+                      d={`M ${coords.s2.x},${coords.s2.y} Q ${(coords.s2.x + coords.ws.x) / 2},${Math.min(coords.s2.y, coords.ws.y) - 30} ${coords.ws.x},${coords.ws.y - 80}`}
+                      fill="none"
+                      stroke="#3b82f6"
+                      strokeWidth="4"
+                      strokeDasharray="6,6"
+                      markerEnd="url(#arrow-blue)"
+                    />
+                  </>
+                ) : (
+                  <motion.path
+                    key="arrow-sub-s"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 0.8 }}
+                    transition={{ duration: 0.8 }}
+                    d={`M ${coords.s1.x},${coords.s1.y} Q ${(coords.s1.x + coords.s2.x) / 2},${Math.min(coords.s1.y, coords.s2.y) - 30} ${coords.s2.x},${coords.s2.y}`}
+                    fill="none"
+                    stroke="#3b82f6"
+                    strokeWidth="4"
+                    strokeDasharray="6,6"
+                    markerEnd="url(#arrow-blue)"
+                  />
+                )}
               </AnimatePresence>
             )}
 
             {/* Garis Panah Puluhan (Langkah 2) */}
             {step === 'puluhan' && (
               <AnimatePresence>
-                <motion.path
-                  key="arrow-p1"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 0.8 }}
-                  transition={{ duration: 0.8 }}
-                  d={`M ${coords.p1.x},${coords.p1.y} Q ${(coords.p1.x + coords.wp.x) / 2},${Math.min(coords.p1.y, coords.wp.y) - 35} ${coords.wp.x},${coords.wp.y - 80}`}
-                  fill="none"
-                  stroke="#10b981"
-                  strokeWidth="4"
-                  strokeDasharray="6,6"
-                  markerEnd="url(#arrow-emerald)"
-                />
-                <motion.path
-                  key="arrow-p2"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 0.8 }}
-                  transition={{ duration: 0.8, delay: 0.2 }}
-                  d={`M ${coords.p2.x},${coords.p2.y} Q ${(coords.p2.x + coords.wp.x) / 2 - 40},${Math.min(coords.p2.y, coords.wp.y) - 50} ${coords.wp.x},${coords.wp.y - 80}`}
-                  fill="none"
-                  stroke="#10b981"
-                  strokeWidth="4"
-                  strokeDasharray="6,6"
-                  markerEnd="url(#arrow-emerald)"
-                />
+                {isPenjumlahan ? (
+                  <>
+                    <motion.path
+                      key="arrow-p1"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 0.8 }}
+                      transition={{ duration: 0.8 }}
+                      d={`M ${coords.p1.x},${coords.p1.y} Q ${(coords.p1.x + coords.wp.x) / 2},${Math.min(coords.p1.y, coords.wp.y) - 35} ${coords.wp.x},${coords.wp.y - 80}`}
+                      fill="none"
+                      stroke="#10b981"
+                      strokeWidth="4"
+                      strokeDasharray="6,6"
+                      markerEnd="url(#arrow-emerald)"
+                    />
+                    <motion.path
+                      key="arrow-p2"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 0.8 }}
+                      transition={{ duration: 0.8, delay: 0.2 }}
+                      d={`M ${coords.p2.x},${coords.p2.y} Q ${(coords.p2.x + coords.wp.x) / 2 - 40},${Math.min(coords.p2.y, coords.wp.y) - 50} ${coords.wp.x},${coords.wp.y - 80}`}
+                      fill="none"
+                      stroke="#10b981"
+                      strokeWidth="4"
+                      strokeDasharray="6,6"
+                      markerEnd="url(#arrow-emerald)"
+                    />
+                  </>
+                ) : (
+                  <motion.path
+                    key="arrow-sub-p"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 0.8 }}
+                    transition={{ duration: 0.8 }}
+                    d={`M ${coords.p1.x},${coords.p1.y} Q ${(coords.p1.x + coords.p2.x) / 2},${Math.min(coords.p1.y, coords.p2.y) - 30} ${coords.p2.x},${coords.p2.y}`}
+                    fill="none"
+                    stroke="#10b981"
+                    strokeWidth="4"
+                    strokeDasharray="6,6"
+                    markerEnd="url(#arrow-emerald)"
+                  />
+                )}
               </AnimatePresence>
             )}
           </svg>
 
-        {/* BARIS 2: Wadah Hasil Sementara */}
-        <div className="flex gap-16 justify-center w-full mt-6 z-10">
-          {/* Wadah Target Puluhan */}
+        {/* BARIS 2: Wadah Hasil Sementara (Hanya untuk Penjumlahan) */}
+        {isPenjumlahan && (
+          <div className="flex gap-16 justify-center w-full mt-6 z-10">
+            {/* Wadah Target Puluhan */}
             <div 
               ref={wadahPuluhanRef}
               className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all w-40 min-h-[160px] bg-white ${
@@ -554,6 +611,7 @@ export default function InteractiveMathBlocks({
               </span>
             </div>
           </div>
+        )}
 
         {/* BARIS 3: Hasil Akhir (Hanya muncul ketika selesai) */}
         <AnimatePresence>
@@ -714,6 +772,34 @@ export default function InteractiveMathBlocks({
             )}
           </motion.div>
         )}
+
+        {/* Render Balok Satuan Terbang */}
+        {flyingUnits.map((block) => (
+          <motion.div
+            key={block.id}
+            initial={{ left: coords.s1.x - 7, top: coords.s1.y - 7, opacity: 1, scale: 1 }}
+            animate={{ left: coords.s2.x - 7, top: coords.s2.y - 7, opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.8, ease: 'easeInOut' }}
+            onAnimationComplete={() => removeFlyingUnit(block.id)}
+            className="absolute z-30 pointer-events-none"
+          >
+            <SatuanBlock />
+          </motion.div>
+        ))}
+
+        {/* Render Batang Puluhan Terbang */}
+        {flyingPuluhan.map((block) => (
+          <motion.div
+            key={block.id}
+            initial={{ left: coords.p1.x - 7, top: coords.p1.y - 40, opacity: 1, scale: 1 }}
+            animate={{ left: coords.p2.x - 7, top: coords.p2.y - 40, opacity: 0, scale: 0.8 }}
+            transition={{ duration: 1.0, ease: 'easeInOut' }}
+            onAnimationComplete={() => removeFlyingPuluhan(block.id)}
+            className="absolute z-30 pointer-events-none"
+          >
+            <PuluhanBlock />
+          </motion.div>
+        ))}
 
       </div>
     </div>
