@@ -468,23 +468,12 @@ export default function InteractiveMathBlocks({
               <AnimatePresence>
                 {isPenjumlahan ? (
                   <>
-                    <motion.path
-                      key="arrow-s1"
-                      initial={{ pathLength: 0, opacity: 0 }}
-                      animate={{ pathLength: 1, opacity: 0.8 }}
-                      transition={{ duration: 0.8 }}
-                      d={`M ${coords.s1.x},${coords.s1.y} Q ${(coords.s1.x + coords.ws.x) / 2},${Math.min(coords.s1.y, coords.ws.y) - 20} ${coords.ws.x},${coords.ws.y - 80}`}
-                      fill="none"
-                      stroke="#3b82f6"
-                      strokeWidth="4"
-                      strokeDasharray="6,6"
-                      markerEnd="url(#arrow-blue)"
-                    />
+                    {/* Garis dari kotak kanan (selalu muncul sejak awal di step satuan) */}
                     <motion.path
                       key="arrow-s2"
                       initial={{ pathLength: 0, opacity: 0 }}
                       animate={{ pathLength: 1, opacity: 0.8 }}
-                      transition={{ duration: 0.8, delay: 0.2 }}
+                      transition={{ duration: 0.8 }}
                       d={`M ${coords.s2.x},${coords.s2.y} Q ${(coords.s2.x + coords.ws.x) / 2},${Math.min(coords.s2.y, coords.ws.y) - 30} ${coords.ws.x},${coords.ws.y - 80}`}
                       fill="none"
                       stroke="#3b82f6"
@@ -492,6 +481,21 @@ export default function InteractiveMathBlocks({
                       strokeDasharray="6,6"
                       markerEnd="url(#arrow-blue)"
                     />
+                    {/* Garis dari kotak kiri (hanya muncul saat balok kanan sudah habis dipindahkan) */}
+                    {satuanAnimateCount >= satuan2 && (
+                      <motion.path
+                        key="arrow-s1"
+                        initial={{ pathLength: 0, opacity: 0 }}
+                        animate={{ pathLength: 1, opacity: 0.8 }}
+                        transition={{ duration: 0.8 }}
+                        d={`M ${coords.s1.x},${coords.s1.y} Q ${(coords.s1.x + coords.ws.x) / 2},${Math.min(coords.s1.y, coords.ws.y) - 20} ${coords.ws.x},${coords.ws.y - 80}`}
+                        fill="none"
+                        stroke="#3b82f6"
+                        strokeWidth="4"
+                        strokeDasharray="6,6"
+                        markerEnd="url(#arrow-blue)"
+                      />
+                    )}
                   </>
                 ) : (
                   <motion.path
@@ -515,23 +519,12 @@ export default function InteractiveMathBlocks({
               <AnimatePresence>
                 {isPenjumlahan ? (
                   <>
-                    <motion.path
-                      key="arrow-p1"
-                      initial={{ pathLength: 0, opacity: 0 }}
-                      animate={{ pathLength: 1, opacity: 0.8 }}
-                      transition={{ duration: 0.8 }}
-                      d={`M ${coords.p1.x},${coords.p1.y} Q ${(coords.p1.x + coords.wp.x) / 2},${Math.min(coords.p1.y, coords.wp.y) - 35} ${coords.wp.x},${coords.wp.y - 80}`}
-                      fill="none"
-                      stroke="#10b981"
-                      strokeWidth="4"
-                      strokeDasharray="6,6"
-                      markerEnd="url(#arrow-emerald)"
-                    />
+                    {/* Garis dari kotak kanan (selalu muncul sejak awal di step puluhan) */}
                     <motion.path
                       key="arrow-p2"
                       initial={{ pathLength: 0, opacity: 0 }}
                       animate={{ pathLength: 1, opacity: 0.8 }}
-                      transition={{ duration: 0.8, delay: 0.2 }}
+                      transition={{ duration: 0.8 }}
                       d={`M ${coords.p2.x},${coords.p2.y} Q ${(coords.p2.x + coords.wp.x) / 2 - 40},${Math.min(coords.p2.y, coords.wp.y) - 50} ${coords.wp.x},${coords.wp.y - 80}`}
                       fill="none"
                       stroke="#10b981"
@@ -539,6 +532,21 @@ export default function InteractiveMathBlocks({
                       strokeDasharray="6,6"
                       markerEnd="url(#arrow-emerald)"
                     />
+                    {/* Garis dari kotak kiri (hanya muncul saat puluhan kanan sudah habis dipindahkan) */}
+                    {puluhanAnimateCount >= puluhan2 && (
+                      <motion.path
+                        key="arrow-p1"
+                        initial={{ pathLength: 0, opacity: 0 }}
+                        animate={{ pathLength: 1, opacity: 0.8 }}
+                        transition={{ duration: 0.8 }}
+                        d={`M ${coords.p1.x},${coords.p1.y} Q ${(coords.p1.x + coords.wp.x) / 2},${Math.min(coords.p1.y, coords.wp.y) - 35} ${coords.wp.x},${coords.wp.y - 80}`}
+                        fill="none"
+                        stroke="#10b981"
+                        strokeWidth="4"
+                        strokeDasharray="6,6"
+                        markerEnd="url(#arrow-emerald)"
+                      />
+                    )}
                   </>
                 ) : (
                   <motion.path

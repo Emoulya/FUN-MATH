@@ -7,6 +7,54 @@ import { CheckCircle2, Wand2 } from 'lucide-react';
 import type { Operasi } from '@/types/math';
 import { OPERASI_SIMBOL } from '@/lib/constants';
 
+// Sub-components untuk Balok
+function SatuanBlock({ ghost = false }: { ghost?: boolean }) {
+  return (
+    <div
+      style={{
+        width: 10,
+        height: 10,
+        backgroundColor: ghost ? 'transparent' : 'var(--block-satuan)',
+        border: ghost
+          ? '1px dashed color-mix(in oklch, var(--block-satuan) 40%, transparent)'
+          : '1px solid color-mix(in oklch, var(--block-satuan) 70%, black)',
+        borderRadius: 1.5,
+      }}
+      className="transition-all duration-300"
+    />
+  );
+}
+
+function PuluhanBlock({ ghost = false }: { ghost?: boolean }) {
+  return (
+    <div
+      style={{
+        width: 10,
+        height: 60,
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: ghost ? 'transparent' : 'var(--block-puluhan)',
+        border: ghost
+          ? '1px dashed color-mix(in oklch, var(--block-puluhan) 40%, transparent)'
+          : '1px solid color-mix(in oklch, var(--block-puluhan) 70%, black)',
+        borderRadius: 2,
+        overflow: 'hidden',
+      }}
+      className="transition-all duration-300"
+    >
+      {Array.from({ length: 10 }).map((_, i) => (
+        <div
+          key={i}
+          style={{
+            flex: 1,
+            borderBottom: i < 9 && !ghost ? '1px solid color-mix(in oklch, var(--block-puluhan) 50%, black)' : 'none',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 interface InteractiveMathNumbersProps {
   angka1: number;
   angka2: number;
@@ -28,26 +76,49 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
   const hasilPuluhan = isPenjumlahan ? puluhan1 + puluhan2 : puluhan1 - puluhan2;
   const hasilAkhir = isPenjumlahan ? angka1 + angka2 : angka1 - angka2;
 
-  const [step, setStep] = useState<'satuan' | 'puluhan' | 'selesai'>(compact ? 'selesai' : 'satuan');
+  // State sub-langkah interaktif baru
+  const [step, setStep] = useState<'balok-satuan' | 'angka-satuan' | 'balok-puluhan' | 'angka-puluhan' | 'selesai'>(
+    compact ? 'selesai' : 'balok-satuan'
+  );
+  
+  const [satuanBalokProcessed, setSatuanBalokProcessed] = useState(compact ? true : false);
   const [satuanProcessed, setSatuanProcessed] = useState(compact ? true : false);
+  const [puluhanBalokProcessed, setPuluhanBalokProcessed] = useState(compact ? true : false);
   const [puluhanProcessed, setPuluhanProcessed] = useState(compact ? true : false);
 
+  const handleBalokSatuanClick = () => {
+    if (step !== 'balok-satuan') return;
+    setSatuanBalokProcessed(true);
+    setTimeout(() => {
+      setStep('angka-satuan');
+    }, 600);
+  };
+
   const handleSatuanClick = () => {
-    if (step !== 'satuan') return;
+    if (step !== 'angka-satuan') return;
     setSatuanProcessed(true);
     setTimeout(() => {
       // Jika tidak ada puluhan2 (misal angka2 < 10), langsung selesai
       if (puluhan2 === 0) {
+        setPuluhanBalokProcessed(true);
         setPuluhanProcessed(true);
         setStep('selesai');
       } else {
-        setStep('puluhan');
+        setStep('balok-puluhan');
       }
-    }, 600); // Tunggu animasi selesai
+    }, 600);
+  };
+
+  const handleBalokPuluhanClick = () => {
+    if (step !== 'balok-puluhan') return;
+    setPuluhanBalokProcessed(true);
+    setTimeout(() => {
+      setStep('angka-puluhan');
+    }, 600);
   };
 
   const handlePuluhanClick = () => {
-    if (step !== 'puluhan') return;
+    if (step !== 'angka-puluhan') return;
     setPuluhanProcessed(true);
     setTimeout(() => {
       setStep('selesai');
@@ -55,17 +126,21 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
   };
 
   const handleOtomatis = () => {
-    if (step === 'satuan') handleSatuanClick();
-    else if (step === 'puluhan') handlePuluhanClick();
+    if (step === 'balok-satuan') handleBalokSatuanClick();
+    else if (step === 'angka-satuan') handleSatuanClick();
+    else if (step === 'balok-puluhan') handleBalokPuluhanClick();
+    else if (step === 'angka-puluhan') handlePuluhanClick();
   };
 
-  const instruksiSatuan = isPenjumlahan 
-    ? `Klik angka ${satuan2} di kolom SATUAN (kanan) untuk ditambah!`
-    : `Klik angka ${satuan2} di kolom SATUAN (kanan) untuk dikurang!`;
+  const instruksiSatuanBalok = `Klik BALOK SATUAN di atas untuk digabungkan!`;
+  const instruksiSatuanAngka = isPenjumlahan 
+    ? `Klik angka ${satuan2} di kolom SATUAN bawah untuk ditambah!`
+    : `Klik angka ${satuan2} di kolom SATUAN bawah untuk dikurang!`;
     
-  const instruksiPuluhan = isPenjumlahan
-    ? `Lanjut klik angka ${puluhan2} di kolom PULUHAN (kiri).`
-    : `Lanjut klik angka ${puluhan2} di kolom PULUHAN (kiri).`;
+  const instruksiPuluhanBalok = `Klik BALOK PULUHAN di atas untuk digabungkan!`;
+  const instruksiPuluhanAngka = isPenjumlahan
+    ? `Lanjut klik angka ${puluhan2} di kolom PULUHAN bawah.`
+    : `Lanjut klik angka ${puluhan2} di kolom PULUHAN bawah.`;
 
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-md">
@@ -77,22 +152,52 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
         </h3>
         
         <div className="flex-col gap-2 text-left bg-white/60 p-3 rounded-lg inline-block border border-blue-200/50 shadow-sm mx-auto max-w-sm">
-          <div className={`flex items-start gap-2 ${step !== 'satuan' ? 'opacity-70 text-slate-600' : 'font-bold text-blue-800'}`}>
+          {/* Langkah 1: Balok Satuan */}
+          <div className={`flex items-start gap-2 ${step === 'balok-satuan' ? 'font-bold text-blue-800 animate-pulse' : 'opacity-70 text-slate-600'}`}>
             <span className="shrink-0 mt-0.5">1.</span>
-            <span>{instruksiSatuan}</span>
-            {step !== 'satuan' && <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />}
+            <span>{instruksiSatuanBalok}</span>
+            {satuanBalokProcessed && <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />}
           </div>
-          {(step === 'puluhan' || step === 'selesai') && puluhan2 > 0 && (
+
+          {/* Langkah 2: Angka Satuan */}
+          {(step === 'angka-satuan' || satuanProcessed) && (
             <motion.div 
               initial={{ opacity: 0, height: 0 }} 
               animate={{ opacity: 1, height: 'auto' }} 
-              className={`flex items-start gap-2 ${step === 'selesai' ? 'opacity-70 text-slate-600' : 'font-bold text-blue-800'}`}
+              className={`flex items-start gap-2 ${step === 'angka-satuan' ? 'font-bold text-blue-800' : 'opacity-70 text-slate-600'}`}
             >
               <span className="shrink-0 mt-0.5">2.</span>
-              <span>{instruksiPuluhan}</span>
-              {step === 'selesai' && <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />}
+              <span>{instruksiSatuanAngka}</span>
+              {satuanProcessed && <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />}
             </motion.div>
           )}
+
+          {/* Langkah 3: Balok Puluhan */}
+          {puluhan2 > 0 && (step === 'balok-puluhan' || step === 'angka-puluhan' || puluhanProcessed) && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }} 
+              animate={{ opacity: 1, height: 'auto' }} 
+              className={`flex items-start gap-2 ${step === 'balok-puluhan' ? 'font-bold text-emerald-800' : 'opacity-70 text-slate-600'}`}
+            >
+              <span className="shrink-0 mt-0.5">3.</span>
+              <span>{instruksiPuluhanBalok}</span>
+              {puluhanBalokProcessed && <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />}
+            </motion.div>
+          )}
+
+          {/* Langkah 4: Angka Puluhan */}
+          {puluhan2 > 0 && (step === 'angka-puluhan' || puluhanProcessed) && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }} 
+              animate={{ opacity: 1, height: 'auto' }} 
+              className={`flex items-start gap-2 ${step === 'angka-puluhan' ? 'font-bold text-emerald-800' : 'opacity-70 text-slate-600'}`}
+            >
+              <span className="shrink-0 mt-0.5">4.</span>
+              <span>{instruksiPuluhanAngka}</span>
+              {puluhanProcessed && <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />}
+            </motion.div>
+          )}
+
           {step === 'selesai' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 font-bold text-emerald-600 mt-1">
               <CheckCircle2 className="w-4 h-4" /> Selesai {isPenjumlahan ? 'ditambahkan' : 'dikurangi'}!
@@ -108,140 +213,288 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
       </div>
       )}
 
-      {/* Board Hitung Susun */}
-      <div className="bg-white p-8 rounded-3xl shadow-md border border-slate-200 relative min-w-[280px]">
-        <div className="grid grid-cols-[auto_1fr_1fr] gap-x-8 gap-y-6 text-6xl font-black tabular-nums">
-          {/* Baris 1: Angka Atas */}
-          <div /> {/* Kosong untuk kolom simbol */}
-          <div className="text-center">{puluhan1 > 0 ? puluhan1 : ''}</div>
-          <div className="text-center">{satuan1}</div>
-
-          {/* Baris 2: Angka Bawah */}
-          <div className="text-blue-500 self-end text-5xl font-bold">{simbol}</div>
-          
-          <div className="relative text-center flex justify-center items-center">
-            {/* Highlight Puluhan */}
-            {step === 'puluhan' && !puluhanProcessed && puluhan2 > 0 && (
-               <div className="absolute inset-0 -m-3 bg-primary/20 ring-4 ring-primary rounded-xl animate-pulse" />
-            )}
-
-            {/* Bouncing Arrow Indicator */}
-            {step === 'puluhan' && !puluhanProcessed && puluhan2 > 0 && (
-              <motion.div 
-                className="absolute -top-10 text-primary text-4xl"
-                animate={{ y: [0, 8, 0] }}
-                transition={{ repeat: Infinity, duration: 1 }}
-              >
-                ↓
-              </motion.div>
-            )}
-
-            {/* Sideways Label Indicator */}
-            {(step === 'puluhan' || step === 'selesai') && puluhan2 > 0 && (
-              <motion.div 
-                className={`absolute right-full mr-4 flex items-center font-bold text-lg whitespace-nowrap bg-white/90 p-2 rounded-lg shadow-sm border z-20 ${step === 'puluhan' ? 'text-primary border-primary/20' : 'text-slate-400 border-slate-200 opacity-60'}`}
-                animate={step === 'puluhan' ? { x: [0, 10, 0] } : { x: 0 }}
-                transition={step === 'puluhan' ? { repeat: Infinity, duration: 1.5 } : {}}
-              >
-                Lanjut ke Puluhan →
-              </motion.div>
-            )}
-
-            {puluhan2 > 0 && (
-              <motion.div
-                className={`relative z-10 w-full rounded-lg ${step === 'puluhan' && !puluhanProcessed ? 'cursor-pointer hover:scale-110 text-primary bg-primary/10' : ''}`}
-                onClick={() => step === 'puluhan' && handlePuluhanClick()}
-                animate={!isPenjumlahan && puluhanProcessed ? { opacity: 0.3 } : {}}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-              >
-                {puluhan2}
-              </motion.div>
-            )}
-          </div>
-          
-          <div className="relative text-center flex justify-center items-center">
-            {/* Highlight Satuan */}
-            {step === 'satuan' && !satuanProcessed && (
-               <div className="absolute inset-0 -m-3 bg-primary/20 ring-4 ring-primary rounded-xl animate-pulse" />
-            )}
-
-            {/* Bouncing Arrow Indicator */}
-            {step === 'satuan' && !satuanProcessed && (
-              <motion.div 
-                className="absolute -top-10 text-primary text-4xl"
-                animate={{ y: [0, 8, 0] }}
-                transition={{ repeat: Infinity, duration: 1 }}
-              >
-                ↓
-              </motion.div>
-            )}
-
-            {/* Sideways Label Indicator */}
-            <motion.div 
-              className={`absolute left-full ml-4 flex items-center font-bold text-lg whitespace-nowrap bg-white/90 p-2 rounded-lg shadow-sm border z-20 ${step === 'satuan' ? 'text-primary border-primary/20' : 'text-slate-400 border-slate-200 opacity-60'}`}
-              animate={step === 'satuan' ? { x: [0, -10, 0] } : { x: 0 }}
-              transition={step === 'satuan' ? { repeat: Infinity, duration: 1.5 } : {}}
+      {/* Dua Kartu Terpisah Bertumpuk (Berlaku untuk Desktop & Mobile) */}
+      <div className="flex flex-col items-center gap-5 w-full max-w-sm justify-center">
+        
+        {/* Atas: Board Hitung Susun Balok Pendamping */}
+        <div className="bg-white p-6 rounded-2xl shadow-md border border-slate-200 relative w-full flex flex-col justify-center">
+          <div className="grid grid-cols-[auto_1fr_1fr] gap-x-6 gap-y-4 items-center">
+            
+            {/* Baris 1: Balok Atas */}
+            <div />
+            
+            {/* Puluhan Atas */}
+            <div 
+              className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 transition-all duration-300 min-h-[72px] ${
+                step === 'balok-puluhan' 
+                  ? 'bg-emerald-50/70 border-emerald-400 ring-2 ring-emerald-300 animate-pulse' 
+                  : 'border-transparent'
+              }`}
             >
-              ← Mulai dari Satuan
-            </motion.div>
+              <div className="flex gap-1 justify-center items-end flex-nowrap">
+                {puluhan1 > 0 ? (
+                  Array.from({ length: puluhan1 }).map((_, i) => (
+                    <PuluhanBlock key={`mb-p1-${i}`} />
+                  ))
+                ) : (
+                  <span className="text-slate-300 text-xs font-bold">-</span>
+                )}
+              </div>
+            </div>
 
-            <motion.div
-              className={`relative z-10 w-full rounded-lg ${step === 'satuan' && !satuanProcessed ? 'cursor-pointer hover:scale-110 text-primary bg-primary/10' : ''}`}
-              onClick={() => step === 'satuan' && handleSatuanClick()}
-              animate={!isPenjumlahan && satuanProcessed ? { opacity: 0.3 } : {}}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
+            
+            {/* Satuan Atas */}
+            <div 
+              className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 transition-all duration-300 min-h-[72px] ${
+                step === 'balok-satuan' 
+                  ? 'bg-blue-50/70 border-blue-400 ring-2 ring-blue-300 animate-pulse' 
+                  : 'border-transparent'
+              }`}
             >
-              {satuan2}
-            </motion.div>
-          </div>
+              <div className="flex flex-wrap max-w-[45px] gap-1 justify-center items-end">
+                {satuan1 > 0 ? (
+                  Array.from({ length: satuan1 }).map((_, i) => (
+                    <SatuanBlock key={`mb-s1-${i}`} />
+                  ))
+                ) : (
+                  <span className="text-slate-300 text-xs font-bold">-</span>
+                )}
+              </div>
+            </div>
 
-          {/* Garis pemisah */}
-          <div className="col-span-3 h-[4px] bg-slate-800 rounded-full my-[-8px]" />
 
-          {/* Baris 3: Hasil */}
-          <div />
-          <div className="text-center text-blue-600">
-            {puluhanProcessed && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                {hasilPuluhan > 0 ? hasilPuluhan : ''}
+            {/* Baris 2: Balok Bawah */}
+            <div className="text-slate-400 self-center text-3xl font-bold flex justify-center items-center">
+              {simbol}
+            </div>
+
+            {/* Puluhan Bawah */}
+            <div 
+              className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 transition-all duration-300 min-h-[72px] ${
+                step === 'balok-puluhan' 
+                  ? 'bg-emerald-50/70 border-emerald-400 ring-2 ring-emerald-300 animate-pulse cursor-pointer hover:scale-105' 
+                  : 'border-transparent'
+              }`}
+              onClick={() => step === 'balok-puluhan' && handleBalokPuluhanClick()}
+            >
+              {/* Sideways Label Indicator (bawah, sama dengan atas) */}
+              {(step === 'balok-puluhan' || step === 'angka-puluhan' || step === 'selesai') && puluhan2 > 0 && (
+                <motion.div 
+                  className={`absolute right-full mr-3 flex items-center font-bold text-sm whitespace-nowrap bg-white/90 px-2 py-1 rounded-lg shadow-sm border z-20 ${step === 'balok-puluhan' ? 'text-emerald-600 border-emerald-300' : 'text-slate-400 border-slate-200 opacity-60'}`}
+                  animate={step === 'balok-puluhan' ? { x: [0, 6, 0] } : { x: 0 }}
+                  transition={step === 'balok-puluhan' ? { repeat: Infinity, duration: 1.5 } : {}}
+                >
+                  Lanjut ke Puluhan →
+                </motion.div>
+              )}
+              <div className="flex gap-1 justify-center items-end flex-nowrap">
+                {puluhan2 > 0 ? (
+                  Array.from({ length: puluhan2 }).map((_, i) => (
+                    <PuluhanBlock key={`mb-p2-${i}`} />
+                  ))
+                ) : (
+                  <span className="text-slate-300 text-xs font-bold">-</span>
+                )}
+              </div>
+            </div>
+
+            {/* Satuan Bawah */}
+            <div 
+              className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 transition-all duration-300 min-h-[72px] ${
+                step === 'balok-satuan' 
+                  ? 'bg-blue-50/70 border-blue-400 ring-2 ring-blue-300 animate-pulse cursor-pointer hover:scale-105' 
+                  : 'border-transparent'
+              }`}
+              onClick={() => step === 'balok-satuan' && handleBalokSatuanClick()}
+            >
+              {/* Sideways Label Indicator (bawah, sama dengan atas) */}
+              <motion.div 
+                className={`absolute left-full ml-3 flex items-center font-bold text-sm whitespace-nowrap bg-white/90 px-2 py-1 rounded-lg shadow-sm border z-20 ${step === 'balok-satuan' ? 'text-blue-600 border-blue-300' : 'text-slate-400 border-slate-200 opacity-60'}`}
+                animate={step === 'balok-satuan' ? { x: [0, -6, 0] } : { x: 0 }}
+                transition={step === 'balok-satuan' ? { repeat: Infinity, duration: 1.5 } : {}}
+              >
+                ← Mulai dari Satuan
               </motion.div>
-            )}
-          </div>
-          <div className="text-center text-blue-600">
-            {satuanProcessed && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                {hasilSatuan}
-              </motion.div>
-            )}
+              <div className="flex flex-wrap max-w-[45px] gap-1 justify-center items-end">
+                {satuan2 > 0 ? (
+                  Array.from({ length: satuan2 }).map((_, i) => (
+                    <SatuanBlock key={`mb-s2-${i}`} />
+                  ))
+                ) : (
+                  <span className="text-slate-300 text-xs font-bold">-</span>
+                )}
+              </div>
+            </div>
+
+            {/* Garis pemisah */}
+            <div className="col-span-3 h-[4px] bg-slate-800 rounded-full my-[-8px]" />
+
+            {/* Baris 3: Balok Hasil */}
+            <div />
+
+            {/* Puluhan Hasil */}
+            <div className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 border-transparent transition-all duration-300 min-h-[72px] ${
+              step === 'balok-puluhan' ? 'bg-emerald-50/50 border-emerald-300' : ''
+            }`}>
+              {puluhanBalokProcessed ? (
+                <div className="flex gap-1 justify-center items-end flex-nowrap">
+                  {hasilPuluhan > 0 ? (
+                    Array.from({ length: hasilPuluhan }).map((_, i) => (
+                      <motion.div
+                        key={`mb-res-p-${i}`}
+                        initial={{ scale: 0, y: -20 }}
+                        animate={{ scale: 1, y: 0 }}
+                        transition={{ type: 'spring', stiffness: 200, damping: 12 }}
+                      >
+                        <PuluhanBlock />
+                      </motion.div>
+                    ))
+                  ) : (
+                    <span className="text-slate-300 text-xs font-bold">-</span>
+                  )}
+                </div>
+              ) : (
+                <span className="text-slate-300 text-xl font-bold">?</span>
+              )}
+            </div>
+
+            {/* Satuan Hasil */}
+            <div className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 border-transparent transition-all duration-300 min-h-[72px] ${
+              step === 'balok-satuan' ? 'bg-blue-50/50 border-blue-300' : ''
+            }`}>
+              {satuanBalokProcessed ? (
+                <div className="flex flex-wrap max-w-[45px] gap-1 justify-center items-end">
+                  {hasilSatuan > 0 ? (
+                    Array.from({ length: hasilSatuan }).map((_, i) => (
+                      <motion.div
+                        key={`mb-res-s-${i}`}
+                        initial={{ scale: 0, y: -20 }}
+                        animate={{ scale: 1, y: 0 }}
+                        transition={{ type: 'spring', stiffness: 200, damping: 12 }}
+                      >
+                        <SatuanBlock />
+                      </motion.div>
+                    ))
+                  ) : (
+                    <span className="text-slate-300 text-xs font-bold">-</span>
+                  )}
+                </div>
+              ) : (
+                <span className="text-slate-300 text-xl font-bold">?</span>
+              )}
+            </div>
+
           </div>
         </div>
+
+        {/* Bawah: Board Hitung Susun Angka */}
+        <div className="bg-white p-6 rounded-2xl shadow-md border border-slate-200 relative w-full flex flex-col justify-center">
+          <div className="grid grid-cols-[auto_1fr_1fr] gap-x-6 gap-y-4 text-4xl font-black tabular-nums">
+            {/* Baris 1: Angka Atas */}
+            <div />
+            
+            {/* Angka Puluhan Atas */}
+            <div className={`relative text-center flex justify-center items-center p-1 rounded-lg border-2 transition-all duration-300 ${
+              step === 'angka-puluhan' ? 'bg-emerald-50/50 border-emerald-300 animate-pulse' : 'border-transparent'
+            }`}>
+              {puluhan1 > 0 ? puluhan1 : ''}
+            </div>
+            
+            {/* Angka Satuan Atas */}
+            <div className={`relative text-center flex justify-center items-center p-1 rounded-lg border-2 transition-all duration-300 ${
+              step === 'angka-satuan' ? 'bg-blue-50/50 border-blue-300 animate-pulse' : 'border-transparent'
+            }`}>
+              {satuan1}
+            </div>
+
+            {/* Baris 2: Angka Bawah */}
+            <div className="text-blue-500 self-end text-3xl font-bold">{simbol}</div>
+            
+            {/* Angka Puluhan Bawah */}
+            <div className="relative text-center flex justify-center items-center">
+              {step === 'angka-puluhan' && puluhan2 > 0 && (
+                 <div className="absolute inset-0 -m-2 bg-primary/20 ring-4 ring-primary rounded-xl animate-pulse" />
+              )}
+
+              {/* Sideways Label Indicator */}
+              {(step === 'angka-puluhan' || step === 'selesai') && puluhan2 > 0 && (
+                <motion.div 
+                  className={`absolute right-full mr-3 flex items-center font-bold text-sm whitespace-nowrap bg-white/90 px-2 py-1 rounded-lg shadow-sm border z-20 ${step === 'angka-puluhan' ? 'text-primary border-primary/20' : 'text-slate-400 border-slate-200 opacity-60'}`}
+                  animate={step === 'angka-puluhan' ? { x: [0, 6, 0] } : { x: 0 }}
+                  transition={step === 'angka-puluhan' ? { repeat: Infinity, duration: 1.5 } : {}}
+                >
+                  Lanjut ke Puluhan →
+                </motion.div>
+              )}
+
+              {puluhan2 > 0 ? (
+                <motion.div
+                  className={`relative z-10 w-full rounded-lg ${step === 'angka-puluhan' ? 'cursor-pointer hover:scale-110 text-primary bg-primary/10' : ''}`}
+                  onClick={() => step === 'angka-puluhan' && handlePuluhanClick()}
+                  animate={!isPenjumlahan && puluhanProcessed ? { opacity: 0.3 } : {}}
+                >
+                  {puluhan2}
+                </motion.div>
+              ) : (
+                <span className="text-slate-200 text-sm">-</span>
+              )}
+            </div>
+            
+            {/* Angka Satuan Bawah */}
+            <div className="relative text-center flex justify-center items-center">
+              {step === 'angka-satuan' && (
+                 <div className="absolute inset-0 -m-2 bg-primary/20 ring-4 ring-primary rounded-xl animate-pulse" />
+              )}
+
+              {/* Sideways Label Indicator */}
+              <motion.div 
+                className={`absolute left-full ml-3 flex items-center font-bold text-sm whitespace-nowrap bg-white/90 px-2 py-1 rounded-lg shadow-sm border z-20 ${step === 'angka-satuan' ? 'text-primary border-primary/20' : 'text-slate-400 border-slate-200 opacity-60'}`}
+                animate={step === 'angka-satuan' ? { x: [0, -6, 0] } : { x: 0 }}
+                transition={step === 'angka-satuan' ? { repeat: Infinity, duration: 1.5 } : {}}
+              >
+                ← Mulai dari Satuan
+              </motion.div>
+
+              <motion.div
+                className={`relative z-10 w-full rounded-lg ${step === 'angka-satuan' ? 'cursor-pointer hover:scale-110 text-primary bg-primary/10' : ''}`}
+                onClick={() => step === 'angka-satuan' && handleSatuanClick()}
+                animate={!isPenjumlahan && satuanProcessed ? { opacity: 0.3 } : {}}
+              >
+                {satuan2}
+              </motion.div>
+            </div>
+
+            {/* Garis pemisah */}
+            <div className="col-span-3 h-[4px] bg-slate-800 rounded-full my-[-8px]" />
+
+            {/* Baris 3: Hasil */}
+            <div />
+            <div className="text-center text-blue-600">
+              {puluhanProcessed ? (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                  {hasilPuluhan > 0 ? hasilPuluhan : ''}
+                </motion.div>
+              ) : (
+                <span className="text-slate-300 text-lg font-bold">?</span>
+              )}
+            </div>
+            <div className="text-center text-blue-600">
+              {satuanProcessed ? (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                  {hasilSatuan}
+                </motion.div>
+              ) : (
+                <span className="text-slate-300 text-lg font-bold">?</span>
+              )}
+            </div>
+          </div>
+        </div>
+
       </div>
 
-      {/* Penjelasan Langkah */}
+      {/* Hasil Akhir */}
       <div className="flex flex-col gap-2 w-full">
         <AnimatePresence>
-          {satuanProcessed && (
-            <motion.div
-              key="penjelasan-satuan"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-3 bg-card rounded-lg border border-border text-sm"
-            >
-              <span className="font-bold" style={{ color: 'var(--block-satuan)' }}>Kolom satuan:</span>{' '}
-              {satuan1} {simbol} {satuan2} = {hasilSatuan}
-            </motion.div>
-          )}
-          {puluhanProcessed && (
-            <motion.div
-              key="penjelasan-puluhan"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-3 bg-card rounded-lg border border-border text-sm"
-            >
-              <span className="font-bold" style={{ color: 'var(--block-puluhan)' }}>Kolom puluhan:</span>{' '}
-              {puluhan1} {simbol} {puluhan2} = {hasilPuluhan}
-            </motion.div>
-          )}
           {step === 'selesai' && (
             <motion.div
               key="penjelasan-selesai"
