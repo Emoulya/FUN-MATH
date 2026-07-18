@@ -9,6 +9,45 @@ interface PlaceValueIntroAnimationProps {
   onSelesai: () => void;
 }
 
+function HandDrawnCircle({
+  width,
+  height,
+  rx = 15,
+  color = '#10b981',
+  className = '',
+}: {
+  width: number;
+  height: number;
+  rx?: number;
+  color?: string;
+  className?: string;
+}) {
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      className={`absolute pointer-events-none z-10 ${className}`}
+    >
+      <motion.rect
+        x="3"
+        y="3"
+        width={width - 6}
+        height={height - 6}
+        rx={rx}
+        fill="none"
+        stroke={color}
+        strokeWidth="3"
+        strokeLinecap="round"
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: 1, opacity: 1 }}
+        exit={{ pathLength: 0, opacity: 0 }}
+        transition={{ duration: 1.2, ease: 'easeInOut' }}
+      />
+    </svg>
+  );
+}
+
 export default function PlaceValueIntroAnimation({ onSelesai }: PlaceValueIntroAnimationProps) {
   // Fase 1: Pengenalan (angka 11)
   // Fase 2: Contoh Angka Puluhan (angka 23)
@@ -294,6 +333,19 @@ export default function PlaceValueIntroAnimation({ onSelesai }: PlaceValueIntroA
               )}
             </AnimatePresence>
 
+            {/* Lingkaran Gabungan Step 6 */}
+            <AnimatePresence>
+              {step === 'gabung' && (
+                <HandDrawnCircle
+                  width={150}
+                  height={175}
+                  rx={20}
+                  color="#8b5cf6"
+                  className="bottom-[50px] left-6 right-0 mx-auto"
+                />
+              )}
+            </AnimatePresence>
+
             {/* Wadah Satuan / Puluhan */}
             <motion.div
               animate={{ x: step === 'gabung' ? 20 : 0 }}
@@ -341,16 +393,24 @@ export default function PlaceValueIntroAnimation({ onSelesai }: PlaceValueIntroA
               <div className="w-32 h-44 flex items-end justify-center p-2 relative">
                 <AnimatePresence>
                   {(step === 'merged' || step === 'belasan') && (
-                    <motion.div
-                      key="puluhan-value-label"
-                      initial={{ scale: 0.5, opacity: 0, y: 10 }}
-                      animate={{ scale: 1, opacity: 1, y: 0 }}
-                      exit={{ scale: 0.5, opacity: 0, y: 10 }}
-                      transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-                      className="absolute bottom-[154px] text-center text-lg font-bold text-emerald-600"
-                    >
-                      10
-                    </motion.div>
+                    <>
+                      <motion.div
+                        key="puluhan-value-label"
+                        initial={{ scale: 0.5, opacity: 0, y: 10 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.5, opacity: 0, y: 10 }}
+                        transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                        className="absolute bottom-[154px] text-center text-lg font-bold text-emerald-600"
+                      >
+                        10
+                      </motion.div>
+                      <HandDrawnCircle
+                        width={44}
+                        height={160}
+                        rx={12}
+                        className="bottom-px left-0 right-0 mx-auto"
+                      />
+                    </>
                   )}
                   {!isMerged ? (
                     // Tampilan 10 satuan menumpuk
@@ -452,16 +512,25 @@ export default function PlaceValueIntroAnimation({ onSelesai }: PlaceValueIntroA
                   <div className="w-20 h-44 flex items-end justify-center p-2 relative">
                     <AnimatePresence>
                       {step === 'belasan' && (
-                        <motion.div
-                          key="satuan-value-label"
-                          initial={{ scale: 0.5, opacity: 0, y: 10 }}
-                          animate={{ scale: 1, opacity: 1, y: 0 }}
-                          exit={{ scale: 0.5, opacity: 0, y: 10 }}
-                          transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.2 }}
-                          className="absolute bottom-[34px] text-center text-lg font-bold text-blue-600"
-                        >
-                          1
-                        </motion.div>
+                        <>
+                          <motion.div
+                            key="satuan-value-label"
+                            initial={{ scale: 0.5, opacity: 0, y: 10 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.5, opacity: 0, y: 10 }}
+                            transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.2 }}
+                            className="absolute bottom-[34px] text-center text-lg font-bold text-blue-600"
+                          >
+                            1
+                          </motion.div>
+                          <HandDrawnCircle
+                            width={40}
+                            height={38}
+                            rx={8}
+                            color="#3b82f6"
+                            className="bottom-px left-0 right-0 mx-auto"
+                          />
+                        </>
                       )}
                     </AnimatePresence>
                     <div
@@ -514,6 +583,19 @@ export default function PlaceValueIntroAnimation({ onSelesai }: PlaceValueIntroA
               )}
             </AnimatePresence>
 
+            {/* Lingkaran Gabungan Fase 2 */}
+            <AnimatePresence>
+              {langkahSekarang === 3 && (
+                <HandDrawnCircle
+                  width={165}
+                  height={165}
+                  rx={20}
+                  color="#8b5cf6"
+                  className="bottom-[55px] left-4 right-0 mx-auto"
+                />
+              )}
+            </AnimatePresence>
+
             {/* Bagian Puluhan (2 Batang Puluhan) */}
             <motion.div
               animate={{ x: langkahSekarang === 3 ? 20 : 0 }}
@@ -530,16 +612,26 @@ export default function PlaceValueIntroAnimation({ onSelesai }: PlaceValueIntroA
               <div className="flex gap-2 items-end justify-center w-36 h-44 p-2 relative">
                 <AnimatePresence>
                   {langkahSekarang >= 0 && langkahSekarang !== 3 && (
-                    <motion.div
-                      key="puluhan-f2-value-label"
-                      initial={{ scale: 0.5, opacity: 0, y: 10 }}
-                      animate={{ scale: 1, opacity: 1, y: 0 }}
-                      exit={{ scale: 0.5, opacity: 0, y: 10 }}
-                      transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-                      className="absolute bottom-[154px] text-center text-lg font-bold text-emerald-600"
-                    >
-                      20
-                    </motion.div>
+                    <>
+                      <motion.div
+                        key="puluhan-f2-value-label"
+                        initial={{ scale: 0.5, opacity: 0, y: 10 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.5, opacity: 0, y: 10 }}
+                        transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                        className="absolute bottom-[154px] text-center text-lg font-bold text-emerald-600"
+                      >
+                        20
+                      </motion.div>
+                      {langkahSekarang === 2 && (
+                        <HandDrawnCircle
+                          width={68}
+                          height={160}
+                          rx={12}
+                          className="bottom-px left-0 right-0 mx-auto"
+                        />
+                      )}
+                    </>
                   )}
                 </AnimatePresence>
                 {/* Batang 1 */}
@@ -642,16 +734,25 @@ export default function PlaceValueIntroAnimation({ onSelesai }: PlaceValueIntroA
               <div className="w-20 h-44 flex items-end justify-center p-2 relative">
                 <AnimatePresence>
                   {langkahSekarang === 2 && (
-                    <motion.div
-                      key="satuan-f2-value-label"
-                      initial={{ scale: 0.5, opacity: 0, y: 10 }}
-                      animate={{ scale: 1, opacity: 1, y: 0 }}
-                      exit={{ scale: 0.5, opacity: 0, y: 10 }}
-                      transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-                      className="absolute bottom-[62px] text-center text-lg font-bold text-blue-600"
-                    >
-                      3
-                    </motion.div>
+                    <>
+                      <motion.div
+                        key="satuan-f2-value-label"
+                        initial={{ scale: 0.5, opacity: 0, y: 10 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.5, opacity: 0, y: 10 }}
+                        transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                        className="absolute bottom-[62px] text-center text-lg font-bold text-blue-600"
+                      >
+                        3
+                      </motion.div>
+                      <HandDrawnCircle
+                        width={40}
+                        height={60}
+                        rx={10}
+                        color="#3b82f6"
+                        className="bottom-px left-0 right-0 mx-auto"
+                      />
+                    </>
                   )}
                 </AnimatePresence>
                 <div className="flex flex-col-reverse gap-0.5 items-center w-full">
@@ -710,6 +811,19 @@ export default function PlaceValueIntroAnimation({ onSelesai }: PlaceValueIntroA
               )}
             </AnimatePresence>
 
+            {/* Lingkaran Gabungan Fase 3 */}
+            <AnimatePresence>
+              {langkahSekarang === 3 && (
+                <HandDrawnCircle
+                  width={170}
+                  height={165}
+                  rx={20}
+                  color="#8b5cf6"
+                  className="bottom-[55px] left-2 right-0 mx-auto"
+                />
+              )}
+            </AnimatePresence>
+
             {/* Bagian Puluhan (3 Batang Puluhan) */}
             <motion.div
               animate={{ x: langkahSekarang === 3 ? 20 : 0 }}
@@ -726,16 +840,26 @@ export default function PlaceValueIntroAnimation({ onSelesai }: PlaceValueIntroA
               <div className="flex gap-2 items-end justify-center w-36 h-44 p-2 relative">
                 <AnimatePresence>
                   {langkahSekarang >= 0 && langkahSekarang !== 3 && (
-                    <motion.div
-                      key="puluhan-f3-value-label"
-                      initial={{ scale: 0.5, opacity: 0, y: 10 }}
-                      animate={{ scale: 1, opacity: 1, y: 0 }}
-                      exit={{ scale: 0.5, opacity: 0, y: 10 }}
-                      transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-                      className="absolute bottom-[154px] text-center text-lg font-bold text-emerald-600"
-                    >
-                      30
-                    </motion.div>
+                    <>
+                      <motion.div
+                        key="puluhan-f3-value-label"
+                        initial={{ scale: 0.5, opacity: 0, y: 10 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.5, opacity: 0, y: 10 }}
+                        transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                        className="absolute bottom-[154px] text-center text-lg font-bold text-emerald-600"
+                      >
+                        30
+                      </motion.div>
+                      {langkahSekarang === 2 && (
+                        <HandDrawnCircle
+                          width={92}
+                          height={158}
+                          rx={12}
+                          className="bottom-[4px] left-0 right-0 mx-auto"
+                        />
+                      )}
+                    </>
                   )}
                 </AnimatePresence>
                 {/* Batang 1 */}
@@ -867,16 +991,25 @@ export default function PlaceValueIntroAnimation({ onSelesai }: PlaceValueIntroA
               <div className="w-20 h-44 flex items-end justify-center p-2 relative">
                 <AnimatePresence>
                   {langkahSekarang === 2 && (
-                    <motion.div
-                      key="satuan-f3-value-label"
-                      initial={{ scale: 0.5, opacity: 0, y: 10 }}
-                      animate={{ scale: 1, opacity: 1, y: 0 }}
-                      exit={{ scale: 0.5, opacity: 0, y: 10 }}
-                      transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-                      className="absolute bottom-[90px] text-center text-lg font-bold text-blue-600"
-                    >
-                      5
-                    </motion.div>
+                    <>
+                      <motion.div
+                        key="satuan-f3-value-label"
+                        initial={{ scale: 0.5, opacity: 0, y: 10 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.5, opacity: 0, y: 10 }}
+                        transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                        className="absolute bottom-[90px] text-center text-lg font-bold text-blue-600"
+                      >
+                        5
+                      </motion.div>
+                      <HandDrawnCircle
+                        width={40}
+                        height={88}
+                        rx={10}
+                        color="#3b82f6"
+                        className="bottom-[4px] left-0 right-0 mx-auto"
+                      />
+                    </>
                   )}
                 </AnimatePresence>
                 <div className="flex flex-col-reverse gap-0.5 items-center w-full">
@@ -1032,8 +1165,8 @@ export default function PlaceValueIntroAnimation({ onSelesai }: PlaceValueIntroA
       </div>
 
       {/* Button aksi transisi fase atau selesai */}
-      <div className="w-full flex justify-end">
-        {fase === 1 && langkahSekarang === 5 ? (
+      <div className="w-full flex justify-end min-h-[44px]">
+        {fase === 1 && langkahSekarang === 5 && (
           <Button
             onClick={() => {
               setFase(2);
@@ -1046,7 +1179,8 @@ export default function PlaceValueIntroAnimation({ onSelesai }: PlaceValueIntroA
             Lanjut Contoh ke 2
             <ArrowRight className="w-4 h-4" />
           </Button>
-        ) : fase === 2 && langkahSekarang === 3 ? (
+        )}
+        {fase === 2 && langkahSekarang === 3 && (
           <Button
             onClick={() => {
               setFase(3);
@@ -1059,13 +1193,13 @@ export default function PlaceValueIntroAnimation({ onSelesai }: PlaceValueIntroA
             Lanjut Contoh ke 3
             <ArrowRight className="w-4 h-4" />
           </Button>
-        ) : (
+        )}
+        {fase === 3 && langkahSekarang === 3 && (
           <Button
             onClick={onSelesai}
-            disabled={fase !== 3 || langkahSekarang !== 3}
-            className="gap-2 px-6 shadow-md rounded-2xl w-full"
+            className="gap-2 px-6 shadow-md rounded-2xl w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
           >
-            Lanjut ke Game Mencocokkan
+            Ayo Main Game! 😁
             <ArrowRight className="w-4 h-4" />
           </Button>
         )}
