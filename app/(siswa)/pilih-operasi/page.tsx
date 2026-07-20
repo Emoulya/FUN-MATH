@@ -53,6 +53,9 @@ export default function PilihOperasiPage() {
     if (mode === 'belajar') {
       router.push('/belajar');
     } else {
+      // Hapus data simpanan latihan mandiri agar mulai sesi baru
+      localStorage.removeItem('latihan_mandiri');
+      localStorage.removeItem('latihan_mandiri_timer');
       router.push('/latihan');
     }
   };
@@ -204,11 +207,6 @@ export default function PilihOperasiPage() {
                     <span className="text-3xl">{KESULITAN_EMOJI[k]}</span>
                     <div className="text-left">
                       <p className="font-bold text-base">{KESULITAN_LABEL[k]}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {k === 'mudah' && '2 digit, tanpa simpanan'}
-                        {k === 'sedang' && '2 digit, dengan simpanan'}
-                        {k === 'sulit' && '2-3 digit, simpanan beruntun'}
-                      </p>
                     </div>
                   </motion.button>
                 </div>

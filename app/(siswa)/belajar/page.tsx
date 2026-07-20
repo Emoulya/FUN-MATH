@@ -24,20 +24,34 @@ export default function BelajarPage() {
   const animasi = useAnimasi();
   const [operasi, setOperasi] = useState<Operasi>('penjumlahan');
   const [kesulitan, setKesulitan] = useState<Kesulitan>('mudah');
+  const [isFromLatihan, setIsFromLatihan] = useState(false);
   const { isTutorial: isTutorialActive, tutorialStep, setStep } = useTutorial();
 
   const isTutorial = isTutorialActive && tutorialStep === 'BELAJAR';
 
-  // Load pilihan dari sessionStorage
+  // Load pilihan dari sessionStorage atau query params
   useEffect(() => {
-    const op = sessionStorage.getItem('operasi') as Operasi | null;
-    const ks = sessionStorage.getItem('kesulitan') as Kesulitan | null;
-    if (op) setOperasi(op);
-    if (ks) setKesulitan(ks);
+    const params = new URLSearchParams(window.location.search);
+    const qAngka1 = params.get('angka1');
+    const qAngka2 = params.get('angka2');
+    const qOperasi = params.get('operasi') as Operasi | null;
+    const fromLatihan = params.get('fromLatihan') === 'true';
 
-    // Generate soal awal
-    const soal = generateSoal(op ?? 'penjumlahan', ks ?? 'mudah');
-    animasi.setSoal(soal.angka1, soal.angka2, soal.operasi, ks ?? 'mudah');
+    if (qAngka1 && qAngka2 && qOperasi) {
+      setOperasi(qOperasi);
+      animasi.setSoal(parseInt(qAngka1, 10), parseInt(qAngka2, 10), qOperasi, 'mudah');
+      setIsFromLatihan(true);
+    } else {
+      const op = sessionStorage.getItem('operasi') as Operasi | null;
+      const ks = sessionStorage.getItem('kesulitan') as Kesulitan | null;
+      if (op) setOperasi(op);
+      if (ks) setKesulitan(ks);
+
+      // Generate soal awal
+      const soal = generateSoal(op ?? 'penjumlahan', ks ?? 'mudah');
+      animasi.setSoal(soal.angka1, soal.angka2, soal.operasi, ks ?? 'mudah');
+      setIsFromLatihan(false);
+    }
   }, []);
 
   const handleCobaLatihan = async () => {
@@ -115,35 +129,50 @@ export default function BelajarPage() {
         onTogglePlay={animasi.togglePlay}
       />
 
-      {/* Tombol soal baru */}
+      {/* Tombol aksi */}
       <div className="flex gap-3">
-        <Button
-          variant="outline"
-          onClick={soalBaru}
-          className="gap-2"
-          disabled={isTutorial}
-        >
-          <RefreshCw className="w-4 h-4" />
-          Soal Baru
-        </Button>
-        <div className="relative">
-          {isTutorial && animasi.langkahSekarang === animasi.totalLangkah && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white text-blue-600 px-3 py-1 rounded-full font-bold shadow-lg border-2 border-blue-200 text-sm z-10"
+        {isFromLatihan ? (
+          // Jika datang dari Latihan, hanya tampilkan tombol "Lanjut Latihan?" saat langkah selesai
+          animasi.langkahSekarang === animasi.totalLangkah - 1 && (
+            <Button
+              variant="default"
+              onClick={() => router.push('/latihan?resetActiveSoal=true')}
+              className="gap-2 ring-4 ring-primary ring-offset-2 animate-bounce font-bold"
             >
-              Lanjut ke Latihan! 👇
-            </motion.div>
-          )}
-          <Button
-            variant="default"
-            onClick={handleCobaLatihan}
-            className={isTutorial && animasi.langkahSekarang === animasi.totalLangkah ? 'ring-4 ring-primary ring-offset-2 animate-bounce' : ''}
-          >
-            ✏️ Coba Latihan
-          </Button>
-        </div>
+              🎯 Lanjut Latihan?
+            </Button>
+          )
+        ) : (
+          <>
+            <Button
+              variant="outline"
+              onClick={soalBaru}
+              className="gap-2"
+              disabled={isTutorial}
+            >
+              <RefreshCw className="w-4 h-4" />
+              Soal Baru
+            </Button>
+            <div className="relative">
+              {isTutorial && animasi.langkahSekarang === animasi.totalLangkah - 1 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white text-blue-600 px-3 py-1 rounded-full font-bold shadow-lg border-2 border-blue-200 text-sm z-10"
+                >
+                  Lanjut ke Latihan! 👇
+                </motion.div>
+              )}
+              <Button
+                variant="default"
+                onClick={handleCobaLatihan}
+                className={isTutorial && animasi.langkahSekarang === animasi.totalLangkah - 1 ? 'ring-4 ring-primary ring-offset-2 animate-bounce' : ''}
+              >
+                ✏️ Coba Latihan
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

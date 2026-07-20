@@ -5,6 +5,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Check, ArrowRight, X } from 'lucide-react';
 
+// Pembantu untuk layout kolom balok satuan secara horizontal (maksimal 2 baris)
+function getGridColsClass(count: number) {
+  if (count <= 1) return 'grid-cols-1';
+  if (count === 2) return 'grid-cols-2';
+  const cols = Math.ceil(count / 2);
+  if (cols === 2) return 'grid-cols-2';
+  if (cols === 3) return 'grid-cols-3';
+  if (cols === 4) return 'grid-cols-4';
+  if (cols === 5) return 'grid-cols-5';
+  return 'grid-cols-5';
+}
+
 interface MatchItem {
   id: number;
   angka: number;
@@ -291,7 +303,7 @@ export default function PlaceValueMatchGame({ onBenar }: PlaceValueMatchGameProp
                         ))}
                       </div>
                       {/* Kotak satuan */}
-                      <div className="flex flex-wrap max-w-[30px] gap-0.5 content-end justify-center">
+                      <div className={`grid ${getGridColsClass(item.satuan)} gap-0.5 justify-items-center`}>
                         {Array.from({ length: item.satuan }).map((_, idx) => (
                           <div
                             key={idx}

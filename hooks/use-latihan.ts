@@ -9,7 +9,7 @@
 //      → SELESAI_BENAR → simpan ke DB → rekap → soal berikutnya
 //      → LEWATI → REVEALED → soal berikutnya
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { solve, validateColumn, getDigits, getCarrySteps, padDigits } from '@/lib/math-engine';
 import { MAX_PERCOBAAN } from '@/lib/constants';
 import type { LatihanState, InputBoxState, Operasi, Soal, RekapSoal } from '@/types/math';
@@ -71,24 +71,78 @@ interface UseLatihanReturn {
   tutupFeedback: () => void;
   /** Lanjut ke soal berikutnya */
   soalBerikutnya: () => void;
+  /** Ulangi pengerjaan soal aktif (mengosongkan field) */
+  resetSoalAktif: () => void;
   /** Apakah semua soal sudah selesai */
   sesiSelesai: boolean;
 }
 
-export function useLatihan(): UseLatihanReturn {
-  const [state, setState] = useState<LatihanState>('IDLE');
-  const [daftarSoal, setDaftarSoal] = useState<Soal[]>([]);
-  const [indexSoal, setIndexSoal] = useState(0);
-  const [jawabanState, setJawabanState] = useState<JawabanKolomState[]>([]);
-  const [carryJawabanState, setCarryJawabanState] = useState<JawabanKolomState[]>([]);
-  const [barisPerkalianJawaban, setBarisPerkalianJawaban] = useState<JawabanKolomState[][]>([]);
-  const [barisPerkalianCarryJawaban, setBarisPerkalianCarryJawaban] = useState<JawabanKolomState[][]>([]);
-  const [rekap, setRekap] = useState<RekapSoal[]>([]);
+function getSavedState(storageKey: string | undefined, key: string, fallback: any) {
+  if (typeof window !== 'undefined' && storageKey) {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        const val = JSON.parse(saved)[key];
+        if (val !== undefined) return val;
+      } catch {}
+    }
+  }
+  return fallback;
+}
+
+export function useLatihan(storageKey?: string): UseLatihanReturn {
+  const [state, setState] = useState<LatihanState>(() => getSavedState(storageKey, 'state', 'IDLE'));
+  const [daftarSoal, setDaftarSoal] = useState<Soal[]>(() => getSavedState(storageKey, 'daftarSoal', []));
+  const [indexSoal, setIndexSoal] = useState<number>(() => getSavedState(storageKey, 'indexSoal', 0));
+  const [jawabanState, setJawabanState] = useState<JawabanKolomState[]>(() => getSavedState(storageKey, 'jawabanState', []));
+  const [carryJawabanState, setCarryJawabanState] = useState<JawabanKolomState[]>(() => getSavedState(storageKey, 'carryJawabanState', []));
+  const [barisPerkalianJawaban, setBarisPerkalianJawaban] = useState<JawabanKolomState[][]>(() => getSavedState(storageKey, 'barisPerkalianJawaban', []));
+  const [barisPerkalianCarryJawaban, setBarisPerkalianCarryJawaban] = useState<JawabanKolomState[][]>(() => getSavedState(storageKey, 'barisPerkalianCarryJawaban', []));
+  const [rekap, setRekap] = useState<RekapSoal[]>(() => getSavedState(storageKey, 'rekap', []));
   const [feedbackPesan, setFeedbackPesan] = useState('');
   const [feedbackHint, setFeedbackHint] = useState('');
   const [kolomSalah, setKolomSalah] = useState<number | null>(null);
-  const [waktuMulai, setWaktuMulai] = useState(0);
-  const [waktuDetik, setWaktuDetik] = useState(0);
+  const [waktuMulai, setWaktuMulai] = useState<number>(() => getSavedState(storageKey, 'waktuMulai', 0));
+  const [waktuDetik, setWaktuDetik] = useState<number>(() => getSavedState(storageKey, 'waktuDetik', 0));
+
+  // Efek untuk menyimpan progress latihan ke localStorage
+  useEffect(() => {
+    if (!storageKey || daftarSoal.length === 0) return;
+
+    const stateToSave = {
+      state,
+      daftarSoal,
+      indexSoal,
+      jawabanState,
+      carryJawabanState,
+      barisPerkalianJawaban,
+      barisPerkalianCarryJawaban,
+      rekap,
+      waktuMulai,
+      waktuDetik,
+    };
+    localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+  }, [
+    storageKey,
+    state,
+    daftarSoal,
+    indexSoal,
+    jawabanState,
+    carryJawabanState,
+    barisPerkalianJawaban,
+    barisPerkalianCarryJawaban,
+    rekap,
+    waktuMulai,
+    waktuDetik,
+  ]);
+
+  // Bersihkan localStorage saat sesi selesai
+  useEffect(() => {
+    if (!storageKey) return;
+    if (indexSoal >= daftarSoal.length && daftarSoal.length > 0) {
+      localStorage.removeItem(storageKey);
+    }
+  }, [storageKey, indexSoal, daftarSoal]);
 
   const soalAktif = daftarSoal[indexSoal] ?? null;
   const sesiSelesai = indexSoal >= daftarSoal.length && daftarSoal.length > 0;
@@ -612,6 +666,25 @@ export function useLatihan(): UseLatihanReturn {
     initJawaban(daftarSoal[nextIndex]);
   }, [indexSoal, daftarSoal, initJawaban]);
 
+  /** Ulangi pengerjaan soal aktif (mengosongkan field) */
+  const resetSoalAktif = useCallback(() => {
+    if (!soalAktif) return;
+    initJawaban(soalAktif);
+    setState('MENGERJAKAN');
+
+    // Hapus rekap pengerjaan soal ini jika sebelumnya sempat masuk (misal karena di-reveal/lewati)
+    setRekap((prev) =>
+      prev.filter(
+        (r) =>
+          !(
+            r.soal.angka1 === soalAktif.angka1 &&
+            r.soal.angka2 === soalAktif.angka2 &&
+            r.soal.operasi === soalAktif.operasi
+          )
+      )
+    );
+  }, [soalAktif, initJawaban]);
+
   return {
     state,
     jawabanState,
@@ -638,6 +711,7 @@ export function useLatihan(): UseLatihanReturn {
     lihatCara,
     tutupFeedback,
     soalBerikutnya,
+    resetSoalAktif,
     sesiSelesai,
   };
 }

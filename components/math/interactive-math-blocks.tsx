@@ -15,6 +15,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ArrowRight, Wand2, CheckCircle2, SkipBack, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+// Pembantu untuk layout kolom balok satuan secara horizontal (maksimal 2 baris)
+function getGridColsClass(count: number) {
+  if (count <= 1) return 'grid-cols-1';
+  if (count === 2) return 'grid-cols-2';
+  const cols = Math.ceil(count / 2);
+  if (cols === 2) return 'grid-cols-2';
+  if (cols === 3) return 'grid-cols-3';
+  if (cols === 4) return 'grid-cols-4';
+  if (cols === 5) return 'grid-cols-5';
+  return 'grid-cols-5';
+}
+
 interface InteractiveMathBlocksProps {
   angka1: number;
   angka2: number;
@@ -118,20 +130,12 @@ export default function InteractiveMathBlocks({
 
   // Hitung posisi pusat setiap elemen balok relatif terhadap SVG parent
   const updateCoords = useCallback(() => {
-    if (
-      !puluhan1Ref.current ||
-      !satuan1Ref.current ||
-      !puluhan2Ref.current ||
-      !satuan2Ref.current ||
-      !wadahPuluhanRef.current ||
-      !wadahSatuanRef.current ||
-      !svgRef.current
-    )
-      return;
+    if (!svgRef.current) return;
 
     const svgRect = svgRef.current.getBoundingClientRect();
 
-    const getCenter = (el: HTMLElement) => {
+    const getCenter = (el: HTMLElement | null) => {
+      if (!el) return { x: 0, y: 0 };
       const rect = el.getBoundingClientRect();
       return {
         x: rect.left - svgRect.left + rect.width / 2,
@@ -155,9 +159,17 @@ export default function InteractiveMathBlocks({
   const [puluhanAnimateCount, setPuluhanAnimateCount] = useState(puluhan1);
   const [isAnimating, setIsAnimating] = useState(false);
 
+  // Melacak pergerakan sisa balok ke bawah pada pengurangan
+  const [remainingUnitsMoved, setRemainingUnitsMoved] = useState(false);
+  const [remainingTensMoved, setRemainingTensMoved] = useState(false);
+
   // Kontrol navigasi animasi manual
   const [langkahSekarang, setLangkahSekarang] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
+
+  const satuanAnimateCountRef = useRef(satuanAnimateCount);
+  satuanAnimateCountRef.current = satuanAnimateCount;
+  const pauseTicks = useRef(0);
 
   // States untuk melacak balok satuan dan puluhan terbang saat pengurangan
   const [flyingUnits, setFlyingUnits] = useState<{ id: number }[]>([]);
@@ -201,16 +213,46 @@ export default function InteractiveMathBlocks({
       setStep('satuan');
       setSatuanAnimateCount(isPenjumlahan ? 0 : satuan1);
       setPuluhanAnimateCount(isPenjumlahan ? 0 : puluhan1);
+      pauseTicks.current = 0; // Reset jeda animasi
+      setRemainingUnitsMoved(false);
+      setRemainingTensMoved(false);
     } else if (langkahSekarang === 1) {
       setStep('puluhan');
       setSatuanAnimateCount(targetSatuan);
       setPuluhanAnimateCount(isPenjumlahan ? 0 : puluhan1);
+      setRemainingUnitsMoved(true); // Pastikan satuan sudah pindah ke bawah
+      setRemainingTensMoved(false);
     } else if (langkahSekarang === 2) {
       setStep('selesai');
       setSatuanAnimateCount(targetSatuan);
       setPuluhanAnimateCount(targetPuluhan);
+      setRemainingUnitsMoved(true);
+      setRemainingTensMoved(true);
     }
   }, [langkahSekarang, satuan1, puluhan1, targetSatuan, targetPuluhan, isPenjumlahan]);
+
+  // Efek untuk memicu pergerakan sisa balok ke bawah setelah jeda 1 detik (pengurangan)
+  useEffect(() => {
+    if (!isPenjumlahan) {
+      if (step === 'satuan' && satuanAnimateCount === targetSatuan) {
+        const timer = setTimeout(() => {
+          setRemainingUnitsMoved(true);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [step, satuanAnimateCount, targetSatuan, isPenjumlahan]);
+
+  useEffect(() => {
+    if (!isPenjumlahan) {
+      if (step === 'puluhan' && puluhanAnimateCount === targetPuluhan) {
+        const timer = setTimeout(() => {
+          setRemainingTensMoved(true);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [step, puluhanAnimateCount, targetPuluhan, isPenjumlahan]);
 
   // Animasi otomatis penambahan/pengurangan satuan & puluhan
   useEffect(() => {
@@ -218,6 +260,19 @@ export default function InteractiveMathBlocks({
       setIsAnimating(true);
       if (isPlaying) {
         const interval = setInterval(() => {
+          // Berikan jeda sedikit (1 detik / 1 tick interval) setelah balok angka2 (satuan2) selesai berpindah
+          // sebelum mulai memindahkan balok dari angka1.
+          if (
+            isPenjumlahan &&
+            satuanAnimateCountRef.current === satuan2 &&
+            satuan2 > 0 &&
+            satuan1 > 0 &&
+            pauseTicks.current < 1
+          ) {
+            pauseTicks.current += 1;
+            return;
+          }
+
           setSatuanAnimateCount((prev) => {
             if (isPenjumlahan) {
               if (prev >= targetSatuan) {
@@ -267,7 +322,7 @@ export default function InteractiveMathBlocks({
         setIsAnimating(false);
       }
     }
-  }, [step, targetSatuan, targetPuluhan, isPenjumlahan, isPlaying]);
+  }, [step, targetSatuan, targetPuluhan, isPenjumlahan, isPlaying, satuan2, satuan1]);
 
   // Transisi otomatis langkah jika isPlaying aktif dan animasi hitungan selesai
   useEffect(() => {
@@ -304,9 +359,12 @@ export default function InteractiveMathBlocks({
           )
         : (step === 'puluhan' || step === 'selesai' ? 0 : satuan1)
       )
-    : (step === 'satuan'
-        ? satuanAnimateCount
-        : (step === 'puluhan' || step === 'selesai' ? targetSatuan : satuan1)
+    : (remainingUnitsMoved
+        ? 0
+        : (step === 'satuan'
+            ? satuanAnimateCount
+            : (step === 'puluhan' || step === 'selesai' ? targetSatuan : satuan1)
+          )
       );
 
   // Kotak 2 Satuan (Kanan)
@@ -338,9 +396,12 @@ export default function InteractiveMathBlocks({
           )
         : (step === 'selesai' ? 0 : puluhan1)
       )
-    : (step === 'puluhan'
-        ? puluhanAnimateCount
-        : (step === 'selesai' ? targetPuluhan : puluhan1)
+    : (remainingTensMoved
+        ? 0
+        : (step === 'puluhan'
+            ? puluhanAnimateCount
+            : (step === 'selesai' ? targetPuluhan : puluhan1)
+          )
       );
 
   // Kotak 2 Puluhan (Kanan)
@@ -359,10 +420,27 @@ export default function InteractiveMathBlocks({
 
   const simbol = isPenjumlahan ? '+' : '−';
 
+  // Pembantu koordinat dan nilai pengurangan melayang
+  const subSatuanX = (coords.s1.x + coords.s2.x) / 2;
+  const subSatuanY = Math.min(coords.s1.y, coords.s2.y) - 45;
+  const subSatuanVal = satuanAnimateCount - targetSatuan;
+
+  const subPuluhanX = (coords.p1.x + coords.p2.x) / 2;
+  const subPuluhanY = Math.min(coords.p1.y, coords.p2.y) - 45;
+  const subPuluhanVal = puluhanAnimateCount - targetPuluhan;
+
+  const showHasilAkhirBox = step === 'selesai' || (!isPenjumlahan && (remainingUnitsMoved || remainingTensMoved));
+
   return (
     <div className="flex flex-col items-center gap-8 w-full max-w-2xl select-none">
       {/* Box Instruksi */}
-      <div className={`text-center p-4 rounded-2xl w-full border shadow-sm transition-colors duration-500 ${step === 'selesai' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-blue-50/80 border-blue-100 text-blue-900'}`}>
+      <div className={`text-center p-4 rounded-2xl w-full border shadow-sm transition-colors duration-500 ${
+        step === 'selesai' 
+          ? 'bg-emerald-50 border-emerald-200 text-emerald-900' 
+          : isPenjumlahan 
+          ? 'bg-blue-50/80 border-blue-100 text-blue-900' 
+          : 'bg-rose-50/80 border-rose-100 text-rose-900'
+      }`}>
         <h3 className="font-bold text-lg">
           {isPenjumlahan ? 'Penjumlahan (Gabung Balok)' : 'Pengurangan (Buang Balok)'}
         </h3>
@@ -374,81 +452,93 @@ export default function InteractiveMathBlocks({
       </div>
 
       {/* Area Visualisasi Balok Utama */}
-      <div className="relative flex flex-col items-center gap-12 w-full p-6 bg-slate-50/50 rounded-3xl border border-slate-100 min-h-[450px]">
+      <div className="relative flex flex-col items-center gap-6 sm:gap-12 w-full p-3 sm:p-6 bg-slate-50/50 rounded-3xl border border-slate-100 min-h-[450px]">
         
         {/* BARIS 1: Angka Awal (Kotak 1 & Kotak 2) */}
-        <div className="flex items-center justify-center gap-8 w-full z-10">
+        <div className="flex items-center justify-center gap-2 sm:gap-6 md:gap-8 w-full z-10">
             {/* Kotak Angka 1 (Dinamis berkurang jika pengurangan) */}
-            <div className={`flex flex-col items-center gap-2 bg-white p-4 rounded-2xl border-2 shadow-sm transition-all duration-300 ${
+            <div className={`flex flex-col items-center gap-1 sm:gap-2 bg-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border-2 shadow-sm transition-all duration-300 ${
               step === 'satuan' ? 'border-blue-400' : step === 'puluhan' ? 'border-emerald-400' : 'border-slate-200'
             }`}>
-              <div className="flex gap-4 items-end min-h-[100px] px-2">
+              <div className="flex gap-2 sm:gap-4 items-end min-h-[90px] sm:min-h-[100px] px-1 sm:px-2">
                 {/* Puluhan Angka 1 */}
-                <div 
-                  ref={puluhan1Ref}
-                  className={`flex gap-1 p-2 rounded-xl transition-all duration-300 ${
-                    step === 'puluhan' 
-                      ? 'bg-emerald-100/90 ring-4 ring-emerald-500 ring-offset-2 scale-105 border-2 border-emerald-400 shadow-md' 
-                      : 'border border-transparent'
-                  }`}
-                >
-                  {Array.from({ length: puluhan1Terdisplay }).map((_, i) => (
-                    <PuluhanBlock key={`p1-${i}`} />
-                  ))}
-                </div>
+                {puluhan1 > 0 && (step === 'puluhan' || puluhan1Terdisplay > 0) && (
+                  <div 
+                    ref={puluhan1Ref}
+                    className={`flex gap-0.5 sm:gap-1 p-1 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-300 ${
+                      step === 'puluhan' 
+                        ? 'bg-emerald-100/90 ring-4 ring-emerald-500 ring-offset-2 scale-105 border-2 border-emerald-400 shadow-md' 
+                        : 'border border-transparent'
+                    }`}
+                  >
+                    {Array.from({ length: puluhan1Terdisplay }).map((_, i) => (
+                      <PuluhanBlock key={`p1-${i}`} />
+                    ))}
+                  </div>
+                )}
                 {/* Satuan Angka 1 */}
-                <div 
-                  ref={satuan1Ref}
-                  className={`flex flex-wrap max-w-[70px] gap-1.5 p-2 rounded-xl transition-all duration-300 ${
-                    step === 'satuan' 
-                      ? 'bg-blue-100/90 ring-4 ring-blue-500 ring-offset-2 scale-105 border-2 border-blue-400 shadow-md' 
-                      : 'border border-transparent'
-                  }`}
-                >
-                  {Array.from({ length: satuan1Terdisplay }).map((_, i) => (
-                    <SatuanBlock key={`s1-${i}`} />
-                  ))}
-                </div>
+                {satuan1 > 0 && (step === 'satuan' || satuan1Terdisplay > 0) && (
+                  <div 
+                    ref={satuan1Ref}
+                    className={`grid ${getGridColsClass(satuan1Terdisplay)} gap-1 sm:gap-1.5 p-1 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-300 ${
+                      step === 'satuan' 
+                        ? 'bg-blue-100/90 ring-4 ring-blue-500 ring-offset-2 scale-105 border-2 border-blue-400 shadow-md' 
+                        : 'border border-transparent'
+                    }`}
+                  >
+                    {Array.from({ length: satuan1Terdisplay }).map((_, i) => (
+                      <SatuanBlock key={`s1-${i}`} />
+                    ))}
+                  </div>
+                )}
               </div>
-              <span className="text-xl font-black text-slate-700 mt-2">{angka1Terdisplay}</span>
+              <span className="text-lg sm:text-xl font-black text-slate-700 mt-2">{angka1Terdisplay}</span>
             </div>
 
             {/* Simbol Operasi */}
-            <div className="text-3xl font-black text-slate-400">{simbol}</div>
+            <div className="text-2xl sm:text-3xl font-black text-slate-400">{simbol}</div>
 
             {/* Kotak Angka 2 */}
-            <div className={`flex flex-col items-center gap-2 bg-white p-4 rounded-2xl border-2 shadow-sm transition-all duration-300 ${
-              step === 'satuan' ? 'border-blue-400' : step === 'puluhan' ? 'border-emerald-400' : 'border-slate-200'
+            <div className={`flex flex-col items-center gap-1 sm:gap-2 bg-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border-2 shadow-sm transition-all duration-300 ${
+              step === 'satuan' 
+                ? (isPenjumlahan ? 'border-blue-400' : 'border-red-400 shadow-[0_0_12px_rgba(239,68,68,0.15)]') 
+                : step === 'puluhan' 
+                ? (isPenjumlahan ? 'border-emerald-400' : 'border-red-400 shadow-[0_0_12px_rgba(239,68,68,0.15)]') 
+                : 'border-slate-200'
             }`}>
-              <div className="flex gap-4 items-end min-h-[100px] px-2">
+              <div className="flex gap-2 sm:gap-4 items-end min-h-[90px] sm:min-h-[100px] px-1 sm:px-2">
                 {/* Puluhan Angka 2 */}
-                <div 
-                  ref={puluhan2Ref}
-                  className={`flex gap-1 p-2 rounded-xl transition-all duration-300 ${
-                    step === 'puluhan' 
-                      ? 'bg-emerald-100/90 ring-4 ring-emerald-500 ring-offset-2 scale-105 border-2 border-emerald-400 shadow-md' 
-                      : 'border border-transparent'
-                  }`}
-                >
-                  {Array.from({ length: puluhan2Terdisplay }).map((_, i) => (
-                    <PuluhanBlock key={`p2-${i}`} />
-                  ))}
-                </div>
+                {puluhan2 > 0 && (step === 'puluhan' || puluhan2Terdisplay > 0) && (
+                  <div 
+                    ref={puluhan2Ref}
+                    className={`flex gap-0.5 sm:gap-1 p-1 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-300 ${
+                      step === 'puluhan' 
+                        ? 'bg-emerald-100/90 ring-4 ring-emerald-500 ring-offset-2 scale-105 border-2 border-emerald-400 shadow-md' 
+                        : 'border border-transparent'
+                    }`}
+                  >
+                    {Array.from({ length: puluhan2Terdisplay }).map((_, i) => (
+                      <PuluhanBlock key={`p2-${i}`} />
+                    ))}
+                  </div>
+                )}
                 {/* Satuan Angka 2 */}
-                <div 
-                  ref={satuan2Ref}
-                  className={`flex flex-wrap max-w-[70px] gap-1.5 p-2 rounded-xl transition-all duration-300 ${
-                    step === 'satuan' 
-                      ? 'bg-blue-100/90 ring-4 ring-blue-500 ring-offset-2 scale-105 border-2 border-blue-400 shadow-md' 
-                      : 'border border-transparent'
-                  }`}
-                >
-                  {Array.from({ length: satuan2Terdisplay }).map((_, i) => (
-                    <SatuanBlock key={`s2-${i}`} />
-                  ))}
-                </div>
+                {satuan2 > 0 && (step === 'satuan' || satuan2Terdisplay > 0) && (
+                  <div 
+                    ref={satuan2Ref}
+                    className={`grid ${getGridColsClass(satuan2Terdisplay)} gap-1 sm:gap-1.5 p-1 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-300 ${
+                      step === 'satuan' 
+                        ? 'bg-blue-100/90 ring-4 ring-blue-500 ring-offset-2 scale-105 border-2 border-blue-400 shadow-md' 
+                        : 'border border-transparent'
+                    }`}
+                  >
+                    {Array.from({ length: satuan2Terdisplay }).map((_, i) => (
+                      <SatuanBlock key={`s2-${i}`} />
+                    ))}
+                  </div>
+                )}
               </div>
-              <span className="text-xl font-black text-slate-700 mt-2">{angka2Terdisplay}</span>
+              <span className="text-lg sm:text-xl font-black text-slate-700 mt-2">{angka2Terdisplay}</span>
             </div>
           </div>
 
@@ -469,20 +559,22 @@ export default function InteractiveMathBlocks({
                 {isPenjumlahan ? (
                   <>
                     {/* Garis dari kotak kanan (selalu muncul sejak awal di step satuan) */}
-                    <motion.path
-                      key="arrow-s2"
-                      initial={{ pathLength: 0, opacity: 0 }}
-                      animate={{ pathLength: 1, opacity: 0.8 }}
-                      transition={{ duration: 0.8 }}
-                      d={`M ${coords.s2.x},${coords.s2.y} Q ${(coords.s2.x + coords.ws.x) / 2},${Math.min(coords.s2.y, coords.ws.y) - 30} ${coords.ws.x},${coords.ws.y - 80}`}
-                      fill="none"
-                      stroke="#3b82f6"
-                      strokeWidth="4"
-                      strokeDasharray="6,6"
-                      markerEnd="url(#arrow-blue)"
-                    />
+                    {satuan2 > 0 && (
+                      <motion.path
+                        key="arrow-s2"
+                        initial={{ pathLength: 0, opacity: 0 }}
+                        animate={{ pathLength: 1, opacity: 0.8 }}
+                        transition={{ duration: 0.8 }}
+                        d={`M ${coords.s2.x},${coords.s2.y} Q ${(coords.s2.x + coords.ws.x) / 2},${Math.min(coords.s2.y, coords.ws.y) - 30} ${coords.ws.x},${coords.ws.y - 80}`}
+                        fill="none"
+                        stroke="#3b82f6"
+                        strokeWidth="4"
+                        strokeDasharray="6,6"
+                        markerEnd="url(#arrow-blue)"
+                      />
+                    )}
                     {/* Garis dari kotak kiri (hanya muncul saat balok kanan sudah habis dipindahkan) */}
-                    {satuanAnimateCount >= satuan2 && (
+                    {satuan1 > 0 && satuanAnimateCount >= satuan2 && (
                       <motion.path
                         key="arrow-s1"
                         initial={{ pathLength: 0, opacity: 0 }}
@@ -498,18 +590,20 @@ export default function InteractiveMathBlocks({
                     )}
                   </>
                 ) : (
-                  <motion.path
-                    key="arrow-sub-s"
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 0.8 }}
-                    transition={{ duration: 0.8 }}
-                    d={`M ${coords.s1.x},${coords.s1.y} Q ${(coords.s1.x + coords.s2.x) / 2},${Math.min(coords.s1.y, coords.s2.y) - 30} ${coords.s2.x},${coords.s2.y}`}
-                    fill="none"
-                    stroke="#3b82f6"
-                    strokeWidth="4"
-                    strokeDasharray="6,6"
-                    markerEnd="url(#arrow-blue)"
-                  />
+                  satuan2 > 0 && (
+                    <motion.path
+                      key="arrow-sub-s"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 0.8 }}
+                      transition={{ duration: 0.8 }}
+                      d={`M ${coords.s1.x},${coords.s1.y} Q ${(coords.s1.x + coords.s2.x) / 2},${Math.min(coords.s1.y, coords.s2.y) - 30} ${coords.s2.x},${coords.s2.y}`}
+                      fill="none"
+                      stroke="#3b82f6"
+                      strokeWidth="4"
+                      strokeDasharray="6,6"
+                      markerEnd="url(#arrow-blue)"
+                    />
+                  )
                 )}
               </AnimatePresence>
             )}
@@ -520,20 +614,22 @@ export default function InteractiveMathBlocks({
                 {isPenjumlahan ? (
                   <>
                     {/* Garis dari kotak kanan (selalu muncul sejak awal di step puluhan) */}
-                    <motion.path
-                      key="arrow-p2"
-                      initial={{ pathLength: 0, opacity: 0 }}
-                      animate={{ pathLength: 1, opacity: 0.8 }}
-                      transition={{ duration: 0.8 }}
-                      d={`M ${coords.p2.x},${coords.p2.y} Q ${(coords.p2.x + coords.wp.x) / 2 - 40},${Math.min(coords.p2.y, coords.wp.y) - 50} ${coords.wp.x},${coords.wp.y - 80}`}
-                      fill="none"
-                      stroke="#10b981"
-                      strokeWidth="4"
-                      strokeDasharray="6,6"
-                      markerEnd="url(#arrow-emerald)"
-                    />
+                    {puluhan2 > 0 && (
+                      <motion.path
+                        key="arrow-p2"
+                        initial={{ pathLength: 0, opacity: 0 }}
+                        animate={{ pathLength: 1, opacity: 0.8 }}
+                        transition={{ duration: 0.8 }}
+                        d={`M ${coords.p2.x},${coords.p2.y} Q ${(coords.p2.x + coords.wp.x) / 2 - 40},${Math.min(coords.p2.y, coords.wp.y) - 50} ${coords.wp.x},${coords.wp.y - 80}`}
+                        fill="none"
+                        stroke="#10b981"
+                        strokeWidth="4"
+                        strokeDasharray="6,6"
+                        markerEnd="url(#arrow-emerald)"
+                      />
+                    )}
                     {/* Garis dari kotak kiri (hanya muncul saat puluhan kanan sudah habis dipindahkan) */}
-                    {puluhanAnimateCount >= puluhan2 && (
+                    {puluhan1 > 0 && puluhanAnimateCount >= puluhan2 && (
                       <motion.path
                         key="arrow-p1"
                         initial={{ pathLength: 0, opacity: 0 }}
@@ -549,35 +645,77 @@ export default function InteractiveMathBlocks({
                     )}
                   </>
                 ) : (
-                  <motion.path
-                    key="arrow-sub-p"
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 0.8 }}
-                    transition={{ duration: 0.8 }}
-                    d={`M ${coords.p1.x},${coords.p1.y} Q ${(coords.p1.x + coords.p2.x) / 2},${Math.min(coords.p1.y, coords.p2.y) - 30} ${coords.p2.x},${coords.p2.y}`}
-                    fill="none"
-                    stroke="#10b981"
-                    strokeWidth="4"
-                    strokeDasharray="6,6"
-                    markerEnd="url(#arrow-emerald)"
-                  />
+                  puluhan2 > 0 && (
+                    <motion.path
+                      key="arrow-sub-p"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 0.8 }}
+                      transition={{ duration: 0.8 }}
+                      d={`M ${coords.p1.x},${coords.p1.y} Q ${(coords.p1.x + coords.p2.x) / 2},${Math.min(coords.p1.y, coords.p2.y) - 30} ${coords.p2.x},${coords.p2.y}`}
+                      fill="none"
+                      stroke="#10b981"
+                      strokeWidth="4"
+                      strokeDasharray="6,6"
+                      markerEnd="url(#arrow-emerald)"
+                    />
+                  )
                 )}
               </AnimatePresence>
             )}
           </svg>
 
+        {/* Floating Subtraction Badge for Satuan */}
+        {!isPenjumlahan && step === 'satuan' && satuan2 > 0 && coords.s1.x > 0 && coords.s2.x > 0 && subSatuanVal >= 0 && (
+          <motion.div
+            initial={{ scale: 0, y: 10, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            style={{
+              position: 'absolute',
+              left: subSatuanX,
+              top: subSatuanY,
+              transform: 'translate(-50%, -50%)',
+            }}
+            className="z-20 bg-white border-2 border-red-200 px-3 py-1 rounded-xl shadow-md flex items-center justify-center min-w-[48px]"
+          >
+            <span className="text-red-500 font-black text-base sm:text-lg">
+              {subSatuanVal > 0 ? `-${subSatuanVal}` : '0'}
+            </span>
+          </motion.div>
+        )}
+
+        {/* Floating Subtraction Badge for Puluhan */}
+        {!isPenjumlahan && step === 'puluhan' && puluhan2 > 0 && coords.p1.x > 0 && coords.p2.x > 0 && subPuluhanVal >= 0 && (
+          <motion.div
+            initial={{ scale: 0, y: 10, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            style={{
+              position: 'absolute',
+              left: subPuluhanX,
+              top: subPuluhanY,
+              transform: 'translate(-50%, -50%)',
+            }}
+            className="z-20 bg-white border-2 border-red-200 px-3 py-1 rounded-xl shadow-md flex items-center justify-center min-w-[48px]"
+          >
+            <span className="text-red-500 font-black text-base sm:text-lg">
+              {subPuluhanVal > 0 ? `-${subPuluhanVal}` : '0'}
+            </span>
+          </motion.div>
+        )}
+
         {/* BARIS 2: Wadah Hasil Sementara (Hanya untuk Penjumlahan) */}
         {isPenjumlahan && (
-          <div className="flex gap-16 justify-center w-full mt-6 z-10">
+          <div className="flex gap-4 sm:gap-12 md:gap-16 justify-center w-full mt-6 z-10">
             {/* Wadah Target Puluhan */}
             <div 
               ref={wadahPuluhanRef}
-              className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all w-40 min-h-[160px] bg-white ${
+              className={`flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all w-[120px] sm:w-40 min-h-[140px] sm:min-h-[160px] bg-white ${
                 step === 'puluhan' ? 'border-emerald-400 bg-emerald-50/20 shadow-md scale-105' : 'border-slate-100 opacity-40'
               }`}
             >
-              <span className="text-xs font-bold text-emerald-600">Hasil Puluhan</span>
-              <div className="flex gap-1 items-end flex-1 justify-center min-h-[90px]">
+              <span className="text-[10px] sm:text-xs font-bold text-emerald-600">Hasil Puluhan</span>
+              <div className="flex gap-0.5 sm:gap-1 items-end flex-1 justify-center min-h-[70px] sm:min-h-[90px]">
                 {Array.from({ length: puluhanWadahCount }).map((_, i) => (
                   <motion.div
                     key={`res-p-${i}`}
@@ -589,7 +727,7 @@ export default function InteractiveMathBlocks({
                   </motion.div>
                 ))}
               </div>
-              <span className="text-lg font-black text-emerald-700 mt-1">
+              <span className="text-base sm:text-lg font-black text-emerald-700 mt-1">
                 {step === 'puluhan' || puluhanWadahCount > 0 ? puluhanWadahCount * 10 : '?'}
               </span>
             </div>
@@ -597,12 +735,12 @@ export default function InteractiveMathBlocks({
             {/* Wadah Target Satuan */}
             <div 
               ref={wadahSatuanRef}
-              className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all w-40 min-h-[160px] bg-white ${
+              className={`flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all w-[120px] sm:w-40 min-h-[140px] sm:min-h-[160px] bg-white ${
                 step === 'satuan' ? 'border-blue-400 bg-blue-50/20 shadow-md scale-105' : 'border-slate-100 opacity-60'
               }`}
             >
-              <span className="text-xs font-bold text-blue-600">Hasil Satuan</span>
-              <div className="flex flex-wrap max-w-[85px] gap-1 items-end flex-1 justify-center min-h-[90px] content-end">
+              <span className="text-[10px] sm:text-xs font-bold text-blue-600">Hasil Satuan</span>
+              <div className={`grid ${getGridColsClass(satuanWadahCount)} gap-1 items-end flex-1 justify-center min-h-[70px] sm:min-h-[90px] content-end justify-items-center`}>
                 {Array.from({ length: satuanWadahCount }).map((_, i) => (
                   <motion.div
                     key={`res-s-${i}`}
@@ -614,16 +752,16 @@ export default function InteractiveMathBlocks({
                   </motion.div>
                 ))}
               </div>
-              <span className="text-lg font-black text-blue-700 mt-1">
+              <span className="text-base sm:text-lg font-black text-blue-700 mt-1">
                 {satuanWadahCount}
               </span>
             </div>
           </div>
         )}
 
-        {/* BARIS 3: Hasil Akhir (Hanya muncul ketika selesai) */}
+        {/* BARIS 3: Hasil Akhir */}
         <AnimatePresence>
-          {step === 'selesai' && (
+          {showHasilAkhirBox && (
             <motion.div
               initial={{ scale: 0.8, opacity: 0, y: 30 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -631,49 +769,57 @@ export default function InteractiveMathBlocks({
               transition={{ type: 'spring', stiffness: 150, damping: 15 }}
               className="flex flex-col items-center gap-4 bg-white p-6 rounded-3xl border-2 border-emerald-400 shadow-lg w-full max-w-sm mt-8 z-10"
             >
-              <div className="text-xs font-bold text-emerald-600 uppercase tracking-widest">
-                Hasil Akhir Gabungan
-              </div>
+              {step === 'selesai' && (
+                <div className="text-xs font-bold text-emerald-600 uppercase tracking-widest">
+                  Hasil Akhir Gabungan
+                </div>
+              )}
               
               {/* Representasi Balok Gabungan */}
-              <div className="flex gap-6 items-end justify-center min-h-[100px] border-b border-dashed border-slate-100 pb-4 w-full">
+              <div className="flex gap-4 sm:gap-6 items-end justify-center min-h-[100px] border-b border-dashed border-slate-100 pb-4 w-full">
                 {/* Puluhan Akhir */}
-                <div className="flex gap-1.5 bg-emerald-50/50 p-2 rounded-xl border border-emerald-100">
-                  {Array.from({ length: targetPuluhan }).map((_, i) => (
-                    <motion.div
-                      key={`final-p-${i}`}
-                      initial={{ x: -20, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: i * 0.1 }}
-                    >
-                      <PuluhanBlock />
-                    </motion.div>
-                  ))}
-                </div>
+                {targetPuluhan > 0 && remainingTensMoved && (
+                  <div className="flex gap-1 bg-emerald-50/50 p-1.5 sm:p-2 rounded-lg sm:rounded-xl border border-emerald-100">
+                    {Array.from({ length: targetPuluhan }).map((_, i) => (
+                      <motion.div
+                        key={`final-p-${i}`}
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: i * 0.1 }}
+                      >
+                        <PuluhanBlock />
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
                 {/* Satuan Akhir */}
-                <div className="flex flex-wrap max-w-[80px] gap-1 bg-blue-50/50 p-2 rounded-xl border border-blue-100">
-                  {Array.from({ length: targetSatuan }).map((_, i) => (
-                    <motion.div
-                      key={`final-s-${i}`}
-                      initial={{ x: 20, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: i * 0.05 }}
-                    >
-                      <SatuanBlock />
-                    </motion.div>
-                  ))}
-                </div>
+                {targetSatuan > 0 && remainingUnitsMoved && (
+                  <div className={`grid ${getGridColsClass(targetSatuan)} gap-1 bg-blue-50/50 p-1.5 sm:p-2 rounded-lg sm:rounded-xl border border-blue-100 justify-items-center`}>
+                    {Array.from({ length: targetSatuan }).map((_, i) => (
+                      <motion.div
+                        key={`final-s-${i}`}
+                        initial={{ x: 20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: i * 0.05 }}
+                      >
+                        <SatuanBlock />
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Teks Penjelasan */}
-              <div className="text-center flex flex-col gap-1">
-                <span className="text-slate-500 text-xs font-semibold">
-                  {targetPuluhan * 10} + {targetSatuan} = {isPenjumlahan ? angka1 + angka2 : angka1 - angka2}
-                </span>
-                <span className="text-2xl font-black text-emerald-800 tracking-tight mt-1">
-                  Hasilnya: {isPenjumlahan ? angka1 + angka2 : angka1 - angka2}
-                </span>
-              </div>
+              {step === 'selesai' && (
+                <div className="text-center flex flex-col gap-1">
+                  <span className="text-slate-500 text-xs font-semibold">
+                    {targetPuluhan * 10} + {targetSatuan} = {isPenjumlahan ? angka1 + angka2 : angka1 - angka2}
+                  </span>
+                  <span className="text-2xl font-black text-emerald-800 tracking-tight mt-1">
+                    Hasilnya: {isPenjumlahan ? angka1 + angka2 : angka1 - angka2}
+                  </span>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

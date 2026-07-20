@@ -363,6 +363,8 @@ export default function MathBoard({
           operasi={operasi}
           visible={true}
           mode={mode === 'animasi' || mode === 'latihan' ? mode : undefined}
+          angka1={angka1}
+          angka2={angka2}
         />
       )}
 
@@ -752,6 +754,8 @@ export default function MathBoard({
           operasi={operasi}
           visible={true}
           mode={mode === 'animasi' || mode === 'latihan' ? mode : undefined}
+          angka1={angka1}
+          angka2={angka2}
         />
       )}
     </div>
