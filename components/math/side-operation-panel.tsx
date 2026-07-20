@@ -2,15 +2,18 @@
 
 import { motion } from 'framer-motion';
 import type { LangkahHitung, Operasi } from '@/types/math';
+import { getDigits } from '@/lib/math-engine';
 
 interface SideOperationPanelProps {
   langkah: LangkahHitung | null;
   operasi: Operasi;
   visible: boolean;
   mode?: 'animasi' | 'latihan';
+  angka1?: number;
+  angka2?: number;
 }
 
-export default function SideOperationPanel({ langkah, operasi, visible, mode = 'animasi' }: SideOperationPanelProps) {
+export default function SideOperationPanel({ langkah, operasi, visible, mode = 'animasi', angka1, angka2 }: SideOperationPanelProps) {
   if (!visible || !langkah || langkah.kolom === -1) {
     return (
       <div className="w-32 aspect-square self-end flex items-center justify-center border border-dashed border-border/50 rounded-2xl bg-card/30 text-muted-foreground text-sm p-4 text-center">
@@ -21,6 +24,9 @@ export default function SideOperationPanel({ langkah, operasi, visible, mode = '
 
   const { nilaiDigit1, nilaiDigit2, hasil, carry, borrow, nilaiSetelahBorrow } = langkah;
   const simbol = operasi === 'penjumlahan' ? '+' : operasi === 'pengurangan' ? '−' : '×';
+
+  const isDigit1Empty = angka1 !== undefined && langkah.kolom >= getDigits(angka1).length;
+  const isDigit2Empty = angka2 !== undefined && langkah.kolom >= getDigits(angka2).length;
 
   return (
     <motion.div
@@ -44,9 +50,10 @@ export default function SideOperationPanel({ langkah, operasi, visible, mode = '
             </div>
           )}
           <div className="flex items-center gap-2">
-            <span>{nilaiDigit1}</span>
-            <span className="text-primary">{simbol}</span>
-            <span>{nilaiDigit2}</span>
+            {!isDigit1Empty && <span>{nilaiDigit1}</span>}
+            {!isDigit1Empty && !isDigit2Empty && <span className="text-primary">{simbol}</span>}
+            {!isDigit2Empty && <span>{nilaiDigit2}</span>}
+            {isDigit1Empty && isDigit2Empty && <span>0</span>}
           </div>
           <div className="w-16 h-px bg-border my-1" />
           <div className="text-2xl font-bold text-primary flex gap-2">
@@ -72,15 +79,16 @@ export default function SideOperationPanel({ langkah, operasi, visible, mode = '
                 <span className="text-borrow-color relative">
                    {nilaiSetelahBorrow}
                 </span>
-                <span className="text-primary">{simbol}</span>
-                <span>{nilaiDigit2}</span>
+                {!isDigit2Empty && <span className="text-primary">{simbol}</span>}
+                {!isDigit2Empty && <span>{nilaiDigit2}</span>}
               </div>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <span>{nilaiDigit1}</span>
-              <span className="text-primary">{simbol}</span>
-              <span>{nilaiDigit2}</span>
+              {!isDigit1Empty && <span>{nilaiDigit1}</span>}
+              {!isDigit1Empty && !isDigit2Empty && <span className="text-primary">{simbol}</span>}
+              {!isDigit2Empty && <span>{nilaiDigit2}</span>}
+              {isDigit1Empty && isDigit2Empty && <span>0</span>}
             </div>
           )}
           
