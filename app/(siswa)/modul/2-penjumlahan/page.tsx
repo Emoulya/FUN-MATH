@@ -195,11 +195,16 @@ export default function Modul2Page() {
 
             {/* Tombol aksi penjelasan */}
             <div className="flex gap-3 justify-center items-center mt-2">
-              {/* Tombol Contoh Sebelumnya */}
-              {indexContoh > 0 && (
+              {/* Tombol Contoh Sebelumnya / Kembali ke Balok */}
+              {indexContoh > 0 ? (
                 <Button variant="outline" onClick={contohSebelumnya} className="gap-2">
                   <ArrowLeft className="w-4 h-4" />
                   Sebelumnya
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={() => { setLayar('interaktif'); setIndexInteraktif(INTERAKTIF_SOAL.length - 1); }} className="gap-2">
+                  <ArrowLeft className="w-4 h-4" />
+                  Kembali ke Balok
                 </Button>
               )}
 

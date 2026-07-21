@@ -102,7 +102,9 @@ export default function PilihSiswaClient({ initialSiswaList }: { initialSiswaLis
         data = await res.json();
       } else {
         const text = await res.text();
-        throw new Error(`Server Error: ${res.status} ${text.substring(0, 50)}`);
+        console.error(`Server Error: ${res.status} ${text.substring(0, 50)}`);
+        setError('Terjadi kesalahan pada server. Coba refresh halaman.');
+        return;
       }
 
       if (data.valid) {

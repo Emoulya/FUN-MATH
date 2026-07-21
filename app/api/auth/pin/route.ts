@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error || !data) {
-    return NextResponse.json({ error: 'Siswa tidak ditemukan' }, { status: 404 });
+    return NextResponse.json({ error: 'Siswa tidak ditemukan' }, { status: 400 });
   }
 
   if (data.pin !== pin) {
