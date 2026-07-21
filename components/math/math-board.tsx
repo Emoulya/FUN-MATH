@@ -7,7 +7,7 @@
 // 3 mode: tampil (read-only), latihan (interactive input), animasi (step-by-step).
 // Semua logika kalkulasi menggunakan mathEngine — komponen hanya render.
 
-import { useMemo, useRef, useCallback } from 'react';
+import { useMemo, useRef, useCallback, useEffect, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getDigits, solve } from '@/lib/math-engine';
 import { OPERASI_SIMBOL } from '@/lib/constants';
@@ -17,6 +17,20 @@ import CarryIndicator from './carry-indicator';
 import BorrowIndicator from './borrow-indicator';
 import OffsetIndicator from './offset-indicator';
 import SideOperationPanel from './side-operation-panel';
+import Xarrow, { Xwrapper, useXarrow } from 'react-xarrows';
+
+const ArrowUpdater = ({ langkah, step }: { langkah: any, step: number }) => {
+  const updateXarrow = useXarrow();
+  useEffect(() => {
+    // Only run when step changes to prevent infinite loops
+    updateXarrow();
+    const timeout1 = setTimeout(updateXarrow, 100);
+    const timeout2 = setTimeout(updateXarrow, 300);
+    return () => { clearTimeout(timeout1); clearTimeout(timeout2); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+  return null;
+};
 
 interface MathBoardProps {
   angka1: number;
@@ -65,6 +79,7 @@ export default function MathBoard({
   onParsialJawaban,
 }: MathBoardProps) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const boardId = useId().replace(/:/g, '');
 
   // Hitung hasil menggunakan math engine (atau gunakan override jika ada)
   const perhitunganRaw: HasilPerhitungan = useMemo(
@@ -355,22 +370,26 @@ export default function MathBoard({
   }
 
   return (
-    <div className="inline-flex flex-row items-stretch gap-4">
+    <Xwrapper>
+    <div className="inline-flex flex-row items-stretch gap-4" id="math-board-container">
       {/* Side Panel Khusus Mode Animasi/Belajar dan Latihan (KIRI) */}
       {isSidePanelVisible && langkahSekarang && langkahSekarang.kolom > 0 && (
-        <SideOperationPanel
-          langkah={langkahSekarang}
-          operasi={operasi}
-          visible={true}
-          mode={mode === 'animasi' || mode === 'latihan' ? mode : undefined}
-        />
+        <div id="side-panel-left" className="flex">
+          <SideOperationPanel
+            boardId={boardId}
+            langkah={langkahSekarang}
+            operasi={operasi}
+            visible={true}
+            mode={mode === 'animasi' || mode === 'latihan' ? mode : undefined}
+          />
+        </div>
       )}
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="inline-flex flex-col items-end gap-1 p-6 bg-card rounded-2xl shadow-lg border border-border shrink-0"
+        className="inline-flex flex-col items-end gap-1 p-6 bg-card rounded-2xl shadow-lg border border-border shrink-0 z-10"
       >
       {/* ============================================
           Baris Carry/Borrow Indicators
@@ -416,7 +435,7 @@ export default function MathBoard({
           })();
 
           return (
-            <div key={`indicator-${kolom}`} className="math-digit relative flex justify-center items-end" style={{ height: '2rem' }}>
+            <div id={borrow ? `borrow-indicator-${boardId}-${kolom}` : `carry-indicator-${boardId}-${kolom}`} key={`indicator-${kolom}`} className="math-digit relative flex justify-center items-end" style={{ height: '2rem' }}>
               {carry && (
                 mode === 'latihan' ? (
                   <div className="absolute bottom-0 scale-75 origin-bottom">
@@ -473,6 +492,7 @@ export default function MathBoard({
           return (
             <motion.div
               key={`d1-${kolom}`}
+              id={`d1-${boardId}-${kolom}`}
               className="math-digit"
               animate={
                 getHighlightForBaris(1, kolom)
@@ -508,6 +528,7 @@ export default function MathBoard({
           return (
             <motion.div
               key={`d2-${kolom}`}
+              id={`kolom-target-${boardId}-${kolom}`}
               className="math-digit"
               animate={
                 getHighlightForBaris(2, kolom)
@@ -608,7 +629,8 @@ export default function MathBoard({
 
                     return (
                       <motion.div
-                        key={`baris-${barisIdx}-digit-${i}`}
+                        key={`baris-${barisIdx}-d-${c}`}
+                        id={`kolom-target-${boardId}-${barisIdx}-${c}`}
                         initial={{ opacity: 0 }}
                         animate={
                           isDigitHighlighted
@@ -655,6 +677,7 @@ export default function MathBoard({
               return (
                 <motion.div
                   key={`hasil-${kolom}`}
+                  id={`hasil-kolom-${boardId}-${kolom}`}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
@@ -692,6 +715,7 @@ export default function MathBoard({
               return (
                 <motion.div
                   key={`animasi-${kolom}`}
+                  id={`hasil-kolom-${boardId}-${kolom}`}
                   className="math-digit font-extrabold"
                   style={{ color: 'var(--primary)' }}
                 >
@@ -747,13 +771,113 @@ export default function MathBoard({
 
       {/* Side Panel Khusus Mode Animasi/Belajar dan Latihan (KANAN) */}
       {isSidePanelVisible && (!langkahSekarang || langkahSekarang.kolom <= 0) && (
-        <SideOperationPanel
-          langkah={langkahSekarang}
-          operasi={operasi}
-          visible={true}
-          mode={mode === 'animasi' || mode === 'latihan' ? mode : undefined}
-        />
+        <div id="side-panel-right" className="flex">
+          <SideOperationPanel
+            boardId={boardId}
+            langkah={langkahSekarang}
+            operasi={operasi}
+            visible={true}
+            mode={mode === 'animasi' || mode === 'latihan' ? mode : undefined}
+          />
+        </div>
       )}
     </div>
+
+    {/* ARROWS */}
+    {isSidePanelVisible && langkahSekarang && (
+      <>
+        <ArrowUpdater langkah={langkahSekarang} step={langkahAktif || 0} />
+        {(() => {
+          // D1 ID
+          const idD1 = langkahSekarang.borrow ? `borrow-indicator-${boardId}-${langkahSekarang.kolom}` : `d1-${boardId}-${langkahSekarang.kolom}`;
+          
+          // D2 ID (untuk perkalian bisa dari baris parsial, tapi ini kolom D2)
+          let idD2 = `kolom-target-${boardId}-${langkahSekarang.kolom}`;
+          if (operasi === 'perkalian' && langkahSekarang.barisPerkalianIdx !== undefined) {
+             idD2 = `kolom-target-${boardId}-${langkahSekarang.barisPerkalianIdx}-${langkahSekarang.kolom}`;
+          }
+
+          // Hasil Panel ID
+          const idPanelHasil = `side-hasil-${boardId}-${langkahSekarang.kolom}`;
+          const idPanelCarry = `side-hasil-carry-${boardId}-${langkahSekarang.kolom}`;
+          
+          // Hasil Board ID
+          const idHasilBoard = mode === 'latihan' ? `input-kolom-${langkahSekarang.kolom}` : `hasil-kolom-${boardId}-${langkahSekarang.kolom}`;
+          const idCarryBoard = mode === 'latihan' ? `carry-kolom-${langkahSekarang.kolom + 1}` : `carry-indicator-${boardId}-${langkahSekarang.kolom + 1}`;
+
+          const arrows = [];
+
+          // 1. Panah dari soal ke kotak detail (selalu muncul saat menghitung kolom)
+          if (langkahSekarang.kolom >= 0) {
+            arrows.push(
+              <Xarrow
+                key={`arrow-d1-${boardId}-${langkahSekarang.kolom}-${langkahAktif}`}
+                start={idD1}
+                end={`side-d1-${boardId}-${langkahSekarang.kolom}`}
+                color="#94a3b8"
+                strokeWidth={2}
+                path="straight"
+                dashness={{ animation: true }}
+                headSize={4}
+                startAnchor="auto"
+                endAnchor="auto"
+                zIndex={50}
+              />,
+              <Xarrow
+                key={`arrow-d2-${boardId}-${langkahSekarang.kolom}-${langkahAktif}`}
+                start={idD2}
+                end={`side-d2-${boardId}-${langkahSekarang.kolom}`}
+                color="#94a3b8"
+                strokeWidth={2}
+                path="straight"
+                dashness={{ animation: true }}
+                headSize={4}
+                startAnchor="auto"
+                endAnchor="auto"
+                zIndex={50}
+              />
+            );
+          }
+
+          // 2. Panah Hasil (selalu muncul jika ada panel hasil)
+          if (langkahSekarang.hasil !== undefined) {
+             arrows.push(
+               <Xarrow
+                key={`arrow-hasil-${boardId}-${langkahSekarang.kolom}-${langkahAktif}`}
+                start={idPanelHasil}
+                end={idHasilBoard}
+                color="#10b981"
+                strokeWidth={3}
+                path="straight"
+                headSize={6}
+                startAnchor="auto"
+                endAnchor="auto"
+                zIndex={50}
+               />
+             );
+          }
+
+          // 3. Panah Simpanan (jika ada carryBaru)
+          if (langkahSekarang.carryBaru !== undefined && langkahSekarang.carryBaru > 0) {
+             arrows.push(
+               <Xarrow
+                key={`arrow-carry-out-${boardId}-${langkahSekarang.kolom}-${langkahAktif}`}
+                start={mode === 'latihan' ? idPanelHasil : idPanelCarry}
+                end={idCarryBoard}
+                color="#3b82f6"
+                strokeWidth={3}
+                path="straight"
+                headSize={6}
+                startAnchor="auto"
+                endAnchor="auto"
+                zIndex={50}
+               />
+             );
+          }
+          return arrows;
+        })()}
+      </>
+    )}
+    </Xwrapper>
   );
 }

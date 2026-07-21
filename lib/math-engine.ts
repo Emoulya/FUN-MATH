@@ -302,7 +302,9 @@ export function solveSubtraction(a: number, b: number): HasilPerhitungan {
         nilaiSetelahBorrow: workingA[i + 1],
         hasil: 0,
         digitAtasAktif: [...workingA],
-        penjelasan: `Angka puluhan <b>${nilaiSebelumBorrow}</b> dipinjam 1, dicoret menjadi <b>${workingA[i + 1]}</b>.`,
+        penjelasan: workingA[i + 1] === 0 
+          ? `Angka puluhan <b>${nilaiSebelumBorrow}</b> dipinjam 1 dan habis (dicoret).`
+          : `Angka puluhan <b>${nilaiSebelumBorrow}</b> dipinjam 1, dicoret menjadi <b>${workingA[i + 1]}</b>.`,
       });
 
       // E. Tambah 10 ke Satuan (Tampil angka baru kecil di atas satuan)

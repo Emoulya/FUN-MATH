@@ -582,7 +582,7 @@ export default function InteractiveMathBlocks({
                 ))}
               </div>
               <span className="text-lg font-black text-emerald-700 mt-1">
-                {step === 'puluhan' || puluhanWadahCount > 0 ? puluhanWadahCount * 10 : '?'}
+                {step === 'selesai' ? targetPuluhan * 10 : '?'}
               </span>
             </div>
 
@@ -607,7 +607,7 @@ export default function InteractiveMathBlocks({
                 ))}
               </div>
               <span className="text-lg font-black text-blue-700 mt-1">
-                {satuanWadahCount}
+                {step === 'selesai' ? targetSatuan : '?'}
               </span>
             </div>
           </div>

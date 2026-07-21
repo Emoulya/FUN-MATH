@@ -236,7 +236,7 @@ export default function InteractiveRegroupingBlocks({
           setBreakingTens([]);
           setOnes((prev) => [...prev, ...newOnes]);
           setIsShattering(false);
-        }, 1000);
+        }, 1500);
       }
     }
   };
@@ -255,7 +255,7 @@ export default function InteractiveRegroupingBlocks({
         setGroupedOnes([]);
         setTens((prev) => [...prev, { id: `t-new-${Date.now()}` }]);
         setIsMerging(false);
-      }, 600);
+      }, 2000); // Diperlambat dari 600ms menjadi 2000ms
     }
   }, [ones, isPenjumlahan, isMerging]);
 
@@ -286,11 +286,11 @@ export default function InteractiveRegroupingBlocks({
         <Info className="w-5 h-5 shrink-0" />
         <div className="flex flex-col gap-1">
           {isPenjumlahan ? (
-            <p>Tarik (geser) semua Kotak dari Kotak Jawaban 2 ke Kotak Jawaban 1 untuk menjumlahkan. Jika Satuan mencapai 10, ia akan melebur menjadi 1 Puluhan (Hijau).</p>
+            <p>Geser semua kotak dari jawaban 2 ke jawaban 1. Hitung jumhlahnya.  Jika satuan menjadi 10, kotak akan berubah menjadi 1 puluhan (warna hijau).</p>
           ) : (
             <>
-              <p><strong>Langkah 1:</strong> Tarik (geser) balok ke Kotak Pengurang sesuai target untuk menguranginya.</p>
-              <p><strong>Langkah 2:</strong> Jika satuan tidak cukup, tarik 1 balok Puluhan ke Area Satuan di Kotak Kiri untuk meminjam (dipecah jadi 10 satuan).</p>
+              <p><strong>Langkah 1:</strong> Geser balok ke Kotak Pengurang sesuai target untuk menguranginya.</p>
+              <p><strong>Langkah 2:</strong> Jika satuan tidak cukup geser balok puluhan untuk meminjam.(pecah jadi 10 satuan).</p>
             </>
           )}
         </div>
@@ -347,7 +347,7 @@ export default function InteractiveRegroupingBlocks({
                             layoutId={o.id}
                             initial={{ scale: 1 }}
                             animate={isMerging ? { scale: [1, 1.2, 0], backgroundColor: 'var(--block-puluhan)', opacity: 0 } : { scale: 1 }}
-                            transition={{ duration: 0.5 }}
+                            transition={{ duration: 1.5 }}
                             style={{
                               width: 16,
                               height: 15,
@@ -456,7 +456,18 @@ export default function InteractiveRegroupingBlocks({
                     <div className="flex flex-col-reverse gap-[1px] bg-blue-50/50 p-1 rounded-lg border border-blue-200 shadow-sm self-end h-[160px] justify-start ml-2">
                       <AnimatePresence>
                         {breakingTens.map((o) => (
-                          <SatuanBlock key={o.id} id={o.id} isDraggable={false} />
+                          <motion.div
+                            key={o.id}
+                            initial={{ scale: 0, backgroundColor: 'var(--block-puluhan)' }}
+                            animate={{ scale: [0, 1.2, 1], backgroundColor: 'var(--block-satuan)' }}
+                            transition={{ duration: 1.5 }}
+                            style={{
+                              width: 16,
+                              height: 16,
+                              borderRadius: 4,
+                              border: '1.5px solid color-mix(in oklch, var(--block-satuan) 70%, black)',
+                            }}
+                          />
                         ))}
                       </AnimatePresence>
                     </div>
@@ -504,43 +515,49 @@ export default function InteractiveRegroupingBlocks({
       </div>
       
       {/* Kotak Hasil Akhir Gabungan */}
-      <div className="w-full flex flex-col items-center gap-2 mt-4">
-        <div className="text-center font-bold text-slate-600 bg-slate-100 py-2 px-6 rounded-xl border border-slate-200 shadow-sm">
-          Kotak Hasil Akhir ({isPenjumlahan ? 'Total Gabungan' : 'Sisa Balok'} = {totalValue})
-        </div>
-        <div className="flex gap-4 items-end justify-center p-6 rounded-2xl border-2 border-slate-300 bg-slate-50 min-h-[180px] w-full max-w-sm">
-          <div className="flex gap-1.5 h-[160px] items-end">
-            {tens.map((t, i) => (
-              <div
-                key={`final-t-${i}`}
-                className="shrink-0"
-                style={{
-                  width: 14,
-                  height: 140,
-                  backgroundColor: 'var(--block-puluhan)',
-                  border: '1.5px solid color-mix(in oklch, var(--block-puluhan) 70%, black)',
-                  borderRadius: 3,
-                }}
-              />
-            ))}
+      <AnimatePresence>
+        <motion.div 
+          initial={{ opacity: 0, y: -20, height: 0 }}
+          animate={{ opacity: 1, y: 0, height: 'auto' }}
+          className="w-full flex flex-col items-center gap-2 mt-4 overflow-hidden"
+        >
+          <div className="text-center font-bold text-slate-600 bg-slate-100 py-2 px-6 rounded-xl border border-slate-200 shadow-sm">
+            Kotak Hasil Akhir ({isPenjumlahan ? 'Total Gabungan' : 'Sisa Balok'} = ?)
           </div>
-          <div className="flex flex-wrap gap-2 w-[120px] justify-start content-end">
-            {[...ones, ...groupedOnes, ...breakingTens].map((o, i) => (
-              <div
-                key={`final-s-${i}`}
-                className="shrink-0"
-                style={{
-                  width: 14,
-                  height: 14,
-                  backgroundColor: 'var(--block-satuan)',
-                  border: '1.5px solid color-mix(in oklch, var(--block-satuan) 70%, black)',
-                  borderRadius: 3,
-                }}
-              />
-            ))}
+          <div className="flex gap-4 items-end justify-center p-6 rounded-2xl border-2 border-slate-300 bg-slate-50 min-h-[180px] w-full max-w-sm">
+            <div className="flex gap-1.5 h-[160px] items-end">
+              {tens.map((t, i) => (
+                <div
+                  key={`final-t-${i}`}
+                  className="shrink-0"
+                  style={{
+                    width: 14,
+                    height: 140,
+                    backgroundColor: 'var(--block-puluhan)',
+                    border: '1.5px solid color-mix(in oklch, var(--block-puluhan) 70%, black)',
+                    borderRadius: 3,
+                  }}
+                />
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2 w-[120px] justify-start content-end">
+              {[...ones, ...groupedOnes, ...breakingTens].map((o, i) => (
+                <div
+                  key={`final-s-${i}`}
+                  className="shrink-0"
+                  style={{
+                    width: 14,
+                    height: 14,
+                    backgroundColor: 'var(--block-satuan)',
+                    border: '1.5px solid color-mix(in oklch, var(--block-satuan) 70%, black)',
+                    borderRadius: 3,
+                  }}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </AnimatePresence>
 
       <div className="mt-2 flex items-center justify-center gap-4">
         {onComplete && (
