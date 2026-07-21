@@ -14,7 +14,7 @@ interface SideOperationPanelProps {
   angka2?: number;
 }
 
-export default function SideOperationPanel({ langkah, operasi, visible, mode = 'animasi', angka1, angka2 }: SideOperationPanelProps) {
+export default function SideOperationPanel({ boardId = '', langkah, operasi, visible, mode = 'animasi', angka1, angka2 }: SideOperationPanelProps) {
   if (!visible || !langkah || langkah.kolom === -1) {
     return (
       <div className="w-32 aspect-square self-end flex items-center justify-center border border-dashed border-border/50 rounded-2xl bg-card/30 text-muted-foreground text-sm p-4 text-center">
@@ -51,9 +51,9 @@ export default function SideOperationPanel({ langkah, operasi, visible, mode = '
             </div>
           )}
           <div className="flex items-center gap-2">
-            {!isDigit1Empty && <span>{nilaiDigit1}</span>}
+            {!isDigit1Empty && <span id={`side-d1-${boardId}-${langkah.kolom}`}>{nilaiDigit1}</span>}
             {!isDigit1Empty && !isDigit2Empty && <span className="text-primary">{simbol}</span>}
-            {!isDigit2Empty && <span>{nilaiDigit2}</span>}
+            {!isDigit2Empty && <span id={`side-d2-${boardId}-${langkah.kolom}`}>{nilaiDigit2}</span>}
             {isDigit1Empty && isDigit2Empty && <span>0</span>}
           </div>
           <div className="w-16 h-px bg-border my-1" />
@@ -90,14 +90,14 @@ export default function SideOperationPanel({ langkah, operasi, visible, mode = '
                    {nilaiSetelahBorrow}
                 </span>
                 {!isDigit2Empty && <span className="text-primary">{simbol}</span>}
-                {!isDigit2Empty && <span>{nilaiDigit2}</span>}
+                {!isDigit2Empty && <span id={`side-d2-${boardId}-${langkah.kolom}`}>{nilaiDigit2}</span>}
               </div>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              {!isDigit1Empty && <span>{nilaiDigit1}</span>}
+              {!isDigit1Empty && <span id={`side-d1-${boardId}-${langkah.kolom}`}>{nilaiDigit1}</span>}
               {!isDigit1Empty && !isDigit2Empty && <span className="text-primary">{simbol}</span>}
-              {!isDigit2Empty && <span>{nilaiDigit2}</span>}
+              {!isDigit2Empty && <span id={`side-d2-${boardId}-${langkah.kolom}`}>{nilaiDigit2}</span>}
               {isDigit1Empty && isDigit2Empty && <span>0</span>}
             </div>
           )}

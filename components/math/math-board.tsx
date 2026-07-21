@@ -375,6 +375,7 @@ export default function MathBoard({
       {/* Side Panel Khusus Mode Animasi/Belajar dan Latihan (KIRI) */}
       {isSidePanelVisible && langkahSekarang && langkahSekarang.kolom > 0 && (
         <SideOperationPanel
+          boardId={boardId}
           langkah={langkahSekarang}
           operasi={operasi}
           visible={true}
@@ -771,6 +772,7 @@ export default function MathBoard({
       {/* Side Panel Khusus Mode Animasi/Belajar dan Latihan (KANAN) */}
       {isSidePanelVisible && (!langkahSekarang || langkahSekarang.kolom <= 0) && (
         <SideOperationPanel
+          boardId={boardId}
           langkah={langkahSekarang}
           operasi={operasi}
           visible={true}
