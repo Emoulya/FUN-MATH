@@ -10,7 +10,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Timer, SkipForward, BookOpen } from 'lucide-react';
+import { Timer, SkipForward, BookOpen, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -36,16 +36,28 @@ function ErrorFallback({ resetErrorBoundary }: { resetErrorBoundary: () => void 
 
 export default function LatihanPage() {
   const router = useRouter();
-  const latihan = useLatihan();
+  const latihan = useLatihan('latihan_mandiri');
   const [operasi, setOperasi] = useState<Operasi>('penjumlahan');
   const [kesulitan, setKesulitan] = useState<Kesulitan>('mudah');
-  const [timerDetik, setTimerDetik] = useState(TIMER_DEFAULT_DETIK);
+  const [timerDetik, setTimerDetik] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('latihan_mandiri_timer');
+      if (saved) return parseInt(saved, 10);
+    }
+    return TIMER_DEFAULT_DETIK;
+  });
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const sesiMulaiRef = useRef(Date.now());
 
   // Simpan referensi fungsi yang stabil untuk dipakai di timer
   const lewatiSoalRef = useRef(latihan.lewatiSoal);
   lewatiSoalRef.current = latihan.lewatiSoal;
+
+  // Simpan timer ke localStorage
+  useEffect(() => {
+    localStorage.setItem('latihan_mandiri_timer', timerDetik.toString());
+  }, [timerDetik]);
 
   // Load pilihan dan mulai sesi
   useEffect(() => {
@@ -54,11 +66,53 @@ export default function LatihanPage() {
     if (op) setOperasi(op);
     if (ks) setKesulitan(ks);
 
+    // Cek apakah ada sesi latihan mandiri yang sedang berjalan
+    const saved = localStorage.getItem('latihan_mandiri');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.daftarSoal && parsed.daftarSoal.length > 0) {
+          setIsTimerRunning(true);
+          sesiMulaiRef.current = parsed.waktuMulai || Date.now();
+          return;
+        }
+      } catch (e) {
+        console.error('Gagal memuat sesi latihan tersimpan:', e);
+      }
+    }
+
     const soalList = generateSesiSoal(op ?? 'penjumlahan', ks ?? 'mudah', SOAL_PER_SESI);
     latihan.mulaiSesi(soalList);
     setIsTimerRunning(true);
     sesiMulaiRef.current = Date.now();
   }, []);
+
+  // Konfirmasi saat menutup/me-refresh tab browser
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (latihan.state === 'MENGERJAKAN' || latihan.state === 'WRONG') {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [latihan.state]);
+
+  // Intersepsi tombol Back browser menggunakan history.pushState
+  useEffect(() => {
+    if (latihan.state === 'MENGERJAKAN' || latihan.state === 'WRONG') {
+      window.history.pushState(null, '', window.location.href);
+      
+      const handlePopState = () => {
+        setShowExitConfirm(true);
+        window.history.pushState(null, '', window.location.href);
+      };
+      
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }
+  }, [latihan.state]);
 
   // Timer countdown — gunakan ref untuk menghindari dependency pada object latihan
   useEffect(() => {
@@ -83,9 +137,27 @@ export default function LatihanPage() {
     latihan.soalBerikutnya();
   }, [latihan]);
 
+  // Ulangi pengerjaan soal jika kembali dari belajar ulang
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const doReset = params.get('resetActiveSoal') === 'true';
+      if (doReset) {
+        latihan.resetSoalAktif();
+        setTimerDetik(TIMER_DEFAULT_DETIK);
+        // Hapus query params agar tidak terus menerus reset saat refresh berikutnya
+        router.replace('/latihan');
+      }
+    }
+  }, [latihan.resetSoalAktif, router]);
+
   // Simpan sesi ke DB + navigasi ke rekap saat sesi selesai
   useEffect(() => {
     if (!latihan.sesiSelesai) return;
+
+    // Bersihkan data simpanan
+    localStorage.removeItem('latihan_mandiri');
+    localStorage.removeItem('latihan_mandiri_timer');
 
     const rekap = latihan.rekap;
     const benar = rekap.filter((r) => r.status === 'benar').length;
@@ -150,8 +222,22 @@ export default function LatihanPage() {
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between w-full max-w-sm"
+        className="flex items-center gap-4 w-full max-w-sm"
       >
+        <Button
+          variant="outline"
+          size="icon"
+          className="rounded-xl w-9 h-9 shrink-0"
+          onClick={() => {
+            if (latihan.state === 'MENGERJAKAN' || latihan.state === 'WRONG') {
+              setShowExitConfirm(true);
+            } else {
+              router.push('/pilih-operasi');
+            }
+          }}
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
         {/* Progress soal */}
         <div className="flex flex-col gap-1 flex-1">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -185,8 +271,8 @@ export default function LatihanPage() {
           onJawaban={latihan.isiJawaban}
           onCarryJawaban={latihan.isiCarryJawaban}
           onParsialJawaban={latihan.isiParsialJawaban}
-          carryVisible={[]} // Latihan Mandiri: Sembunyikan petunjuk carry otomatis
-          borrowVisible={[]} // Latihan Mandiri: Sembunyikan petunjuk borrow otomatis
+          carryVisible={latihan.carryVisible}
+          borrowVisible={latihan.borrowVisible}
         />
       </ErrorBoundary>
 
@@ -227,7 +313,18 @@ export default function LatihanPage() {
               Tidak apa-apa! Perhatikan jawabannya, lalu coba soal berikutnya.
             </p>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => router.push('/belajar')} className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (latihan.soalAktif) {
+                    const { angka1, angka2, operasi } = latihan.soalAktif;
+                    router.push(`/belajar?angka1=${angka1}&angka2=${angka2}&operasi=${operasi}&fromLatihan=true`);
+                  } else {
+                    router.push('/belajar');
+                  }
+                }}
+                className="gap-2"
+              >
                 <BookOpen className="w-4 h-4" />
                 Pelajari Dulu
               </Button>
@@ -261,9 +358,50 @@ export default function LatihanPage() {
         percobaan={latihan.percobaanAktif}
         maxPercobaan={MAX_PERCOBAAN}
         onCobaLagi={latihan.cobaLagi}
-        onLihatCara={undefined} // Latihan Mandiri: Sembunyikan tombol Lihat Cara agar siswa mencoba sendiri
+        onLihatCara={latihan.lihatCara}
         onTutup={latihan.tutupFeedback}
       />
+
+      {/* Dialog Konfirmasi Keluar (Ramah Anak) */}
+      <AnimatePresence>
+        {showExitConfirm && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-card border-2 border-primary/20 rounded-3xl p-6 max-w-sm w-full shadow-2xl flex flex-col items-center text-center gap-4"
+            >
+              <div className="text-5xl">⚠️</div>
+              <h3 className="text-lg font-bold text-foreground">Yakin ingin keluar?</h3>
+              <p className="text-sm text-muted-foreground">
+                Eits! Sayang sekali kalau kamu keluar sekarang, hasil latihanmu hari ini tidak akan tercatat dan kamu harus mengulang dari awal lagi. Yakin ingin keluar?
+              </p>
+              <div className="flex gap-3 w-full mt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-xl"
+                  onClick={() => setShowExitConfirm(false)}
+                >
+                  Yuk Lanjut! 🚀
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold"
+                  onClick={() => {
+                    localStorage.removeItem('latihan_mandiri');
+                    localStorage.removeItem('latihan_mandiri_timer');
+                    setShowExitConfirm(false);
+                    router.push('/pilih-operasi');
+                  }}
+                >
+                  Keluar Saja
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

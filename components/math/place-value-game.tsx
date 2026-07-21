@@ -40,6 +40,14 @@ export default function PlaceValueGame({
   const [inputSatuan, setInputSatuan] = useState('');
   const [inputAngka, setInputAngka] = useState('');
   const [soalState, setSoalState] = useState<SoalState>('mengerjakan');
+  const [focusedInput, setFocusedInput] = useState<'puluhan' | 'satuan' | 'angka' | null>(null);
+  const [isTestUser, setIsTestUser] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsTestUser(sessionStorage.getItem('siswaNama') === 'test');
+    }
+  }, []);
 
   // Urutan baru: drag-drop → mencocokkan → isian
   const [stage, setStage] = useState<'dragdrop' | 'mencocokkan' | 'isian'>('dragdrop');
@@ -130,18 +138,20 @@ export default function PlaceValueGame({
     if (dragDropIndex < SOAL_DRAG_DROP) {
       return (
         <div className="flex flex-col items-center gap-6 w-full max-w-md">
-          <div className="flex items-center justify-between w-full text-sm text-muted-foreground">
+          <div className={`flex items-center w-full text-sm text-muted-foreground ${isTestUser ? 'justify-between' : 'justify-center'}`}>
             <span className="font-semibold">
               Soal {dragDropIndex + 1} dari {SOAL_DRAG_DROP}
             </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setStage('mencocokkan')}
-              className="text-xs text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-            >
-              Lewati (Skip) ⏭️
-            </Button>
+            {isTestUser && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setStage('mencocokkan')}
+                className="text-xs text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              >
+                Lewati (Skip) ⏭️
+              </Button>
+            )}
           </div>
           <AnimatePresence mode="wait">
             <motion.div
@@ -187,15 +197,29 @@ export default function PlaceValueGame({
 
     return (
       <div className="flex flex-col items-center gap-4 w-full">
-        <div className="flex justify-end w-full max-w-md px-2">
+        <div className={`flex w-full max-w-md px-2 ${isTestUser ? 'justify-between' : 'justify-start'}`}>
           <Button
             variant="ghost"
             size="sm"
-            onClick={skipKeIsian}
-            className="text-xs text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+            onClick={() => {
+              setStage('dragdrop');
+              setDragDropIndex(0);
+              setAngka(generateAngka());
+            }}
+            className="text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 flex items-center gap-1 font-semibold"
           >
-            Lewati (Skip) ⏭️
+            ⏪ Kembali ke Susun Balok
           </Button>
+          {isTestUser && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={skipKeIsian}
+              className="text-xs text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+            >
+              Lewati (Skip) ⏭️
+            </Button>
+          )}
         </div>
         <PlaceValueMatchGame
           onBenar={skipKeIsian}
@@ -235,11 +259,45 @@ export default function PlaceValueGame({
 
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-md">
-      {/* Progress indicator */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span className="font-semibold">
+      {/* Progress indicator & Tombol Kembali */}
+      <div className="flex items-center justify-between w-full text-sm text-muted-foreground px-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setStage('mencocokkan');
+          }}
+          className="text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 flex items-center gap-1 font-semibold"
+        >
+          ⏪ Kembali ke Mencocokkan
+        </Button>
+        <span className="font-semibold text-xs text-slate-400">
           Soal {isianIndex + 1} dari {SOAL_ISIAN}
         </span>
+      </div>
+
+      {/* Panel Instruksi Dinamis */}
+      <div className="h-10 w-full flex items-center justify-center relative overflow-hidden bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 px-4 py-1">
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={focusedInput || 'default'}
+            initial={{ y: 15, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -15, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="text-xs font-bold text-center text-slate-600 dark:text-slate-300"
+          >
+            {focusedInput === 'puluhan' ? (
+              <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">Berapa puluhannya? (Hitung balok puluhan)</span>
+            ) : focusedInput === 'satuan' ? (
+              <span className="text-blue-600 dark:text-blue-400 font-extrabold text-sm">Berapa satuannya? (Hitung balok satuan)</span>
+            ) : focusedInput === 'angka' ? (
+              <span className="text-purple-600 dark:text-purple-400 font-extrabold text-sm">Berapa hasilnya?</span>
+            ) : (
+              <span>Klik kotak di bawah untuk mulai mengisi!</span>
+            )}
+          </motion.p>
+        </AnimatePresence>
       </div>
 
       {/* Visualisasi balok */}
@@ -271,6 +329,8 @@ export default function PlaceValueGame({
             inputMode="numeric"
             value={inputPuluhan}
             onChange={(e) => handleInputPuluhan(e.target.value)}
+            onFocus={() => setFocusedInput('puluhan')}
+            onBlur={() => setFocusedInput(null)}
             disabled={soalState !== 'mengerjakan'}
             className={`input-box w-12 h-14 text-xl ${
               soalState === 'benar'
@@ -294,6 +354,8 @@ export default function PlaceValueGame({
             inputMode="numeric"
             value={inputSatuan}
             onChange={(e) => handleInputSatuan(e.target.value)}
+            onFocus={() => setFocusedInput('satuan')}
+            onBlur={() => setFocusedInput(null)}
             disabled={soalState !== 'mengerjakan'}
             className={`input-box w-12 h-14 text-xl ${
               soalState === 'benar'
@@ -319,6 +381,8 @@ export default function PlaceValueGame({
           inputMode="numeric"
           value={inputAngka}
           onChange={(e) => handleInputAngka(e.target.value)}
+          onFocus={() => setFocusedInput('angka')}
+          onBlur={() => setFocusedInput(null)}
           disabled={soalState !== 'mengerjakan'}
           className={`input-box w-16 h-14 text-xl ${
             soalState === 'benar'

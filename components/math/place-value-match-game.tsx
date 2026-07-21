@@ -5,6 +5,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Check, ArrowRight, X } from 'lucide-react';
 
+// Pembantu untuk layout kolom balok satuan secara horizontal (maksimal 2 baris)
+function getGridColsClass(count: number) {
+  if (count <= 1) return 'grid-cols-1';
+  if (count === 2) return 'grid-cols-2';
+  const cols = Math.ceil(count / 2);
+  if (cols === 2) return 'grid-cols-2';
+  if (cols === 3) return 'grid-cols-3';
+  if (cols === 4) return 'grid-cols-4';
+  if (cols === 5) return 'grid-cols-5';
+  return 'grid-cols-5';
+}
+
 interface MatchItem {
   id: number;
   angka: number;
@@ -126,7 +138,7 @@ export default function PlaceValueMatchGame({ onBenar }: PlaceValueMatchGameProp
 
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-md p-6 bg-card rounded-3xl border border-border shadow-xl">
-      <div className="text-center">
+      <div className="text-center w-full">
         <div className="px-3 py-0.5 bg-blue-50 text-blue-600 dark:bg-blue-950/20 text-[10px] font-bold rounded-full inline-block mb-1">
           Ronde {ronde} dari 2
         </div>
@@ -134,9 +146,31 @@ export default function PlaceValueMatchGame({ onBenar }: PlaceValueMatchGameProp
         <p className="text-xs text-muted-foreground mt-1">
           Hubungkan angka dengan balok yang sesuai!
         </p>
+        
+        {/* Banner Feedback Dinamis (Hebat / Coba Lagi) */}
+        <div className="h-10 w-full flex items-center justify-center relative overflow-hidden mt-3">
+          <AnimatePresence mode="wait">
+            {feedback && (
+              <motion.div
+                key={feedback.type}
+                initial={{ y: -20, opacity: 0, scale: 0.9 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                exit={{ y: 20, opacity: 0, scale: 0.9 }}
+                transition={{ type: 'spring', stiffness: 350, damping: 20 }}
+                className={`px-6 py-1 rounded-full text-xs font-bold shadow-sm border flex items-center gap-1.5 ${
+                  feedback.type === 'benar'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-600 dark:bg-emerald-950/20'
+                    : 'bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-950/20 animate-shake'
+                }`}
+              >
+                {feedback.type === 'benar' ? 'Hebat! 🎉' : 'Coba lagi! 😊'}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-8 w-full mt-4">
+      <div className="grid grid-cols-2 gap-8 w-full mt-2">
         {/* Kolom Kiri: Angka */}
         <div className="flex flex-col gap-4">
           <h4 className="text-sm font-bold text-slate-500 text-center">Angka</h4>
@@ -236,7 +270,7 @@ export default function PlaceValueMatchGame({ onBenar }: PlaceValueMatchGameProp
                     ? { duration: 0.3 }
                     : {}
                 }
-                className={`relative flex items-center justify-center p-3 rounded-2xl border-2 transition-colors h-20 overflow-hidden ${
+                className={`relative flex items-center justify-center p-3 rounded-2xl border-2 transition-colors h-20 ${
                   isMatched
                     ? 'border-emerald-200 bg-emerald-50 opacity-60'
                     : cardFeedback === 'benar'
@@ -269,7 +303,7 @@ export default function PlaceValueMatchGame({ onBenar }: PlaceValueMatchGameProp
                         ))}
                       </div>
                       {/* Kotak satuan */}
-                      <div className="flex flex-wrap max-w-[30px] gap-0.5 content-end justify-center">
+                      <div className={`grid ${getGridColsClass(item.satuan)} gap-0.5 justify-items-center`}>
                         {Array.from({ length: item.satuan }).map((_, idx) => (
                           <div
                             key={idx}

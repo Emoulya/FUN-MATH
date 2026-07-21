@@ -374,15 +374,14 @@ export default function MathBoard({
     <div className="inline-flex flex-row items-stretch gap-4" id="math-board-container">
       {/* Side Panel Khusus Mode Animasi/Belajar dan Latihan (KIRI) */}
       {isSidePanelVisible && langkahSekarang && langkahSekarang.kolom > 0 && (
-        <div id="side-panel-left" className="flex">
-          <SideOperationPanel
-            boardId={boardId}
-            langkah={langkahSekarang}
-            operasi={operasi}
-            visible={true}
-            mode={mode === 'animasi' || mode === 'latihan' ? mode : undefined}
-          />
-        </div>
+        <SideOperationPanel
+          langkah={langkahSekarang}
+          operasi={operasi}
+          visible={true}
+          mode={mode === 'animasi' || mode === 'latihan' ? mode : undefined}
+          angka1={angka1}
+          angka2={angka2}
+        />
       )}
 
       <motion.div
@@ -771,15 +770,14 @@ export default function MathBoard({
 
       {/* Side Panel Khusus Mode Animasi/Belajar dan Latihan (KANAN) */}
       {isSidePanelVisible && (!langkahSekarang || langkahSekarang.kolom <= 0) && (
-        <div id="side-panel-right" className="flex">
-          <SideOperationPanel
-            boardId={boardId}
-            langkah={langkahSekarang}
-            operasi={operasi}
-            visible={true}
-            mode={mode === 'animasi' || mode === 'latihan' ? mode : undefined}
-          />
-        </div>
+        <SideOperationPanel
+          langkah={langkahSekarang}
+          operasi={operasi}
+          visible={true}
+          mode={mode === 'animasi' || mode === 'latihan' ? mode : undefined}
+          angka1={angka1}
+          angka2={angka2}
+        />
       )}
     </div>
 

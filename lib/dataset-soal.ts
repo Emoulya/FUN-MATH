@@ -83,6 +83,12 @@ export const MODUL4_SOAL: Soal[] = [
   { angka1: 47, angka2: 28, operasi: 'pengurangan', kesulitan: 'sulit' },
   { angka1: 29, angka2: 19, operasi: 'penjumlahan', kesulitan: 'sulit' },
   { angka1: 48, angka2: 19, operasi: 'pengurangan', kesulitan: 'sulit' },
+  { angka1: 34, angka2: 12, operasi: 'pengurangan', kesulitan: 'mudah' },
+  { angka1: 34, angka2: 14, operasi: 'penjumlahan', kesulitan: 'mudah' },
+  { angka1: 46, angka2: 23, operasi: 'pengurangan', kesulitan: 'mudah' },
+  { angka1: 44, angka2: 25, operasi: 'penjumlahan', kesulitan: 'mudah' },
+  { angka1: 53, angka2: 32, operasi: 'pengurangan', kesulitan: 'mudah' },
+  { angka1: 63, angka2: 21, operasi: 'penjumlahan', kesulitan: 'mudah' },
 ];
 
 // ----------------------------------------------------

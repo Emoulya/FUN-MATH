@@ -278,9 +278,9 @@ export default function Base10Blocks({
             Satuan
           </span>
           <div
-            className="grid"
+            className="grid justify-items-center"
             style={{
-              gridTemplateColumns: `repeat(${Math.min(satuan || 1, 5)}, ${w}px)`,
+              gridTemplateColumns: `repeat(${satuan <= 1 ? 1 : satuan === 2 ? 2 : Math.ceil(satuan / 2)}, ${w}px)`,
               gap,
             }}
           >
