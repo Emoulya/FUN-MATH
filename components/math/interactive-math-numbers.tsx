@@ -147,7 +147,9 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
     else if (step === 'angka-puluhan') handlePuluhanClick();
   };
 
-  const instruksiSatuanBalok = `Klik BALOK SATUAN atas untuk memulai pengurangan.`;
+  const instruksiSatuanBalok = isPenjumlahan 
+    ? `Klik BALOK SATUAN atas untuk memulai penjumlahan.`
+    : `Klik BALOK SATUAN atas untuk memulai pengurangan.`;
   const instruksiSatuanAngka = isPenjumlahan 
     ? `Klik angka ${satuan2} pada kolom SATUAN bawah.`
     : `Klik angka ${satuan2} pada kolom SATUAN bawah.`;
