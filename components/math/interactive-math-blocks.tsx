@@ -406,13 +406,15 @@ export default function InteractiveMathBlocks({
 
   // Kotak 2 Puluhan (Kanan)
   const puluhan2Terdisplay = isPenjumlahan
-    ? (step === 'puluhan'
+    ? (step === 'satuan'
+        ? puluhan2
+        : step === 'puluhan'
         ? Math.max(0, puluhan2 - puluhanAnimateCount)
         : 0
       )
-    : (step === 'puluhan'
-        ? Math.max(0, puluhan1 - puluhanAnimateCount)
-        : 0
+    : (step === 'selesai'
+        ? 0
+        : Math.max(0, puluhan2 - (puluhan1 - puluhanAnimateCount))
       );
 
   const angka1Terdisplay = (puluhan1Terdisplay * 10) + satuan1Terdisplay;
@@ -445,29 +447,29 @@ export default function InteractiveMathBlocks({
           {isPenjumlahan ? 'Penjumlahan (Gabung Balok)' : 'Pengurangan (Buang Balok)'}
         </h3>
         <p className="text-sm font-medium mt-1">
-          {step === 'satuan' && `Langkah 1: Hubungkan & ${isPenjumlahan ? 'jumlahkan' : 'kurangkan'} kolom SATUAN (kanan).`}
-          {step === 'puluhan' && `Langkah 2: Hubungkan & ${isPenjumlahan ? 'jumlahkan' : 'kurangkan'} kolom PULUHAN (kiri).`}
+          {step === 'satuan' && (isPenjumlahan ? 'Mulai jumlahkan dari kolom satuan' : 'Mulai kurangi dari kolom satuan')}
+          {step === 'puluhan' && (isPenjumlahan ? 'Mulai jumlahkan dari kolom puluhan' : 'Mulai kurangi dari kolom puluhan')}
           {step === 'selesai' && 'Selesai! Gabungkan hasil puluhan dan satuan.'}
         </p>
       </div>
 
       {/* Area Visualisasi Balok Utama */}
-      <div className="relative flex flex-col items-center gap-6 sm:gap-12 w-full p-3 sm:p-6 bg-slate-50/50 rounded-3xl border border-slate-100 min-h-[450px]">
+      <div className="relative flex flex-col items-center gap-6 sm:gap-12 w-full p-3 sm:p-6 bg-slate-50/50 rounded-3xl border border-slate-100 min-h-112.5">
         
         {/* BARIS 1: Angka Awal (Kotak 1 & Kotak 2) */}
         <div className="flex items-center justify-center gap-2 sm:gap-6 md:gap-8 w-full z-10">
             {/* Kotak Angka 1 (Dinamis berkurang jika pengurangan) */}
-            <div className={`flex flex-col items-center gap-1 sm:gap-2 bg-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border-2 shadow-sm transition-all duration-300 ${
+            <div className={`flex flex-col items-center gap-1 sm:gap-2 bg-white p-2.5 sm:p-1 rounded-xl sm:rounded-2xl border-2 shadow-sm transition-all duration-300 ${
               step === 'satuan' ? 'border-blue-400' : step === 'puluhan' ? 'border-emerald-400' : 'border-slate-200'
             }`}>
-              <div className="flex gap-2 sm:gap-4 items-end min-h-[90px] sm:min-h-[100px] px-1 sm:px-2">
+              <div className="flex gap-2 sm:gap-4 items-end min-h-22.5 sm:min-h-25 px-1 sm:px-2">
                 {/* Puluhan Angka 1 */}
                 {puluhan1 > 0 && (step === 'puluhan' || puluhan1Terdisplay > 0) && (
                   <div 
                     ref={puluhan1Ref}
                     className={`flex gap-0.5 sm:gap-1 p-1 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-300 ${
                       step === 'puluhan' 
-                        ? 'bg-emerald-100/90 ring-4 ring-emerald-500 ring-offset-2 scale-105 border-2 border-emerald-400 shadow-md' 
+                        ? 'bg-emerald-100/90 ring-2 ring-emerald-400 border border-emerald-500 shadow-sm' 
                         : 'border border-transparent'
                     }`}
                   >
@@ -482,7 +484,7 @@ export default function InteractiveMathBlocks({
                     ref={satuan1Ref}
                     className={`grid ${getGridColsClass(satuan1Terdisplay)} gap-1 sm:gap-1.5 p-1 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-300 ${
                       step === 'satuan' 
-                        ? 'bg-blue-100/90 ring-4 ring-blue-500 ring-offset-2 scale-105 border-2 border-blue-400 shadow-md' 
+                        ? 'bg-blue-100/90 ring-2 ring-blue-400 border border-blue-500 shadow-sm' 
                         : 'border border-transparent'
                     }`}
                   >
@@ -506,14 +508,14 @@ export default function InteractiveMathBlocks({
                 ? (isPenjumlahan ? 'border-emerald-400' : 'border-red-400 shadow-[0_0_12px_rgba(239,68,68,0.15)]') 
                 : 'border-slate-200'
             }`}>
-              <div className="flex gap-2 sm:gap-4 items-end min-h-[90px] sm:min-h-[100px] px-1 sm:px-2">
+              <div className="flex gap-2 sm:gap-2 items-end min-h-22.5 sm:min-h-25 px-1 sm:px-2">
                 {/* Puluhan Angka 2 */}
                 {puluhan2 > 0 && (step === 'puluhan' || puluhan2Terdisplay > 0) && (
                   <div 
                     ref={puluhan2Ref}
                     className={`flex gap-0.5 sm:gap-1 p-1 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-300 ${
                       step === 'puluhan' 
-                        ? 'bg-emerald-100/90 ring-4 ring-emerald-500 ring-offset-2 scale-105 border-2 border-emerald-400 shadow-md' 
+                        ? 'bg-emerald-100/90 ring-2 ring-emerald-400 border border-emerald-500 shadow-sm' 
                         : 'border border-transparent'
                     }`}
                   >
@@ -524,13 +526,22 @@ export default function InteractiveMathBlocks({
                 )}
                 {/* Satuan Angka 2 */}
                 {satuan2 > 0 && (step === 'satuan' || satuan2Terdisplay > 0) && (
-                  <div 
+                  <div
                     ref={satuan2Ref}
-                    className={`grid ${getGridColsClass(satuan2Terdisplay)} gap-1 sm:gap-1.5 p-1 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-300 ${
-                      step === 'satuan' 
-                        ? 'bg-blue-100/90 ring-4 ring-blue-500 ring-offset-2 scale-105 border-2 border-blue-400 shadow-md' 
+                    className={`
+                      grid ${getGridColsClass(satuan2Terdisplay)}
+                      gap-1 sm:gap-1.5
+                      p-1 sm:p-2
+                      content-center
+                      place-items-center
+                      min-h-5
+                      rounded-lg sm:rounded-xl
+                      transition-all duration-300
+                      ${step === 'satuan'
+                        ? 'bg-blue-100/90 ring-2 ring-blue-400 border border-blue-500 shadow-sm'
                         : 'border border-transparent'
-                    }`}
+                      }
+                    `}
                   >
                     {Array.from({ length: satuan2Terdisplay }).map((_, i) => (
                       <SatuanBlock key={`s2-${i}`} />
@@ -676,7 +687,7 @@ export default function InteractiveMathBlocks({
               top: subSatuanY,
               transform: 'translate(-50%, -50%)',
             }}
-            className="z-20 bg-white border-2 border-red-200 px-3 py-1 rounded-xl shadow-md flex items-center justify-center min-w-[48px]"
+            className="z-20 bg-white border-2 border-red-200 px-3 py-1 rounded-xl shadow-md flex items-center justify-center min-w-12"
           >
             <span className="text-red-500 font-black text-base sm:text-lg">
               {subSatuanVal > 0 ? `-${subSatuanVal}` : '0'}
@@ -696,7 +707,7 @@ export default function InteractiveMathBlocks({
               top: subPuluhanY,
               transform: 'translate(-50%, -50%)',
             }}
-            className="z-20 bg-white border-2 border-red-200 px-3 py-1 rounded-xl shadow-md flex items-center justify-center min-w-[48px]"
+            className="z-20 bg-white border-2 border-red-200 px-3 py-1 rounded-xl shadow-md flex items-center justify-center min-w-12"
           >
             <span className="text-red-500 font-black text-base sm:text-lg">
               {subPuluhanVal > 0 ? `-${subPuluhanVal}` : '0'}
@@ -710,12 +721,12 @@ export default function InteractiveMathBlocks({
             {/* Wadah Target Puluhan */}
             <div 
               ref={wadahPuluhanRef}
-              className={`flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all w-[120px] sm:w-40 min-h-[140px] sm:min-h-[160px] bg-white ${
+              className={`flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all w-30 sm:w-40 min-h-35 sm:min-h-40 bg-white ${
                 step === 'puluhan' ? 'border-emerald-400 bg-emerald-50/20 shadow-md scale-105' : 'border-slate-100 opacity-40'
               }`}
             >
               <span className="text-[10px] sm:text-xs font-bold text-emerald-600">Hasil Puluhan</span>
-              <div className="flex gap-0.5 sm:gap-1 items-end flex-1 justify-center min-h-[70px] sm:min-h-[90px]">
+              <div className="flex gap-0.5 sm:gap-1 items-end flex-1 justify-center min-h-17.5 sm:min-h-22.5">
                 {Array.from({ length: puluhanWadahCount }).map((_, i) => (
                   <motion.div
                     key={`res-p-${i}`}
@@ -735,12 +746,12 @@ export default function InteractiveMathBlocks({
             {/* Wadah Target Satuan */}
             <div 
               ref={wadahSatuanRef}
-              className={`flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all w-[120px] sm:w-40 min-h-[140px] sm:min-h-[160px] bg-white ${
+              className={`flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all w-30 sm:w-40 min-h-35 sm:min-h-40 bg-white ${
                 step === 'satuan' ? 'border-blue-400 bg-blue-50/20 shadow-md scale-105' : 'border-slate-100 opacity-60'
               }`}
             >
               <span className="text-[10px] sm:text-xs font-bold text-blue-600">Hasil Satuan</span>
-              <div className={`grid ${getGridColsClass(satuanWadahCount)} gap-1 items-end flex-1 justify-center min-h-[70px] sm:min-h-[90px] content-end justify-items-center`}>
+              <div className={`grid ${getGridColsClass(satuanWadahCount)} gap-1 items-end flex-1 justify-center min-h-17.5 sm:min-h-22.5 content-end justify-items-center`}>
                 {Array.from({ length: satuanWadahCount }).map((_, i) => (
                   <motion.div
                     key={`res-s-${i}`}
@@ -776,7 +787,7 @@ export default function InteractiveMathBlocks({
               )}
               
               {/* Representasi Balok Gabungan */}
-              <div className="flex gap-4 sm:gap-6 items-end justify-center min-h-[100px] border-b border-dashed border-slate-100 pb-4 w-full">
+              <div className="flex gap-4 sm:gap-6 items-end justify-center min-h-25 border-b border-dashed border-slate-100 pb-4 w-full">
                 {/* Puluhan Akhir */}
                 {targetPuluhan > 0 && remainingTensMoved && (
                   <div className="flex gap-1 bg-emerald-50/50 p-1.5 sm:p-2 rounded-lg sm:rounded-xl border border-emerald-100">
