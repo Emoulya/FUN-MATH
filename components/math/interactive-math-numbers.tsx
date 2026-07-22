@@ -147,10 +147,10 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
     else if (step === 'angka-puluhan') handlePuluhanClick();
   };
 
-  const instruksiSatuanBalok = `Klik BALOK SATUAN di atas untuk digabungkan!`;
+  const instruksiSatuanBalok = `Klik BALOK SATUAN atas untuk memulai pengurangan.`;
   const instruksiSatuanAngka = isPenjumlahan 
-    ? `Klik angka ${satuan2} di kolom SATUAN bawah untuk ditambah!`
-    : `Klik angka ${satuan2} di kolom SATUAN bawah untuk dikurang!`;
+    ? `Klik angka ${satuan2} pada kolom SATUAN bawah.`
+    : `Klik angka ${satuan2} pada kolom SATUAN bawah.`;
     
   const instruksiPuluhanBalok = `Klik BALOK PULUHAN di atas untuk digabungkan!`;
   const instruksiPuluhanAngka = isPenjumlahan
@@ -240,7 +240,7 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
             
             {/* Puluhan Atas */}
             <div 
-              className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 transition-all duration-300 min-h-[72px] ${
+              className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 transition-all duration-300 min-h-18 ${
                 step === 'balok-puluhan' 
                   ? 'bg-emerald-50/70 border-emerald-400 ring-2 ring-emerald-300 animate-pulse' 
                   : 'border-transparent'
@@ -260,7 +260,7 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
             
             {/* Satuan Atas */}
             <div 
-              className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 transition-all duration-300 min-h-[72px] ${
+              className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 transition-all duration-300 min-h-18 ${
                 step === 'balok-satuan' 
                   ? 'bg-blue-50/70 border-blue-400 ring-2 ring-blue-300 animate-pulse' 
                   : 'border-transparent'
@@ -285,7 +285,7 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
 
             {/* Puluhan Bawah */}
             <div 
-              className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 transition-all duration-300 min-h-[72px] ${
+              className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 transition-all duration-300 min-h-18 ${
                 step === 'balok-puluhan' 
                   ? 'bg-emerald-50/70 border-emerald-400 ring-2 ring-emerald-300 animate-pulse cursor-pointer hover:scale-105' 
                   : 'border-transparent'
@@ -315,7 +315,7 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
 
             {/* Satuan Bawah */}
             <div 
-              className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 transition-all duration-300 min-h-[72px] ${
+              className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 transition-all duration-300 min-h-18 ${
                 step === 'balok-satuan' 
                   ? 'bg-blue-50/70 border-blue-400 ring-2 ring-blue-300 animate-pulse cursor-pointer hover:scale-105' 
                   : 'border-transparent'
@@ -342,13 +342,13 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
             </div>
 
             {/* Garis pemisah */}
-            <div className="col-span-3 h-[4px] bg-slate-800 rounded-full my-[-8px]" />
+            <div className="col-span-3 h-1 bg-slate-800 rounded-full -my-2" />
 
             {/* Baris 3: Balok Hasil */}
             <div />
 
             {/* Puluhan Hasil */}
-            <div className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 border-transparent transition-all duration-300 min-h-[72px] ${
+            <div className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 border-transparent transition-all duration-300 min-h-18 ${
               step === 'balok-puluhan' ? 'bg-emerald-50/50 border-emerald-300' : ''
             }`}>
               {puluhanBalokProcessed ? (
@@ -374,7 +374,7 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
             </div>
 
             {/* Satuan Hasil */}
-            <div className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 border-transparent transition-all duration-300 min-h-[72px] ${
+            <div className={`relative flex justify-center items-center p-1.5 rounded-lg border-2 border-transparent transition-all duration-300 min-h-18 ${
               step === 'balok-satuan' ? 'bg-blue-50/50 border-blue-300' : ''
             }`}>
               {satuanBalokProcessed ? (
@@ -476,7 +476,7 @@ export default function InteractiveMathNumbers({ angka1, angka2, operasi, onSele
             </div>
 
             {/* Garis pemisah */}
-            <div className="col-span-3 h-[4px] bg-slate-800 rounded-full my-[-8px]" />
+            <div className="col-span-3 h-1 bg-slate-800 rounded-full -my-2" />
 
             {/* Baris 3: Hasil */}
             <div />
