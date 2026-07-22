@@ -140,6 +140,7 @@ export default function Modul4Page() {
           onCarryJawaban={latihan.isiCarryJawaban}
           carryVisible={latihan.carryVisible}
           borrowVisible={latihan.borrowVisible}
+          requireSidePanelInput={latihan.soalAktif.operasi === 'penjumlahan'}
         />
       </ErrorBoundary>
 
