@@ -7,7 +7,7 @@
 // 3 mode: tampil (read-only), latihan (interactive input), animasi (step-by-step).
 // Semua logika kalkulasi menggunakan mathEngine — komponen hanya render.
 
-import { useMemo, useRef, useCallback, useEffect, useId } from 'react';
+import { useMemo, useRef, useCallback, useEffect, useId, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getDigits, solve } from '@/lib/math-engine';
 import { OPERASI_SIMBOL } from '@/lib/constants';
@@ -19,16 +19,16 @@ import OffsetIndicator from './offset-indicator';
 import SideOperationPanel from './side-operation-panel';
 import Xarrow, { Xwrapper, useXarrow } from 'react-xarrows';
 
-const ArrowUpdater = ({ langkah, step }: { langkah: any, step: number }) => {
+const ArrowUpdater = ({ trigger }: { trigger: any }) => {
   const updateXarrow = useXarrow();
   useEffect(() => {
-    // Only run when step changes to prevent infinite loops
+    // Only run when trigger changes to prevent infinite loops
     updateXarrow();
     const timeout1 = setTimeout(updateXarrow, 100);
     const timeout2 = setTimeout(updateXarrow, 300);
     return () => { clearTimeout(timeout1); clearTimeout(timeout2); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
+  }, [trigger]);
   return null;
 };
 
@@ -59,6 +59,8 @@ interface MathBoardProps {
   barisPerkalianJawaban?: { nilai: number | null; state: InputBoxState }[][];
   /** Callback saat siswa mengisi jawaban hasil parsial perkalian */
   onParsialJawaban?: (barisIdx: number, kolom: number, nilai: number) => void;
+  /** Flag untuk mewajibkan input panel samping (untuk penjumlahan) */
+  requireSidePanelInput?: boolean;
 }
 
 export default function MathBoard({
@@ -77,9 +79,27 @@ export default function MathBoard({
   barisPerkalianJawaban,
   barisPerkalianCarryJawaban,
   onParsialJawaban,
+  requireSidePanelInput,
 }: MathBoardProps) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const boardId = useId().replace(/:/g, '');
+  
+  // Internal state for side panel input requirement
+  const [sidePanelState, setSidePanelState] = useState<Record<number, { nilai: number | null; state: InputBoxState }>>({});
+
+  // Reset side panel state when question changes
+  useEffect(() => {
+    setSidePanelState({});
+  }, [angka1, angka2, operasi]);
+
+  const handleSidePanelInput = (kolom: number, nilai: number | null, hasilBenar: number) => {
+    const isBenar = nilai === hasilBenar;
+    setSidePanelState((prev: Record<number, { nilai: number | null; state: InputBoxState }>) => ({
+      ...prev,
+      [kolom]: { nilai, state: isBenar ? 'correct' : 'wrong' }
+    }));
+  };
+
 
   // Hitung hasil menggunakan math engine (atau gunakan override jika ada)
   const perhitunganRaw: HasilPerhitungan = useMemo(
@@ -275,6 +295,11 @@ export default function MathBoard({
   const isJawabanDisabled = useCallback((kolom: number): boolean => {
     if (mode !== 'latihan') return false;
 
+    // Jika fitur input panel samping aktif, jawaban utama di-disable jika panel samping belum benar
+    if (requireSidePanelInput && sidePanelState[kolom]?.state !== 'correct') {
+      return true;
+    }
+
     // Untuk perkalian bertingkat, hasil akhir di bawah baru boleh diisi jika semua baris parsial selesai
     if (operasi === 'perkalian' && barisPerkalian && barisPerkalian.length > 1) {
       for (let b = 0; b < barisPerkalian.length; b++) {
@@ -289,11 +314,15 @@ export default function MathBoard({
       if (!isKolomSelesai(k)) return true;
     }
     return false;
-  }, [mode, operasi, barisPerkalian, isBarisParsialSelesai, isKolomSelesai]);
+  }, [mode, requireSidePanelInput, sidePanelState, operasi, barisPerkalian, isBarisParsialSelesai, isKolomSelesai]);
 
   // Cek apakah carry di kolom ini harus di-disable
   const isCarryDisabled = useCallback((kolom: number): boolean => {
     if (mode !== 'latihan') return false;
+
+    if (requireSidePanelInput && sidePanelState[kolom - 1]?.state !== 'correct') {
+      return true;
+    }
 
     if (operasi === 'perkalian') {
       if (kolom <= 1) return false;
@@ -382,6 +411,9 @@ export default function MathBoard({
           mode={mode === 'animasi' || mode === 'latihan' ? mode : undefined}
           angka1={angka1}
           angka2={angka2}
+          requireInput={requireSidePanelInput}
+          inputState={sidePanelState[langkahSekarang.kolom]}
+          onInput={(val) => handleSidePanelInput(langkahSekarang!.kolom, val, langkahSekarang!.hasil)}
         />
       )}
 
@@ -779,6 +811,9 @@ export default function MathBoard({
           mode={mode === 'animasi' || mode === 'latihan' ? mode : undefined}
           angka1={angka1}
           angka2={angka2}
+          requireInput={requireSidePanelInput}
+          inputState={langkahSekarang ? sidePanelState[langkahSekarang.kolom] : undefined}
+          onInput={langkahSekarang ? (val) => handleSidePanelInput(langkahSekarang.kolom, val, langkahSekarang.hasil) : undefined}
         />
       )}
     </div>
@@ -786,7 +821,7 @@ export default function MathBoard({
     {/* ARROWS */}
     {isSidePanelVisible && langkahSekarang && (
       <>
-        <ArrowUpdater langkah={langkahSekarang} step={langkahAktif || 0} />
+        <ArrowUpdater trigger={`${langkahAktif}-${langkahSekarang.kolom}-${angka1}-${angka2}-${langkahSekarang.penjelasan}-${sidePanelState[langkahSekarang.kolom]?.state}`} />
         {(() => {
           // D1 ID
           const idD1 = langkahSekarang.borrow ? `borrow-indicator-${boardId}-${langkahSekarang.kolom}` : `d1-${boardId}-${langkahSekarang.kolom}`;
@@ -809,44 +844,55 @@ export default function MathBoard({
 
           // 1. Panah dari soal ke kotak detail (selalu muncul saat menghitung kolom)
           if (langkahSekarang.kolom >= 0) {
-            arrows.push(
-              <Xarrow
-                key={`arrow-d1-${boardId}-${langkahSekarang.kolom}-${langkahAktif}`}
-                start={idD1}
-                end={`side-d1-${boardId}-${langkahSekarang.kolom}`}
-                color="#94a3b8"
-                strokeWidth={2}
-                path="straight"
-                dashness={{ animation: true }}
-                headSize={4}
-                startAnchor="auto"
-                endAnchor="auto"
-                zIndex={50}
-              />,
-              <Xarrow
-                key={`arrow-d2-${boardId}-${langkahSekarang.kolom}-${langkahAktif}`}
-                start={idD2}
-                end={`side-d2-${boardId}-${langkahSekarang.kolom}`}
-                color="#94a3b8"
-                strokeWidth={2}
-                path="straight"
-                dashness={{ animation: true }}
-                headSize={4}
-                startAnchor="auto"
-                endAnchor="auto"
-                zIndex={50}
-              />
-            );
+            const isDigit1Empty = langkahSekarang.kolom >= getDigits(angka1).length;
+            const isDigit2Empty = langkahSekarang.kolom >= getDigits(angka2).length;
+
+            if (!isDigit1Empty) {
+              arrows.push(
+                <Xarrow
+                  key={`arrow-d1-${boardId}-${langkahSekarang.kolom}-${langkahAktif}-${angka1}-${angka2}`}
+                  start={idD1}
+                  end={`side-d1-${boardId}-${langkahSekarang.kolom}`}
+                  color="#94a3b8"
+                  strokeWidth={2}
+                  path="straight"
+                  dashness={{ animation: true }}
+                  headSize={4}
+                  startAnchor="auto"
+                  endAnchor="auto"
+                  zIndex={50}
+                />
+              );
+            }
+            if (!isDigit2Empty) {
+              arrows.push(
+                <Xarrow
+                  key={`arrow-d2-${boardId}-${langkahSekarang.kolom}-${langkahAktif}-${angka1}-${angka2}`}
+                  start={idD2}
+                  end={`side-d2-${boardId}-${langkahSekarang.kolom}`}
+                  color="#94a3b8"
+                  strokeWidth={2}
+                  path="straight"
+                  dashness={{ animation: true }}
+                  headSize={4}
+                  startAnchor="auto"
+                  endAnchor="auto"
+                  zIndex={50}
+                />
+              );
+            }
           }
 
           // 2. Panah Hasil (selalu muncul jika ada panel hasil)
-          if (langkahSekarang.hasil !== undefined) {
+          const isSidePanelSelesai = !requireSidePanelInput || sidePanelState[langkahSekarang.kolom]?.state === 'correct';
+
+          if (langkahSekarang.hasil !== undefined && isSidePanelSelesai) {
              arrows.push(
                <Xarrow
-                key={`arrow-hasil-${boardId}-${langkahSekarang.kolom}-${langkahAktif}`}
+                key={`arrow-hasil-${boardId}-${langkahSekarang.kolom}-${langkahAktif}-${angka1}-${angka2}`}
                 start={idPanelHasil}
                 end={idHasilBoard}
-                color="#10b981"
+                color="#f97316"
                 strokeWidth={3}
                 path="straight"
                 headSize={6}
@@ -857,14 +903,15 @@ export default function MathBoard({
              );
           }
 
-          // 3. Panah Simpanan (jika ada carryBaru)
-          if (langkahSekarang.carryBaru !== undefined && langkahSekarang.carryBaru > 0) {
+          // 3. Panah Simpanan (jika ada carry)
+          const hasCarry = langkahSekarang.carryBaru !== undefined ? langkahSekarang.carryBaru > 0 : langkahSekarang.hasil >= 10;
+          if (hasCarry && isSidePanelSelesai) {
              arrows.push(
                <Xarrow
-                key={`arrow-carry-out-${boardId}-${langkahSekarang.kolom}-${langkahAktif}`}
-                start={mode === 'latihan' ? idPanelHasil : idPanelCarry}
+                key={`arrow-carry-out-${boardId}-${langkahSekarang.kolom}-${langkahAktif}-${angka1}-${angka2}`}
+                start={mode === 'latihan' && !requireSidePanelInput ? idPanelHasil : idPanelCarry}
                 end={idCarryBoard}
-                color="#3b82f6"
+                color="#a855f7"
                 strokeWidth={3}
                 path="straight"
                 headSize={6}

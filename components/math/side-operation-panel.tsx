@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import type { LangkahHitung, Operasi } from '@/types/math';
+import type { LangkahHitung, Operasi, InputBoxState } from '@/types/math';
 import { getDigits } from '@/lib/math-engine';
 
 interface SideOperationPanelProps {
@@ -12,9 +12,23 @@ interface SideOperationPanelProps {
   mode?: 'animasi' | 'latihan';
   angka1?: number;
   angka2?: number;
+  requireInput?: boolean;
+  inputState?: { nilai: number | null; state: InputBoxState };
+  onInput?: (nilai: number | null) => void;
 }
 
-export default function SideOperationPanel({ boardId = '', langkah, operasi, visible, mode = 'animasi', angka1, angka2 }: SideOperationPanelProps) {
+export default function SideOperationPanel({ 
+  boardId = '', 
+  langkah, 
+  operasi, 
+  visible, 
+  mode = 'animasi', 
+  angka1, 
+  angka2,
+  requireInput,
+  inputState,
+  onInput
+}: SideOperationPanelProps) {
   if (!visible || !langkah || langkah.kolom === -1) {
     return (
       <div className="w-32 aspect-square self-end flex items-center justify-center border border-dashed border-border/50 rounded-2xl bg-card/30 text-muted-foreground text-sm p-4 text-center">
@@ -57,10 +71,40 @@ export default function SideOperationPanel({ boardId = '', langkah, operasi, vis
             {isDigit1Empty && isDigit2Empty && <span>0</span>}
           </div>
           <div className="w-16 h-px bg-border my-1" />
-          <div className="text-2xl font-bold text-primary flex gap-2">
+          <div className="text-2xl font-bold text-primary flex gap-2 items-center">
             <span>=</span>
             {mode === 'latihan' ? (
-              <span id={`side-hasil-${boardId}-${langkah.kolom}`} className="text-muted-foreground">?</span>
+              requireInput ? (
+                inputState?.state === 'correct' ? (
+                  <span className="flex">
+                    {hasil >= 10 || langkah.carryBaru ? (
+                      <>
+                        <span id={`side-hasil-carry-${boardId}-${langkah.kolom}`}>{langkah.carryBaru || Math.floor(hasil / 10)}</span>
+                        <span id={`side-hasil-${boardId}-${langkah.kolom}`}>{langkah.carryBaru ? hasil : hasil % 10}</span>
+                      </>
+                    ) : (
+                      <span id={`side-hasil-${boardId}-${langkah.kolom}`}>{hasil}</span>
+                    )}
+                  </span>
+                ) : (
+                  <input
+                    type="text"
+                    maxLength={2}
+                    value={inputState?.nilai === null || inputState?.nilai === undefined ? '' : inputState.nilai}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/\D/g, '');
+                      if (raw === '') onInput?.(null);
+                      else onInput?.(parseInt(raw, 10));
+                    }}
+                    autoFocus
+                    className={`w-12 h-10 text-center text-xl font-bold rounded-lg border-2 bg-transparent outline-none transition-colors ${
+                      inputState?.state === 'wrong' ? 'border-red-500 text-red-500 bg-red-50' : 'border-border focus:border-primary'
+                    }`}
+                  />
+                )
+              ) : (
+                <span id={`side-hasil-${boardId}-${langkah.kolom}`} className="text-muted-foreground">?</span>
+              )
             ) : (
               <span className="flex">
                 {hasil >= 10 || langkah.carryBaru ? (
