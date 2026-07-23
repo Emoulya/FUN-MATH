@@ -204,7 +204,11 @@ export default function RekapPage() {
             </Button>
             <Button
               onClick={() => {
-                router.push('/modul');
+                if (fromModul) {
+                  router.push('/modul');
+                } else {
+                  router.push(`/pilih-operasi?op=${operasi}`);
+                }
               }}
               className="flex-1 gap-2"
             >

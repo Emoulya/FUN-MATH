@@ -141,6 +141,8 @@ export default function Modul2Page() {
         <p className="text-sm text-muted-foreground mt-1">
           {layar === 'belajar'
             ? `Contoh Penjelasan ${indexContoh + 1}/3`
+            : layar === 'interaktif'
+            ? `Soal ${indexInteraktif + 1}/${INTERAKTIF_SOAL.length}`
             : `Soal ${latihan.indexSoal + 1}/${latihan.totalSoal}`}
         </p>
       </motion.div>

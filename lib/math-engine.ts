@@ -92,9 +92,20 @@ export function solveAddition(a: number, b: number): HasilPerhitungan {
     const carryBaru = Math.floor(jumlah / 10);
 
     // B. Hitung Penjumlahan Kolom i
-    let penjelasanHitung = `Jumlahkan <b>${d1} + ${d2}</b>`;
-    if (carry > 0) {
-      penjelasanHitung += ` ditambah simpanan <b>${carry}</b>`;
+    const digitTerms = [d1, d2].filter((d) => d > 0);
+    let penjelasanHitung = '';
+
+    if (digitTerms.length > 0) {
+      penjelasanHitung = `Jumlahkan <b>${digitTerms.join(' + ')}</b>`;
+      if (carry > 0) {
+        penjelasanHitung += ` ditambah simpanan <b>${carry}</b>`;
+      }
+    } else {
+      if (carry > 0) {
+        penjelasanHitung = `Jumlahkan simpanan <b>${carry}</b>`;
+      } else {
+        penjelasanHitung = `Jumlahkan <b>0</b>`;
+      }
     }
     penjelasanHitung += ` = <b>${jumlah}</b>.`;
 
@@ -141,7 +152,7 @@ export function solveAddition(a: number, b: number): HasilPerhitungan {
         carry,
         hasil: hasilDigit,
         carryBaru,
-        penjelasan: `Simpan <b>${carryBaru}</b> meluncur ke atas puluhan, dan sisakan <b>${hasilDigit}</b> di bawah!`,
+        penjelasan: `Simpan <b>${carryBaru}</b> meluncur ke atas puluhan, dan simpan <b>${hasilDigit}</b> di bawah!`,
       });
     } else {
       // Tanpa Menyimpan: Tulis Hasil
@@ -536,7 +547,8 @@ export function solveMultiplication(a: number, b: number): HasilPerhitungan {
         const hasilDigit = jumlah % 10;
         const carryBaru = Math.floor(jumlah / 10);
 
-        let penj = `${val1} + ${val2}`;
+        const terms = [val1, val2].filter((v) => v > 0);
+        let penj = terms.length > 0 ? terms.join(' + ') : '0';
         if (carry > 0) {
           penj += ` + <span style="color: var(--carry-color)">${carry} (simpanan)</span>`;
         }
