@@ -25,6 +25,13 @@ export default function PilihOperasiPage() {
 
   useEffect(() => {
     setIsTestUser(sessionStorage.getItem('siswaNama') === 'test');
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const opParam = params.get('op') as Operasi | null;
+      if (opParam && ['penjumlahan', 'pengurangan', 'perkalian'].includes(opParam)) {
+        setOperasiTerpilih(opParam);
+      }
+    }
   }, []);
 
 

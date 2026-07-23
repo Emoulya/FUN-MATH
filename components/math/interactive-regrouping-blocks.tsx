@@ -236,7 +236,7 @@ export default function InteractiveRegroupingBlocks({
           setBreakingTens([]);
           setOnes((prev) => [...prev, ...newOnes]);
           setIsShattering(false);
-        }, 1500);
+        }, 2500);
       }
     }
   };
@@ -255,7 +255,7 @@ export default function InteractiveRegroupingBlocks({
         setGroupedOnes([]);
         setTens((prev) => [...prev, { id: `t-new-${Date.now()}` }]);
         setIsMerging(false);
-      }, 2000); // Diperlambat dari 600ms menjadi 2000ms
+      }, 2500);
     }
   }, [ones, isPenjumlahan, isMerging]);
 
@@ -306,18 +306,19 @@ export default function InteractiveRegroupingBlocks({
               </div>
               <div 
                 ref={tensBoxRef}
-                className="flex justify-center gap-6 p-6 rounded-2xl border-4 border-dashed border-emerald-300 bg-emerald-50/30 min-h-[250px] transition-colors relative"
+                className="flex justify-center gap-6 p-6 rounded-2xl border-4 border-dashed border-emerald-300 bg-emerald-50/30 min-h-62.5 transition-colors relative"
               >
                 {/* Tens Area */}
-                <div className="flex gap-2 items-end min-w-[40px] justify-end">
+                <div className="flex gap-2 items-end min-w-10 justify-end">
                    <AnimatePresence>
                     {isMerging && (
                       <motion.div
                         initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: [0, 1.5, 1], opacity: [0, 1, 0] }}
+                        animate={{ scale: [0, 1.4, 1.4, 1], opacity: [0, 1, 1, 0] }}
+                        transition={{ duration: 2.3, times: [0, 0.2, 0.8, 1], ease: 'easeInOut' }}
                         exit={{ opacity: 0 }}
-                        className="absolute text-emerald-500 font-bold text-xl pointer-events-none drop-shadow-md bg-white/80 px-3 py-1 rounded-full z-20"
-                        style={{ top: '30%', left: '50%', transform: 'translateX(-50%)' }}
+                        className="absolute text-emerald-600 font-bold text-xl pointer-events-none drop-shadow-md bg-white/95 px-4 py-1.5 rounded-full border border-emerald-300 z-20"
+                        style={{ top: '25%', left: '50%', transform: 'translateX(-50%)' }}
                       >
                         ✨ Gabung!
                       </motion.div>
@@ -331,7 +332,7 @@ export default function InteractiveRegroupingBlocks({
                   </AnimatePresence>
                 </div>
                 {/* Ones Area */}
-                <div className="flex flex-col-reverse flex-wrap gap-[2px] w-[80px] h-[178px] justify-start content-start self-end">
+                <div className="flex flex-col-reverse flex-wrap gap-0.5 w-20 h-44.5 justify-start content-start self-end">
                   <AnimatePresence>
                     {ones.map((o) => (
                       <SatuanBlock key={o.id} id={o.id} isDraggable={false} />
@@ -339,15 +340,15 @@ export default function InteractiveRegroupingBlocks({
                   </AnimatePresence>
                   
                   {groupedOnes.length > 0 && (
-                    <div className="flex flex-col-reverse gap-[1px] bg-blue-50/50 p-1 rounded-lg border border-blue-200 shadow-sm self-end h-[160px] justify-start ml-2">
+                    <div className="flex flex-col-reverse gap-px bg-blue-50/50 p-1 rounded-lg border border-blue-200 shadow-sm self-end h-40 justify-start ml-2">
                       <AnimatePresence>
                         {groupedOnes.map((o) => (
                           <motion.div
                             key={o.id}
                             layoutId={o.id}
                             initial={{ scale: 1 }}
-                            animate={isMerging ? { scale: [1, 1.2, 0], backgroundColor: 'var(--block-puluhan)', opacity: 0 } : { scale: 1 }}
-                            transition={{ duration: 1.5 }}
+                            animate={isMerging ? { scale: [1, 1.2, 0], backgroundColor: 'var(--block-puluhan)', opacity: [1, 1, 0] } : { scale: 1 }}
+                            transition={{ duration: 2.0, ease: 'easeInOut' }}
                             style={{
                               width: 16,
                               height: 15,
@@ -365,15 +366,15 @@ export default function InteractiveRegroupingBlocks({
             </div>
 
             {/* Box 2 (Kotak Jawaban 2) */}
-            <div className="flex-1 flex flex-col gap-2 max-w-[250px]">
+            <div className="flex-1 flex flex-col gap-2 max-w-62.5">
               <div className="text-center font-bold text-blue-600 bg-blue-50 py-2 rounded-xl border border-blue-200 shadow-sm">
                 Kotak Jawaban 2
               </div>
               <div 
-                className="flex justify-center gap-6 p-6 rounded-2xl border-4 border-dashed border-blue-300 bg-blue-50/30 min-h-[250px] transition-colors relative"
+                className="flex justify-center gap-6 p-6 rounded-2xl border-4 border-dashed border-blue-300 bg-blue-50/30 min-h-62.5 transition-colors relative"
               >
                 {/* Tens Area */}
-                <div className="flex gap-2 items-end min-w-[40px] justify-end">
+                <div className="flex gap-2 items-end min-w-10 justify-end">
                   <AnimatePresence>
                     {tens2.map((t) => (
                       <PuluhanBlock 
@@ -386,7 +387,7 @@ export default function InteractiveRegroupingBlocks({
                   </AnimatePresence>
                 </div>
                 {/* Ones Area */}
-                <div className="flex flex-wrap gap-2 w-[80px] justify-start content-end h-full">
+                <div className="flex flex-wrap gap-2 w-20 justify-start content-end h-full">
                   <AnimatePresence>
                     {ones2.map((o) => (
                       <SatuanBlock 
@@ -409,18 +410,19 @@ export default function InteractiveRegroupingBlocks({
                 Kotak Nilai Awal
               </div>
               <div 
-                className="flex justify-center gap-6 p-6 rounded-2xl border-4 border-dashed border-emerald-300 bg-emerald-50/30 min-h-[250px] transition-colors relative"
+                className="flex justify-center gap-6 p-6 rounded-2xl border-4 border-dashed border-emerald-300 bg-emerald-50/30 min-h-62.5 transition-colors relative"
               >
                 {/* Tens Area */}
-                <div ref={tensBoxRef} className="flex gap-2 items-end min-w-[40px] justify-end relative">
+                <div ref={tensBoxRef} className="flex gap-2 items-end min-w-10 justify-end relative">
                   <AnimatePresence>
                     {isShattering && (
                       <motion.div
                         initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: [0, 1.5, 1], opacity: [0, 1, 0] }}
+                        animate={{ scale: [0, 1.4, 1.4, 1], opacity: [0, 1, 1, 0] }}
+                        transition={{ duration: 2.3, times: [0, 0.2, 0.8, 1], ease: 'easeInOut' }}
                         exit={{ opacity: 0 }}
-                        className="absolute text-rose-500 font-bold text-xl pointer-events-none drop-shadow-md bg-white/80 px-3 py-1 rounded-full z-20"
-                        style={{ top: '30%', left: '50%', transform: 'translateX(-50%)' }}
+                        className="absolute text-rose-600 font-bold text-xl pointer-events-none drop-shadow-md bg-white/95 px-4 py-1.5 rounded-full border border-rose-300 z-20"
+                        style={{ top: '25%', left: '50%', transform: 'translateX(-50%)' }}
                       >
                         💥 Pecah!
                       </motion.div>
@@ -440,7 +442,7 @@ export default function InteractiveRegroupingBlocks({
                 </div>
 
                 {/* Ones Area */}
-                <div ref={onesBoxRef} className="flex flex-col-reverse flex-wrap gap-[2px] w-[80px] h-[178px] justify-start content-start self-end">
+                <div ref={onesBoxRef} className="flex flex-col-reverse flex-wrap gap-0.5 w-20 h-44.5 justify-start content-start self-end">
                   <AnimatePresence>
                     {ones.map((o) => (
                       <SatuanBlock 
@@ -453,14 +455,14 @@ export default function InteractiveRegroupingBlocks({
                   </AnimatePresence>
                   
                   {breakingTens.length > 0 && (
-                    <div className="flex flex-col-reverse gap-[1px] bg-blue-50/50 p-1 rounded-lg border border-blue-200 shadow-sm self-end h-[160px] justify-start ml-2">
+                    <div className="flex flex-col-reverse gap-px bg-blue-50/50 p-1 rounded-lg border border-blue-200 shadow-sm self-end h-40 justify-start ml-2">
                       <AnimatePresence>
                         {breakingTens.map((o) => (
                           <motion.div
                             key={o.id}
                             initial={{ scale: 0, backgroundColor: 'var(--block-puluhan)' }}
                             animate={{ scale: [0, 1.2, 1], backgroundColor: 'var(--block-satuan)' }}
-                            transition={{ duration: 1.5 }}
+                            transition={{ duration: 2.0, ease: 'easeInOut' }}
                             style={{
                               width: 16,
                               height: 16,
@@ -478,13 +480,13 @@ export default function InteractiveRegroupingBlocks({
 
             {/* Box 2 (Kotak Pengurang) */}
             {!isSubtractComplete && (
-              <div className="flex-1 flex flex-col gap-2 max-w-[250px]">
+              <div className="flex-1 flex flex-col gap-2 max-w-62.5">
                 <div className="text-center font-bold text-rose-600 bg-rose-50 py-2 rounded-xl border border-rose-200 shadow-sm">
                 Kotak Pengurang
               </div>
               <div 
                 ref={takeAwayBoxRef}
-                className="flex justify-center items-end gap-6 p-6 rounded-2xl border-4 border-dashed border-rose-300 bg-rose-50/30 min-h-[250px] transition-colors relative"
+                className="flex justify-center items-end gap-6 p-6 rounded-2xl border-4 border-dashed border-rose-300 bg-rose-50/30 min-h-62.5 transition-colors relative"
               >
                 {/* Petunjuk Target */}
                 <div className="absolute top-4 left-0 right-0 text-center font-semibold text-rose-500 opacity-60 text-sm">
@@ -492,7 +494,7 @@ export default function InteractiveRegroupingBlocks({
                 </div>
 
                 {/* Tens Area */}
-                <div className="flex gap-2 items-end min-w-[40px] justify-end">
+                <div className="flex gap-2 items-end min-w-10 justify-end">
                   <AnimatePresence>
                     {subtractedTens.map((t) => (
                       <PuluhanBlock key={t.id} id={t.id} isDraggable={false} />
@@ -500,7 +502,7 @@ export default function InteractiveRegroupingBlocks({
                   </AnimatePresence>
                 </div>
                 {/* Ones Area */}
-                <div className="flex flex-wrap gap-2 w-[80px] justify-start content-end">
+                <div className="flex flex-wrap gap-2 w-20 justify-start content-end">
                   <AnimatePresence>
                     {subtractedOnes.map((o) => (
                       <SatuanBlock key={o.id} id={o.id} isDraggable={false} />
@@ -516,47 +518,50 @@ export default function InteractiveRegroupingBlocks({
       
       {/* Kotak Hasil Akhir Gabungan */}
       <AnimatePresence>
-        <motion.div 
-          initial={{ opacity: 0, y: -20, height: 0 }}
-          animate={{ opacity: 1, y: 0, height: 'auto' }}
-          className="w-full flex flex-col items-center gap-2 mt-4 overflow-hidden"
-        >
-          <div className="text-center font-bold text-slate-600 bg-slate-100 py-2 px-6 rounded-xl border border-slate-200 shadow-sm">
-            Kotak Hasil Akhir ({isPenjumlahan ? 'Total Gabungan' : 'Sisa Balok'} = ?)
-          </div>
-          <div className="flex gap-4 items-end justify-center p-6 rounded-2xl border-2 border-slate-300 bg-slate-50 min-h-[180px] w-full max-w-sm">
-            <div className="flex gap-1.5 h-[160px] items-end">
-              {tens.map((t, i) => (
-                <div
-                  key={`final-t-${i}`}
-                  className="shrink-0"
-                  style={{
-                    width: 14,
-                    height: 140,
-                    backgroundColor: 'var(--block-puluhan)',
-                    border: '1.5px solid color-mix(in oklch, var(--block-puluhan) 70%, black)',
-                    borderRadius: 3,
-                  }}
-                />
-              ))}
+        {isComplete && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: -20, height: 0 }}
+            className="w-full flex flex-col items-center gap-2 mt-4 overflow-hidden"
+          >
+            <div className="text-center font-bold text-emerald-700 bg-emerald-100 py-2 px-6 rounded-xl border border-emerald-300 shadow-sm">
+              Kotak Hasil Akhir ({isPenjumlahan ? 'Total Gabungan' : 'Sisa Balok'} = {tens.length * 10 + ones.length})
             </div>
-            <div className="flex flex-wrap gap-2 w-[120px] justify-start content-end">
-              {[...ones, ...groupedOnes, ...breakingTens].map((o, i) => (
-                <div
-                  key={`final-s-${i}`}
-                  className="shrink-0"
-                  style={{
-                    width: 14,
-                    height: 14,
-                    backgroundColor: 'var(--block-satuan)',
-                    border: '1.5px solid color-mix(in oklch, var(--block-satuan) 70%, black)',
-                    borderRadius: 3,
-                  }}
-                />
-              ))}
+            <div className="flex gap-4 items-end justify-center p-6 rounded-2xl border-2 border-emerald-300 bg-emerald-50 min-h-45 w-full max-w-sm">
+              <div className="flex gap-1.5 h-40 items-end">
+                {tens.map((t, i) => (
+                  <div
+                    key={`final-t-${i}`}
+                    className="shrink-0"
+                    style={{
+                      width: 14,
+                      height: 140,
+                      backgroundColor: 'var(--block-puluhan)',
+                      border: '1.5px solid color-mix(in oklch, var(--block-puluhan) 70%, black)',
+                      borderRadius: 3,
+                    }}
+                  />
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2 w-30 justify-start content-end">
+                {[...ones, ...groupedOnes, ...breakingTens].map((o, i) => (
+                  <div
+                    key={`final-s-${i}`}
+                    className="shrink-0"
+                    style={{
+                      width: 14,
+                      height: 14,
+                      backgroundColor: 'var(--block-satuan)',
+                      border: '1.5px solid color-mix(in oklch, var(--block-satuan) 70%, black)',
+                      borderRadius: 3,
+                    }}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       <div className="mt-2 flex items-center justify-center gap-4">

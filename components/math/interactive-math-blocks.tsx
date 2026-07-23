@@ -431,7 +431,7 @@ export default function InteractiveMathBlocks({
   const subPuluhanY = Math.min(coords.p1.y, coords.p2.y) - 45;
   const subPuluhanVal = puluhanAnimateCount - targetPuluhan;
 
-  const showHasilAkhirBox = step === 'selesai' || (!isPenjumlahan && (remainingUnitsMoved || remainingTensMoved));
+  const showHasilAkhirBox = step === 'selesai';
 
   return (
     <div className="flex flex-col items-center gap-8 w-full max-w-2xl select-none">
