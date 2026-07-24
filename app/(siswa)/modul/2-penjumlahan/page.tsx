@@ -75,6 +75,21 @@ export default function Modul2Page() {
     sesiMulaiRef.current = Date.now();
   }, [latihan]);
 
+  // Jika dipanggil dengan mode=latihan, langsung masuk ke layar latihan
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('mode') === 'latihan') {
+        setLayar('latihan');
+        sessionStorage.setItem('operasi', 'penjumlahan');
+        sessionStorage.setItem('kesulitan', 'mudah');
+        latihan.mulaiSesi(MODUL2_SOAL);
+        sesiMulaiRef.current = Date.now();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const contohBerikutnya = useCallback(() => {
     if (indexContoh < 2) {
       setIndexContoh((prev) => prev + 1);

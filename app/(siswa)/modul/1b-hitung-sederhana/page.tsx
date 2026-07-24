@@ -50,6 +50,19 @@ export default function Modul1BPage() {
     sesiMulaiRef.current = Date.now();
   }, [latihan]);
 
+  // Jika dipanggil dengan mode=latihan, langsung masuk ke layar latihan
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('mode') === 'latihan') {
+        setLayar('latihan');
+        latihan.mulaiSesi(MODUL1B_SOAL);
+        sesiMulaiRef.current = Date.now();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Saat sesi latihan selesai → simpan ke DB + tandai modul selesai
   useEffect(() => {
     if (!latihan.sesiSelesai || layar !== 'latihan') return;
