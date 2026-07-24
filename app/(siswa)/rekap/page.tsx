@@ -35,7 +35,13 @@ export default function RekapPage() {
     }
     if (op) setOperasi(op);
     if (source) setRekapSource(source);
-    if (fModul) setFromModul(fModul);
+
+    if (fModul && source !== 'latihan') {
+      setFromModul(fModul);
+    } else {
+      setFromModul(null);
+      sessionStorage.removeItem('fromModul');
+    }
   }, []);
 
   useEffect(() => {
