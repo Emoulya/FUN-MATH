@@ -61,6 +61,8 @@ export default function LatihanPage() {
 
   // Load pilihan dan mulai sesi
   useEffect(() => {
+    sessionStorage.setItem('rekapSource', 'latihan');
+    sessionStorage.removeItem('fromModul');
     const op = sessionStorage.getItem('operasi') as Operasi | null;
     const ks = sessionStorage.getItem('kesulitan') as Kesulitan | null;
     if (op) setOperasi(op);
@@ -188,6 +190,8 @@ export default function LatihanPage() {
     }).catch(console.error);
 
     // Simpan rekap ke sessionStorage dan navigate
+    sessionStorage.setItem('rekapSource', 'latihan');
+    sessionStorage.removeItem('fromModul');
     sessionStorage.setItem('rekap', JSON.stringify(rekap));
     router.push('/rekap');
   }, [latihan.sesiSelesai, latihan.rekap, router, operasi]);

@@ -72,8 +72,7 @@ export const REWARD_EMOJI: { min: number; emoji: string; pesan: string }[] = [
 ];
 
 /** Durasi default timer per soal (detik) — 0 berarti tanpa batas */
-// TODO: konfirmasi client — timer diaktifkan
-export const TIMER_DEFAULT_DETIK = 120;
+export const TIMER_DEFAULT_DETIK = 480; // 8 menit (480 detik)
 
 /** Jumlah soal per sesi latihan */
 export const SOAL_PER_SESI = 5;
