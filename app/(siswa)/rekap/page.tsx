@@ -85,6 +85,23 @@ export default function RekapPage() {
     })),
   [rekap]);
 
+  const getModulLatihanUrl = (modulKey: string) => {
+    switch (modulKey) {
+      case 'modul1b':
+        return '/modul/1b-hitung-sederhana?mode=latihan';
+      case 'modul2':
+        return '/modul/2-penjumlahan?mode=latihan';
+      case 'modul3':
+        return '/modul/3-pengurangan?mode=latihan';
+      case 'modul4':
+        return '/modul/4-latihan-campuran';
+      case 'modul1a':
+        return '/modul/1a-nilai-tempat';
+      default:
+        return '/modul';
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col items-center gap-6 p-6 max-w-md mx-auto">
       {/* Header reward */}
@@ -211,7 +228,7 @@ export default function RekapPage() {
             <Button
               onClick={() => {
                 if (fromModul) {
-                  router.push('/modul');
+                  router.push(getModulLatihanUrl(fromModul));
                 } else {
                   router.push(`/pilih-operasi?op=${operasi}`);
                 }

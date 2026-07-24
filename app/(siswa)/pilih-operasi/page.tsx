@@ -11,6 +11,16 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, PenTool, ArrowLeft, ClipboardList, Map, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import OperationCard from '@/components/math/operation-card';
 import { useTutorial } from '@/hooks/use-tutorial';
 import type { Operasi, Kesulitan } from '@/types/math';
@@ -21,6 +31,7 @@ export default function PilihOperasiPage() {
   const [operasiTerpilih, setOperasiTerpilih] = useState<Operasi | null>(null);
   const [kesulitanTerpilih, setKesulitanTerpilih] = useState<Kesulitan | null>(null);
   const [isTestUser, setIsTestUser] = useState(false);
+  const [showConfirmTutorial, setShowConfirmTutorial] = useState(false);
   const { isTutorial, tutorialStep, setStep, resetTutorial } = useTutorial();
 
   useEffect(() => {
@@ -79,13 +90,40 @@ export default function PilihOperasiPage() {
         <Button
           variant="outline"
           size="sm"
-          onClick={handleUlangTutorial}
+          onClick={() => setShowConfirmTutorial(true)}
           className="absolute top-4 left-4 z-50 bg-white/50 hover:bg-white text-muted-foreground shadow-sm rounded-full font-bold"
         >
           <RotateCcw className="w-4 h-4 mr-2" />
           Ulang Tutorial
         </Button>
       )}
+
+      <AlertDialog open={showConfirmTutorial} onOpenChange={setShowConfirmTutorial}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-xl font-bold">
+              <span>🔄</span> Ulang Tutorial?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base text-muted-foreground pt-2">
+              Apakah kamu yakin ingin mengulang tutorial dari awal? Kemajuan tutorial kamu akan diulang kembali.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0 mt-4">
+            <AlertDialogCancel onClick={() => setShowConfirmTutorial(false)}>
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setShowConfirmTutorial(false);
+                await handleUlangTutorial();
+              }}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold"
+            >
+              Ya, Ulang
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AnimatePresence mode="wait">
         {!operasiTerpilih ? (
